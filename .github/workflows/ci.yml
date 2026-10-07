@@ -46,9 +46,11 @@ concurrency:
 
 env:
   # Образы, собранные один раз в build-vidayapi и опубликованные в ghcr.io.
-  TEST_RUNNER_IMAGE: ghcr.io/${{ github.repository }}/test-runner:${{ github.sha }}
-  POSTGRES_TEST_IMAGE: ghcr.io/${{ github.repository }}/postgres-test:${{ github.sha }}
-  IMAGE_NAME: ghcr.io/${{ github.repository }}/test-runner:${{ github.sha }}
+  # lower() обязателен: docker требует lowercase в имени образа, а владелец
+  # репозитория (напр. Snowkey505) может содержать заглавные буквы.
+  TEST_RUNNER_IMAGE: ghcr.io/${{ lower(github.repository) }}/test-runner:${{ github.sha }}
+  POSTGRES_TEST_IMAGE: ghcr.io/${{ lower(github.repository) }}/postgres-test:${{ github.sha }}
+  IMAGE_NAME: ghcr.io/${{ lower(github.repository) }}/test-runner:${{ github.sha }}
   COMPOSE_FILE: docker/docker-compose.ci.yml
   COMPOSE_PROJECT_NAME: viday-ci-${{ github.run_id }}
   ALLURE_HISTORY_DIR: /workspace/allure-history
@@ -140,6 +142,7 @@ jobs:
         run: ./gradlew --no-daemon :app:assembleDebug
         env:
           ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
+          ANDROID_SDK_ROOT: ${{ github.workspace }}/viday/.android-sdk
 
   # ---------------------------------------------------------------------------
   # STAGE: unit
@@ -168,6 +171,7 @@ jobs:
         run: ./gradlew --no-daemon :domain:test :data:testDebugUnitTest :app:testDebugUnitTest
         env:
           ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
+          ANDROID_SDK_ROOT: ${{ github.workspace }}/viday/.android-sdk
           GRADLE_USER_HOME: ${{ github.workspace }}/viday/.gradle
       - name: Publish JUnit report
         if: success() || failure()
@@ -458,6 +462,7 @@ jobs:
             ./gradlew --no-daemon :app:connectedDebugAndroidTest
         env:
           ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
+          ANDROID_SDK_ROOT: ${{ github.workspace }}/viday/.android-sdk
           GRADLE_USER_HOME: ${{ github.workspace }}/viday/.gradle
       - name: Publish JUnit report
         if: success() || failure()
