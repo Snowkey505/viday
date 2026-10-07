@@ -114,7 +114,11 @@ jobs:
           retention-days: 7
       - name: Fix cache permissions (root-owned files from docker)
         if: always()
-        run: chmod -R a+rX .gradle-ci allure-history 2>/dev/null || true
+        run: |
+          # Контейнер (-u root) пишет кэш от root: без sudo раннер не может
+          # ни читать файлы для tar, ни chmod'ить чужие файлы.
+          sudo chown -R "$(id -u):$(id -g)" .gradle-ci allure-history 2>/dev/null || true
+          chmod -R a+rX .gradle-ci allure-history 2>/dev/null || true
       - name: Save Gradle + Allure history cache
         if: always()
         continue-on-error: true   # параллельные джобы могут сохранять один ключ
@@ -282,7 +286,11 @@ jobs:
           retention-days: 7
       - name: Fix cache permissions (root-owned files from docker)
         if: always()
-        run: chmod -R a+rX .gradle-ci allure-history 2>/dev/null || true
+        run: |
+          # Контейнер (-u root) пишет кэш от root: без sudo раннер не может
+          # ни читать файлы для tar, ни chmod'ить чужие файлы.
+          sudo chown -R "$(id -u):$(id -g)" .gradle-ci allure-history 2>/dev/null || true
+          chmod -R a+rX .gradle-ci allure-history 2>/dev/null || true
       - name: Save Gradle + Allure history cache
         if: always()
         continue-on-error: true   # параллельные джобы могут сохранять один ключ
@@ -358,7 +366,11 @@ jobs:
           retention-days: 7
       - name: Fix cache permissions (root-owned files from docker)
         if: always()
-        run: chmod -R a+rX .gradle-ci allure-history 2>/dev/null || true
+        run: |
+          # Контейнер (-u root) пишет кэш от root: без sudo раннер не может
+          # ни читать файлы для tar, ни chmod'ить чужие файлы.
+          sudo chown -R "$(id -u):$(id -g)" .gradle-ci allure-history 2>/dev/null || true
+          chmod -R a+rX .gradle-ci allure-history 2>/dev/null || true
       - name: Save Gradle + Allure history cache
         if: always()
         continue-on-error: true   # параллельные джобы могут сохранять один ключ
@@ -434,7 +446,11 @@ jobs:
           retention-days: 7
       - name: Fix cache permissions (root-owned files from docker)
         if: always()
-        run: chmod -R a+rX .gradle-ci allure-history 2>/dev/null || true
+        run: |
+          # Контейнер (-u root) пишет кэш от root: без sudo раннер не может
+          # ни читать файлы для tar, ни chmod'ить чужие файлы.
+          sudo chown -R "$(id -u):$(id -g)" .gradle-ci allure-history 2>/dev/null || true
+          chmod -R a+rX .gradle-ci allure-history 2>/dev/null || true
       - name: Save Gradle + Allure history cache
         if: always()
         continue-on-error: true   # параллельные джобы могут сохранять один ключ
@@ -646,7 +662,11 @@ jobs:
           retention-days: 14
       - name: Fix cache permissions (root-owned files from docker)
         if: always()
-        run: chmod -R a+rX .gradle-ci allure-history 2>/dev/null || true
+        run: |
+          # Контейнер (-u root) пишет кэш от root: без sudo раннер не может
+          # ни читать файлы для tar, ни chmod'ить чужие файлы.
+          sudo chown -R "$(id -u):$(id -g)" .gradle-ci allure-history 2>/dev/null || true
+          chmod -R a+rX .gradle-ci allure-history 2>/dev/null || true
       - name: Save Gradle + Allure history cache
         if: always()
         continue-on-error: true   # параллельные джобы могут сохранять один ключ
@@ -734,7 +754,11 @@ jobs:
         run: docker compose -f docker/docker-compose.sonar.yml down -v || true
       - name: Fix cache permissions (root-owned files from docker)
         if: always()
-        run: chmod -R a+rX .gradle-ci allure-history 2>/dev/null || true
+        run: |
+          # Контейнер (-u root) пишет кэш от root: без sudo раннер не может
+          # ни читать файлы для tar, ни chmod'ить чужие файлы.
+          sudo chown -R "$(id -u):$(id -g)" .gradle-ci allure-history 2>/dev/null || true
+          chmod -R a+rX .gradle-ci allure-history 2>/dev/null || true
       - name: Save Gradle + Allure history cache
         if: always()
         continue-on-error: true   # параллельные джобы могут сохранять один ключ
@@ -755,7 +779,10 @@ jobs:
   # ---------------------------------------------------------------------------
   publish-reports:
     needs: [report-vidayapi, unit-viday, sonar-vidayapi]
-    if: ${{ !cancelled() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+    # Публикуем на push, вручную и на PR из этого же репозитория (раннеры у вас
+    # ходят именно по pull_request — без этого условия джоба скипалась).
+    # Скипаются только форк-PR, где GITHUB_TOKEN не имеет прав на gh-pages.
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
