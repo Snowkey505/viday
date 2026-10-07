@@ -1,0 +1,111 @@
+@startuml Viday_RDBMS_Redis_Interaction
+!theme plain
+title Взаимодействие реляционной СУБ (PostgreSQL) и in-memory СУБ (Redis)\nViday API
+
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+
+actor "Клиент" as Client
+participant "Controller\n(Video / Stream)" as Ctrl
+participant "Use Case\n(Upload / Delete / Stream)" as UC
+participant "CachePort\n(RedisCacheAdapter)" as Redis
+database "Redis\n(in-memory)" as RedisDB
+participant "Repository\n(JDBC)" as Repo
+database "PostgreSQL\n(реляционная СУБ)" as PG
+
+== Чтение: cache hit ==
+
+Client -> Ctrl : GET /api/videos/{id}
+activate Ctrl
+
+Ctrl -> Redis : get("cache:video:{id}")
+activate Redis
+Redis -> RedisDB : GET key
+RedisDB --> Redis : JSON (VideoResponse)
+Redis --> Ctrl : cached value
+deactivate Redis
+
+Ctrl --> Client : 200 OK (из кеша)
+deactivate Ctrl
+
+note over Ctrl, PG #LightGreen
+  PostgreSQL **не вызывается** —
+  снижается latency и нагрузка на диск.
+end note
+
+== Чтение: cache miss ==
+
+Client -> Ctrl : GET /api/videos/{id}
+activate Ctrl
+
+Ctrl -> Redis : get("cache:video:{id}")
+activate Redis
+Redis -> RedisDB : GET key
+RedisDB --> Redis : null
+Redis --> Ctrl : miss
+deactivate Redis
+
+Ctrl -> Repo : findVideoByContentId(id)
+activate Repo
+Repo -> PG : SELECT content, video, media_variant
+PG --> Repo : rows
+Repo --> Ctrl : Video
+deactivate Repo
+
+Ctrl -> Redis : set("cache:video:{id}", JSON, TTL=600s)
+activate Redis
+Redis -> RedisDB : SETEX key
+RedisDB --> Redis : OK
+deactivate Redis
+
+Ctrl --> Client : 200 OK
+deactivate Ctrl
+
+== Чтение: публичная лента (аналогично) ==
+
+Client -> Ctrl : GET /api/videos\nGET /api/streams/live
+Ctrl -> Redis : get("cache:videos:public")\nget("cache:streams:live")
+alt ключ найден
+  RedisDB --> Ctrl : cached list
+else miss
+  Ctrl -> Repo : findPublicContent()\nfindLiveStreams()
+  Repo -> PG : SELECT ...
+  PG --> Repo : rows
+  Ctrl -> Redis : set(..., TTL 300s / 30s)
+end
+Ctrl --> Client : 200 OK
+
+== Запись: всегда PostgreSQL + инвалидация Redis ==
+
+Client -> Ctrl : POST /api/videos/upload\nDELETE /api/videos/{id}\nPOST /api/streams/.../start
+activate Ctrl
+
+Ctrl -> UC : execute(...)
+activate UC
+
+UC -> Repo : save() / delete() / update()
+activate Repo
+Repo -> PG : INSERT / UPDATE / DELETE\n(+ CASCADE)
+PG --> Repo : OK
+Repo --> UC : Result
+deactivate Repo
+
+UC -> Redis : delete("cache:video:{id}")\ndelete("cache:videos:public")\ndelete("cache:streams:live")
+activate Redis
+Redis -> RedisDB : DEL / KEYS+DEL by prefix
+RedisDB --> Redis : OK
+deactivate Redis
+
+UC --> Ctrl : Result
+deactivate UC
+
+Ctrl --> Client : 201 / 204 / 4xx
+deactivate Ctrl
+
+note over PG, RedisDB #LightYellow
+  **Правило:** запись только в PostgreSQL (источник истины).
+  Redis — производный слой; при изменении данных
+  кеш сбрасывается, следующий read снова идёт в PG.
+end note
+
+@enduml

@@ -1,0 +1,66 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam actor {
+    BorderColor black
+    FontName Arial
+    FontSize 12
+}
+skinparam usecase {
+    BorderColor black
+    BackgroundColor LightYellow
+    FontName Arial
+    FontSize 11
+}
+
+actor "Гость" as Guest
+actor "Пользователь" as User
+actor "Контент-мейкер" as Maker
+actor "Аналитик" as Analyst
+actor "Админ" as Admin
+
+Analyst --|> Guest
+User --|> Guest
+Maker --|> User
+Admin --|> Maker
+
+rectangle {
+    usecase "Просмотр публичного контента" as UC1
+    usecase "Просмотр публичных плейлистов" as UC2
+    usecase "Создание плейлиста" as UC3
+    usecase "Удаление своего плейлиста" as UC4
+    usecase "Добавление контента в свой плейлист" as UC5
+    usecase "Удаление контента из своего плейлиста" as UC6
+    usecase "Просмотр своих плейлистов" as UC7
+    usecase "Подписка на другого пользователя" as UC8
+    usecase "Отписка от другого пользователя" as UC9
+    usecase "Загрузка видео" as UC10
+    usecase "Запуск стрима" as UC11
+    usecase "Удаление своего контента" as UC12
+    usecase "Статистика просмотров" as UC13
+    usecase "Удаление любого контента" as UC14
+    usecase "Удаление любого плейлиста" as UC15
+    usecase "Администрирование базы данных" as UC16
+}
+
+Guest --> UC1
+Guest --> UC2
+
+User --> UC3
+User --> UC4
+User --> UC5
+User --> UC6
+User --> UC7
+User --> UC8
+User --> UC9
+
+Analyst --> UC13
+
+Maker --> UC10
+Maker --> UC11
+Maker --> UC12
+
+Admin --> UC14
+Admin --> UC15
+Admin --> UC16
+@enduml

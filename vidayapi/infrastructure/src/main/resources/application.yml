@@ -1,0 +1,68 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/viday
+    username: viday_app_user
+    password: app_password_change_me
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-init-sql: RESET ROLE; RESET app.current_user_id;
+
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+      enabled: true
+
+server:
+  port: 8080
+  address: 0.0.0.0
+  tomcat:
+    accesslog:
+      enabled: true
+      pattern: '%t %a %r %s %D'
+      directory: logs
+
+minio:
+  endpoint: http://localhost:9000
+  public-endpoint: http://192.168.255.112:9000
+  access-key: minioadmin
+  secret-key: minioadmin
+  region: us-east-1
+
+logging:
+  level:
+    com.vidayapi: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.web.servlet: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
+    org.apache.coyote: DEBUG
+    org.apache.tomcat: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.jdbc: DEBUG
+    org.springframework.jdbc.datasource: DEBUG
+    org.springframework.boot.web.embedded.tomcat: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/viday.log
+    max-size: 10MB
+    total-size-cap: 100MB
+    max-history: 30
+
+business:
+  video:
+    max-duration-seconds: 3600
+    allowed-formats:
+      - video/mp4
+      - video/webm
+      - video/avi
+    max-file-size-mb: 500
+  user:
+    default-role: USER
+
+jwt:
+  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+  expiration-ms: 86400000

@@ -1,0 +1,63 @@
+HELP.md
+.gradle
+.gradle-ci/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+### Kotlin ###
+.kotlin
+
+### Логи приложения (не в git) ###
+logs/
+**/logs/
+log_build.txt
+
+### Артефакты демо Задания 5 (curl/tcpdump) и research-снапшоты ###
+# Сами capture'ы (json/pcap) не коммитим, но README и пример для Wireshark —
+# да (см. traffic/examples/viday-e2e-sample.pcap).
+traffic/*
+!traffic/README.md
+!traffic/examples/
+!traffic/examples/**
+research_output/
+research_output.zip
+
+### Большой бинарный архив Node.js для Allure-отчётов (~120 МБ) ###
+# Исключён из git: build.gradle.kts скачивает его автоматически при первом запуске.
+gradle/node/
+
+### История Allure между прогонами (кэш для трендов) ###
+allure-history/
