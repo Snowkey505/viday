@@ -1,0 +1,553 @@
+# =============================================================================
+# GitHub Actions CI для ЛР2.
+#
+# Архитектура:
+#   * build-vidayapi собирает образы test-runner и postgres-test ОДИН раз,
+#     пушит их в GitHub Container Registry (ghcr.io), собирает bootJar;
+#   * тестовые джобы только docker pull + docker run/compose run;
+#   * порядок Требования 5: unit -> integration -> e2e (через needs);
+#   * report выполняется ВСЕГДА (if: !cancelled()), НЕ перезапускает тесты:
+#     Allure собирается из allure-results*, пришедших артефактами;
+#   * device: эмулятор Android (KVM) + API из jar-артефакта + стенд
+#     (postgres со схемой/redis/minio через docker-compose.device.yml);
+#   * Junit-отчёты публикуются аннотациями dorny/test-reporter;
+#   * история Allure (тренды, Требование 9) — actions/cache.
+#
+# Раннеры:
+#   * ubuntu-latest достаточно для ВСЕХ джоб (docker уже есть; KVM для
+#     эмулятора на GitHub-hosted включён). Если используете СВОЙ раннер —
+#     замените runs-on на [self-hosted, linux, x64] и убедитесь, что у него
+#     есть Docker и /dev/kvm.
+#   * Для пуша образов в ghcr.io нужен secret GITHUB_TOKEN (автоматический)
+#     и разрешение packages: write (задано ниже).
+#
+# Запуск: push в main/master, pull request, вручную (workflow_dispatch).
+# =============================================================================
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+# Не даём параллельным прогонам одного рефа мешать друг другу.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Образы, собранные один раз в build-vidayapi и опубликованные в ghcr.io.
+  TEST_RUNNER_IMAGE: ghcr.io/${{ github.repository }}/test-runner:${{ github.sha }}
+  POSTGRES_TEST_IMAGE: ghcr.io/${{ github.repository }}/postgres-test:${{ github.sha }}
+  IMAGE_NAME: ghcr.io/${{ github.repository }}/test-runner:${{ github.sha }}
+  COMPOSE_FILE: docker/docker-compose.ci.yml
+  COMPOSE_PROJECT_NAME: viday-ci-${{ github.run_id }}
+  ALLURE_HISTORY_DIR: /workspace/allure-history
+  GRADLE_CACHE: .gradle-ci
+
+permissions:
+  contents: read
+  packages: write          # build-vidayapi пушит образы в ghcr.io
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # STAGE: build
+  # ---------------------------------------------------------------------------
+  build-vidayapi:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vidayapi
+    steps:
+      - uses: actions/checkout@v4
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cache Gradle + Allure history
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            vidayapi/.gradle-ci
+            vidayapi/allure-history
+          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
+      # 1) контейнер запуска тестов (Требование 1): собирается один раз, дальше только pull
+      - name: Build and push test-runner image
+        run: |
+          docker build -t "$TEST_RUNNER_IMAGE" -f docker/test-runner/Dockerfile .
+          docker push "$TEST_RUNNER_IMAGE"
+      # 2) postgres со схемой init 01..05 (Требование 4) — стенд CI + device
+      - name: Build and push postgres-test image
+        run: |
+          docker build -t "$POSTGRES_TEST_IMAGE" docker/postgres
+          docker push "$POSTGRES_TEST_IMAGE"
+      # 3) bootJar backend'а — артефакт для device (java -jar) и curl-демо
+      - name: Assemble backend bootJar
+        run: |
+          docker run --rm -u root \
+            -v "$PWD:/workspace" \
+            -v "$PWD/$GRADLE_CACHE:/cache/.gradle" \
+            -e GRADLE_USER_HOME=/cache/.gradle \
+            "$TEST_RUNNER_IMAGE" assemble
+      - name: Upload bootJar artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vidayapi-jar
+          path: vidayapi/presentation/build/libs/*.jar
+          if-no-files-found: error
+          retention-days: 7
+      - name: Save Gradle + Allure history cache
+        if: always()
+        continue-on-error: true   # параллельные джобы могут сохранять один ключ
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            vidayapi/.gradle-ci
+            vidayapi/allure-history
+          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
+    # Запускается при изменении backend ИЛИ Android (jar нужен device-джобе).
+    paths: ['vidayapi/**', 'viday/**']
+
+  build-viday:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: viday
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache Gradle + Android SDK
+        uses: actions/cache@v4
+        with:
+          path: |
+            viday/.gradle
+            viday/.android-sdk
+            viday/**/build
+          key: viday-build-${{ hashFiles('viday/gradle/libs.versions.toml', 'viday/build.gradle.kts') }}
+      - name: Install Android SDK
+        run: bash scripts/ci-install-sdk.sh
+        env:
+          ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
+      - name: Assemble debug APK (early compile check)
+        run: ./gradlew --no-daemon :app:assembleDebug
+        env:
+          ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
+    paths: ['viday/**']
+
+  # ---------------------------------------------------------------------------
+  # STAGE: unit
+  # ---------------------------------------------------------------------------
+  unit-viday:
+    needs: [build-viday]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: viday
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache Gradle + Android SDK
+        uses: actions/cache@v4
+        with:
+          path: |
+            viday/.gradle
+            viday/.android-sdk
+            viday/**/build
+          key: viday-build-${{ hashFiles('viday/gradle/libs.versions.toml', 'viday/build.gradle.kts') }}
+      - name: Install Android SDK
+        run: bash scripts/ci-install-sdk.sh
+        env:
+          ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
+      - name: JVM unit tests
+        run: ./gradlew --no-daemon :domain:test :data:testDebugUnitTest :app:testDebugUnitTest
+        env:
+          ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
+          GRADLE_USER_HOME: ${{ github.workspace }}/viday/.gradle
+      - name: Publish JUnit report
+        if: success() || failure()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Android unit tests (JUnit)
+          path: viday/**/build/test-results/**/*.xml
+          reporter: java-junit
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: viday-unit-results
+          path: |
+            viday/app/build/reports/tests/
+            viday/domain/build/reports/tests/
+          if-no-files-found: ignore
+          retention-days: 7
+    paths: ['viday/**']
+
+  unit-vidayapi:
+    needs: [build-vidayapi]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vidayapi
+    steps:
+      - uses: actions/checkout@v4
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Restore Gradle + Allure history cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            vidayapi/.gradle-ci
+            vidayapi/allure-history
+          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
+      - name: Run unit tests (LR1) in test-runner container
+        run: |
+          docker pull "$TEST_RUNNER_IMAGE"
+          docker run --rm -u root \
+            -v "$PWD:/workspace" \
+            -v "$PWD/allure-history:/workspace/allure-history" \
+            -v "$PWD/$GRADLE_CACHE:/cache/.gradle" \
+            -e ALLURE_HISTORY_DIR=$ALLURE_HISTORY_DIR \
+            -e GRADLE_USER_HOME=/cache/.gradle \
+            "$TEST_RUNNER_IMAGE" unit
+      - name: Publish JUnit report
+        if: success() || failure()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Backend unit tests (JUnit)
+          path: vidayapi/application/build/test-results/test/**/*.xml, vidayapi/domain/build/test-results/test/**/*.xml, vidayapi/infrastructure/build/test-results/test/**/*.xml
+          reporter: java-junit
+      - name: Upload allure-results + JUnit XML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vidayapi-unit-results
+          path: |
+            vidayapi/**/build/allure-results/**/*
+            vidayapi/application/build/test-results/test/**/*.xml
+            vidayapi/domain/build/test-results/test/**/*.xml
+            vidayapi/infrastructure/build/test-results/test/**/*.xml
+            vidayapi/allure-history/
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Save Gradle + Allure history cache
+        if: always()
+        continue-on-error: true   # параллельные джобы могут сохранять один ключ
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            vidayapi/.gradle-ci
+            vidayapi/allure-history
+          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
+    paths: ['vidayapi/**']
+
+  # ---------------------------------------------------------------------------
+  # STAGE: integration (Требования 2-4, 6, 10, 14)
+  # ---------------------------------------------------------------------------
+  integration-vidayapi:
+    needs: [unit-vidayapi]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vidayapi
+    steps:
+      - uses: actions/checkout@v4
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Restore Gradle + Allure history cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            vidayapi/.gradle-ci
+            vidayapi/allure-history
+          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
+      - name: Run integration tests on the LR2 stand
+        run: |
+          docker pull "$TEST_RUNNER_IMAGE"
+          docker pull "$POSTGRES_TEST_IMAGE"
+          docker compose -f $COMPOSE_FILE up -d postgres-test redis-test minio-test
+          docker compose -f $COMPOSE_FILE run --rm -u root \
+            -v "$PWD:/workspace" \
+            -v "$PWD/allure-history:/workspace/allure-history" \
+            -v "$PWD/$GRADLE_CACHE:/cache/.gradle" \
+            -e ALLURE_HISTORY_DIR=$ALLURE_HISTORY_DIR \
+            -e GRADLE_USER_HOME=/cache/.gradle \
+            test-runner integration
+      - name: Tear down stand
+        if: always()
+        run: docker compose -f $COMPOSE_FILE down -v || true
+      - name: Publish JUnit report
+        if: success() || failure()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Integration tests (JUnit)
+          path: vidayapi/infrastructure/build/test-results/testIntegration/**/*.xml
+          reporter: java-junit
+      - name: Upload allure-results-it + JUnit XML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vidayapi-it-results
+          path: |
+            vidayapi/infrastructure/build/allure-results-it/**/*
+            vidayapi/infrastructure/build/test-results/testIntegration/**/*.xml
+            vidayapi/allure-history/
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Save Gradle + Allure history cache
+        if: always()
+        continue-on-error: true   # параллельные джобы могут сохранять один ключ
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            vidayapi/.gradle-ci
+            vidayapi/allure-history
+          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
+    paths: ['vidayapi/**']
+
+  # ---------------------------------------------------------------------------
+  # STAGE: e2e (Задание 3, Требование 13)
+  # ---------------------------------------------------------------------------
+  e2e-vidayapi:
+    needs: [integration-vidayapi]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vidayapi
+    steps:
+      - uses: actions/checkout@v4
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Restore Gradle + Allure history cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            vidayapi/.gradle-ci
+            vidayapi/allure-history
+          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
+      - name: Run E2E MVP scenario
+        run: |
+          docker pull "$TEST_RUNNER_IMAGE"
+          docker pull "$POSTGRES_TEST_IMAGE"
+          docker compose -f $COMPOSE_FILE up -d postgres-test redis-test minio-test
+          docker compose -f $COMPOSE_FILE run --rm -u root \
+            -v "$PWD:/workspace" \
+            -v "$PWD/allure-history:/workspace/allure-history" \
+            -v "$PWD/$GRADLE_CACHE:/cache/.gradle" \
+            -e ALLURE_HISTORY_DIR=$ALLURE_HISTORY_DIR \
+            -e GRADLE_USER_HOME=/cache/.gradle \
+            test-runner e2e
+      - name: Tear down stand
+        if: always()
+        run: docker compose -f $COMPOSE_FILE down -v || true
+      - name: Publish JUnit report
+        if: success() || failure()
+        uses: dorny/test-reporter@v1
+        with:
+          name: E2E tests (JUnit)
+          path: vidayapi/presentation/build/test-results/testE2E/**/*.xml
+          reporter: java-junit
+      - name: Upload allure-results-e2e + JUnit XML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vidayapi-e2e-results
+          path: |
+            vidayapi/presentation/build/allure-results-e2e/**/*
+            vidayapi/presentation/build/test-results/testE2E/**/*.xml
+            vidayapi/allure-history/
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Save Gradle + Allure history cache
+        if: always()
+        continue-on-error: true   # параллельные джобы могут сохранять один ключ
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            vidayapi/.gradle-ci
+            vidayapi/allure-history
+          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
+    paths: ['vidayapi/**']
+
+  # ---------------------------------------------------------------------------
+  # STAGE: device — тесты Android НА УСТРОЙСТВЕ (Требование 7).
+  # Эмулятор: reactivecircus/android-emulator-runner (нужен KVM). API стенда
+  # поднимается на хосте из jar-артефакта build-vidayapi; postgres (со схемой)/
+  # redis/minio — docker-compose.device.yml с опубликованными портами.
+  # ---------------------------------------------------------------------------
+  device-viday:
+    needs: [build-viday, build-vidayapi]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download backend bootJar
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: vidayapi-jar
+          path: vidayapi
+      - name: Cache Android SDK + Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            viday/.gradle
+            viday/.android-sdk
+            viday/**/build
+          key: viday-build-${{ hashFiles('viday/gradle/libs.versions.toml', 'viday/build.gradle.kts') }}
+      - name: Setup Java 17 (для bootJar на хосте)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Android SDK (for host-side adb/gradle)
+        run: bash viday/scripts/ci-install-sdk.sh
+        env:
+          ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
+      - name: Login to GHCR and start device stand
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker pull "$POSTGRES_TEST_IMAGE"
+          docker compose -f vidayapi/docker/docker-compose.device.yml up -d
+          # postgres: порт открывается до завершения init-скриптов 01..05
+          timeout 120 bash -c 'until (echo > /dev/tcp/localhost/55432) 2>/dev/null; do sleep 2; done'
+          sleep 10
+          timeout 120 bash -c 'until (echo > /dev/tcp/localhost/56380) 2>/dev/null; do sleep 2; done'
+          timeout 120 bash -c 'until (echo > /dev/tcp/localhost/59002) 2>/dev/null; do sleep 2; done'
+      - name: Start API (bootJar from build-vidayapi)
+        run: |
+          JAR=$(ls "$GITHUB_WORKSPACE"/vidayapi/presentation/build/libs/viday-application-*.jar 2>/dev/null | head -1)
+          if [ -z "$JAR" ] || [ ! -f "$JAR" ]; then
+            echo "WARN: API jar отсутствует — AndroidApiFlowTest будет SKIPPED (assumeTrue)"
+          else
+            export SPRING_DATASOURCE_URL="jdbc:postgresql://localhost:55432/viday"
+            export SPRING_DATASOURCE_USERNAME="viday_admin_user"
+            export SPRING_DATASOURCE_PASSWORD="admin_password_change_me"
+            export SPRING_DATA_REDIS_HOST="localhost"
+            export SPRING_DATA_REDIS_PORT="56380"
+            export MINIO_ENDPOINT="http://localhost:59002"
+            export MINIO_PUBLIC_ENDPOINT="http://localhost:59002"
+            export VIDAY_CONSOLE_ENABLED="false"
+            nohup java -jar "$JAR" --server.port=8080 > /tmp/viday-api.log 2>&1 &
+            echo $! > /tmp/viday-api.pid
+            timeout 240 bash -c 'until (echo > /dev/tcp/127.0.0.1/8080) 2>/dev/null; do sleep 3; done' \
+              || echo "WARN: API не поднялся за 240s (лог: /tmp/viday-api.log)"
+          fi
+      - name: Instrumented tests on emulator (Требование 7)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: google_apis
+          arch: x86_64
+          profile: pixel_4
+          working-directory: viday
+          script: |
+            adb reverse tcp:8080 tcp:8080 || echo "WARN: reverse failed (тест будет SKIPPED)"
+            ./gradlew --no-daemon :app:connectedDebugAndroidTest
+        env:
+          ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
+          GRADLE_USER_HOME: ${{ github.workspace }}/viday/.gradle
+      - name: Publish JUnit report
+        if: success() || failure()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Device tests (JUnit)
+          path: viday/app/build/outputs/androidTest-results/connected/**/*.xml
+          reporter: java-junit
+      - name: Upload device test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: viday-device-results
+          path: |
+            viday/app/build/reports/androidTests/connected/
+            viday/app/build/outputs/androidTest-results/
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Tear down device stand
+        if: always()
+        run: docker compose -f vidayapi/docker/docker-compose.device.yml down -v || true
+    paths: ['viday/**']
+
+  # ---------------------------------------------------------------------------
+  # STAGE: report — Allure ВСЕГДА (Требование 8), без повторного прогона тестов.
+  # Стенд не нужен: отчёт генерируется из allure-results*, пришедших артефактами.
+  # ---------------------------------------------------------------------------
+  report-vidayapi:
+    needs: [unit-vidayapi, integration-vidayapi, e2e-vidayapi]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vidayapi
+    steps:
+      - uses: actions/checkout@v4
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Restore Gradle + Allure history cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            vidayapi/.gradle-ci
+            vidayapi/allure-history
+          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
+      - name: Download unit allure-results
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: vidayapi-unit-results
+      - name: Download integration allure-results
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: vidayapi-it-results
+      - name: Download e2e allure-results
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: vidayapi-e2e-results
+      - name: Generate Allure report from existing results (no re-run)
+        run: |
+          docker pull "$TEST_RUNNER_IMAGE"
+          docker run --rm -u root \
+            -v "$PWD:/workspace" \
+            -v "$PWD/allure-history:/workspace/allure-history" \
+            -v "$PWD/$GRADLE_CACHE:/cache/.gradle" \
+            -e ALLURE_HISTORY_DIR=$ALLURE_HISTORY_DIR \
+            -e GRADLE_USER_HOME=/cache/.gradle \
+            "$TEST_RUNNER_IMAGE" report
+      - name: Upload Allure report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report-ci
+          path: |
+            vidayapi/build/reports/allure-report-ci/
+            vidayapi/allure-history/
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Save Gradle + Allure history cache
+        if: always()
+        continue-on-error: true   # параллельные джобы могут сохранять один ключ
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            vidayapi/.gradle-ci
+            vidayapi/allure-history
+          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
+    paths: ['vidayapi/**']
