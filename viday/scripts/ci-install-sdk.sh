@@ -53,7 +53,10 @@ echo "==> Installing platform-tools, platforms;${PLATFORM}, build-tools;${BUILD_
 # boot-таймаут эмулятора первичной загрузкой ~1.7 ГБ.
 if [ "${INSTALL_EMULATOR:-0}" = "1" ]; then
   EMULATOR_API="${ANDROID_EMULATOR_API:-30}"
-  EMULATOR_TARGET="${ANDROID_EMULATOR_TARGET:-google_apis}"
+  # aosp_atd (Android Test Device) — облегчённый образ для headless-CI: на
+  # GitHub-hosted Linux-раннерах нет KVM, и только ATD реально загружается
+  # в программном режиме (TCG) в пределах boot-таймаута.
+  EMULATOR_TARGET="${ANDROID_EMULATOR_TARGET:-aosp_atd}"
   echo "==> Installing emulator + system-images;android-${EMULATOR_API};${EMULATOR_TARGET};x86_64..."
   yes | "$SDKMANAGER" --licenses >/dev/null || true
   "$SDKMANAGER" --install "emulator" "system-images;android-${EMULATOR_API};${EMULATOR_TARGET};x86_64"

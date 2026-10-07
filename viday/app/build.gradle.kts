@@ -59,9 +59,9 @@ tasks.withType<Test>().configureEach {
 tasks.register<JacocoReport>("jacocoTestReport") {
     group = "verification"
     description = "JaCoCo coverage report for JVM unit tests"
-    // Зависимость по живому списку Test-тасков: покрывает любое имя unit-таска
-    // (testDebugUnitTest в AGP 8, переименованные таски в AGP 9).
-    dependsOn(tasks.withType<Test>())
+    // Живая выборка (не создаётся на этапе конфигурации, резолвится к запуску):
+    // только debug unit-тесты, без release-вариантов.
+    dependsOn(tasks.matching { it.name == "testDebugUnitTest" })
     reports {
         xml.required.set(true)
         html.required.set(true)

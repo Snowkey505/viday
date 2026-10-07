@@ -112,6 +112,9 @@ jobs:
           path: vidayapi/presentation/build/libs/*.jar
           if-no-files-found: error
           retention-days: 7
+      - name: Fix cache permissions (root-owned files from docker)
+        if: always()
+        run: chmod -R a+rX .gradle-ci allure-history 2>/dev/null || true
       - name: Save Gradle + Allure history cache
         if: always()
         continue-on-error: true   # параллельные джобы могут сохранять один ключ
@@ -171,14 +174,17 @@ jobs:
         env:
           ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
       - name: JVM unit tests + JaCoCo coverage
-        run: ./gradlew --no-daemon :domain:test :data:testDebugUnitTest :app:testDebugUnitTest \
-          :domain:jacocoTestReport :data:jacocoTestReport :app:jacocoTestReport
+        run: |
+          # literal block: переводы строк сохраняются, '\' — настоящий перенос команды
+          ./gradlew --no-daemon :domain:test :data:testDebugUnitTest :app:testDebugUnitTest \
+            :domain:jacocoTestReport :data:jacocoTestReport :app:jacocoTestReport
         env:
           ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
           ANDROID_SDK_ROOT: ${{ github.workspace }}/viday/.android-sdk
           GRADLE_USER_HOME: ${{ github.workspace }}/viday/.gradle
       - name: Publish JUnit report
         if: success() || failure()
+        continue-on-error: true   # не маскируем реальную ошибку gradle отсутствием XML
         uses: dorny/test-reporter@v1
         with:
           name: Android unit tests (JUnit)
@@ -274,6 +280,9 @@ jobs:
             vidayapi/**/build/reports/jacoco/test/html/**
           if-no-files-found: ignore
           retention-days: 7
+      - name: Fix cache permissions (root-owned files from docker)
+        if: always()
+        run: chmod -R a+rX .gradle-ci allure-history 2>/dev/null || true
       - name: Save Gradle + Allure history cache
         if: always()
         continue-on-error: true   # параллельные джобы могут сохранять один ключ
@@ -347,6 +356,9 @@ jobs:
             vidayapi/allure-history/
           if-no-files-found: ignore
           retention-days: 7
+      - name: Fix cache permissions (root-owned files from docker)
+        if: always()
+        run: chmod -R a+rX .gradle-ci allure-history 2>/dev/null || true
       - name: Save Gradle + Allure history cache
         if: always()
         continue-on-error: true   # параллельные джобы могут сохранять один ключ
@@ -420,6 +432,9 @@ jobs:
             vidayapi/allure-history/
           if-no-files-found: ignore
           retention-days: 7
+      - name: Fix cache permissions (root-owned files from docker)
+        if: always()
+        run: chmod -R a+rX .gradle-ci allure-history 2>/dev/null || true
       - name: Save Gradle + Allure history cache
         if: always()
         continue-on-error: true   # параллельные джобы могут сохранять один ключ
@@ -462,7 +477,7 @@ jobs:
             viday/**/build
           key: viday-build-${{ hashFiles('viday/gradle/libs.versions.toml', 'viday/build.gradle.kts') }}
       - name: Setup Java 17 (для bootJar на хосте)
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -471,6 +486,7 @@ jobs:
         env:
           ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
           INSTALL_EMULATOR: "1"
+          ANDROID_EMULATOR_TARGET: "aosp_atd"
       - name: Login to GHCR and start device stand
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
@@ -511,14 +527,18 @@ jobs:
           ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
           ANDROID_SDK_ROOT: ${{ github.workspace }}/viday/.android-sdk
       - name: Instrumented tests on emulator (Требование 7)
+        # ВАЖНО: на GitHub-hosted Linux-раннерах приватных репозиториев KVM нет
+        # ("hardware acceleration is not available") — эмулятор работает в
+        # программном режиме. Поэтому используем aosp_atd (ATD): облегчённый
+        # образ для headless-CI, который реально успевает загрузиться в TCG.
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 30
-          target: google_apis
+          target: aosp_atd
           arch: x86_64
           profile: pixel_4
           cores: 2
-          memory: 2048
+          ram-size: 2048
           emulator-boot-timeout: 900
           force-avd-creation: true
           disable-animations: true
@@ -624,6 +644,9 @@ jobs:
             vidayapi/allure-history/
           if-no-files-found: ignore
           retention-days: 14
+      - name: Fix cache permissions (root-owned files from docker)
+        if: always()
+        run: chmod -R a+rX .gradle-ci allure-history 2>/dev/null || true
       - name: Save Gradle + Allure history cache
         if: always()
         continue-on-error: true   # параллельные джобы могут сохранять один ключ
@@ -641,7 +664,9 @@ jobs:
   # конвейер (continue-on-error), результат скана публикуется артефактом.
   # ---------------------------------------------------------------------------
   sonar-vidayapi:
-    needs: [build-vidayapi]
+    # Скан запускается ПОСЛЕ всех тестовых стадий backend'а: покрытие и
+    # результаты должны быть итоговыми (unit + integration + e2e уже прошли).
+    needs: [unit-vidayapi, integration-vidayapi, e2e-vidayapi]
     continue-on-error: true
     runs-on: ubuntu-latest
     defaults:
@@ -707,6 +732,9 @@ jobs:
       - name: Tear down SonarQube
         if: always()
         run: docker compose -f docker/docker-compose.sonar.yml down -v || true
+      - name: Fix cache permissions (root-owned files from docker)
+        if: always()
+        run: chmod -R a+rX .gradle-ci allure-history 2>/dev/null || true
       - name: Save Gradle + Allure history cache
         if: always()
         continue-on-error: true   # параллельные джобы могут сохранять один ключ
