@@ -28,7 +28,15 @@ name: CI
 on:
   push:
     branches: [main, master]
+    paths:
+      - 'vidayapi/**'
+      - 'viday/**'
+      - '.github/workflows/ci.yml'
   pull_request:
+    paths:
+      - 'vidayapi/**'
+      - 'viday/**'
+      - '.github/workflows/ci.yml'
   workflow_dispatch:
 
 # Не даём параллельным прогонам одного рефа мешать друг другу.
@@ -108,8 +116,6 @@ jobs:
             vidayapi/.gradle-ci
             vidayapi/allure-history
           key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
-    # Запускается при изменении backend ИЛИ Android (jar нужен device-джобе).
-    paths: ['vidayapi/**', 'viday/**']
 
   build-viday:
     runs-on: ubuntu-latest
@@ -134,7 +140,6 @@ jobs:
         run: ./gradlew --no-daemon :app:assembleDebug
         env:
           ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
-    paths: ['viday/**']
 
   # ---------------------------------------------------------------------------
   # STAGE: unit
@@ -181,7 +186,6 @@ jobs:
             viday/domain/build/reports/tests/
           if-no-files-found: ignore
           retention-days: 7
-    paths: ['viday/**']
 
   unit-vidayapi:
     needs: [build-vidayapi]
@@ -243,7 +247,6 @@ jobs:
             vidayapi/.gradle-ci
             vidayapi/allure-history
           key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
-    paths: ['vidayapi/**']
 
   # ---------------------------------------------------------------------------
   # STAGE: integration (Требования 2-4, 6, 10, 14)
@@ -311,7 +314,6 @@ jobs:
             vidayapi/.gradle-ci
             vidayapi/allure-history
           key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
-    paths: ['vidayapi/**']
 
   # ---------------------------------------------------------------------------
   # STAGE: e2e (Задание 3, Требование 13)
@@ -379,7 +381,6 @@ jobs:
             vidayapi/.gradle-ci
             vidayapi/allure-history
           key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
-    paths: ['vidayapi/**']
 
   # ---------------------------------------------------------------------------
   # STAGE: device — тесты Android НА УСТРОЙСТВЕ (Требование 7).
@@ -478,7 +479,6 @@ jobs:
       - name: Tear down device stand
         if: always()
         run: docker compose -f vidayapi/docker/docker-compose.device.yml down -v || true
-    paths: ['viday/**']
 
   # ---------------------------------------------------------------------------
   # STAGE: report — Allure ВСЕГДА (Требование 8), без повторного прогона тестов.
@@ -550,4 +550,3 @@ jobs:
             vidayapi/.gradle-ci
             vidayapi/allure-history
           key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
-    paths: ['vidayapi/**']
