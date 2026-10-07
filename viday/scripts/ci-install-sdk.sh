@@ -46,4 +46,17 @@ yes | "$SDKMANAGER" --licenses >/dev/null || true
 echo "==> Installing platform-tools, platforms;${PLATFORM}, build-tools;${BUILD_TOOLS}..."
 "$SDKMANAGER" --install "platform-tools" "platforms;${PLATFORM}" "build-tools;${BUILD_TOOLS}"
 
+# ---- Эмулятор + системный образ (только для device-джобы, INSTALL_EMULATOR=1) ----
+# Требование 7: instrumented-тесты гоняются на эмуляторе. Образ ставим ЗДЕСЬ,
+# а не внутри reactivecircus/android-emulator-runner: установка идемпотентна,
+# кэшируется вместе с SDK (actions/cache: viday/.android-sdk/) и не съедает
+# boot-таймаут эмулятора первичной загрузкой ~1.7 ГБ.
+if [ "${INSTALL_EMULATOR:-0}" = "1" ]; then
+  EMULATOR_API="${ANDROID_EMULATOR_API:-30}"
+  EMULATOR_TARGET="${ANDROID_EMULATOR_TARGET:-google_apis}"
+  echo "==> Installing emulator + system-images;android-${EMULATOR_API};${EMULATOR_TARGET};x86_64..."
+  yes | "$SDKMANAGER" --licenses >/dev/null || true
+  "$SDKMANAGER" --install "emulator" "system-images;android-${EMULATOR_API};${EMULATOR_TARGET};x86_64"
+fi
+
 echo "==> Android SDK ready at $ANDROID_HOME"

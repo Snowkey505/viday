@@ -170,8 +170,9 @@ jobs:
         run: bash scripts/ci-install-sdk.sh
         env:
           ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
-      - name: JVM unit tests
-        run: ./gradlew --no-daemon :domain:test :data:testDebugUnitTest :app:testDebugUnitTest
+      - name: JVM unit tests + JaCoCo coverage
+        run: ./gradlew --no-daemon :domain:test :data:testDebugUnitTest :app:testDebugUnitTest \
+          :domain:jacocoTestReport :data:jacocoTestReport :app:jacocoTestReport
         env:
           ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
           ANDROID_SDK_ROOT: ${{ github.workspace }}/viday/.android-sdk
@@ -191,6 +192,17 @@ jobs:
           path: |
             viday/app/build/reports/tests/
             viday/domain/build/reports/tests/
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Upload coverage (JaCoCo XML/HTML/CSV)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: viday-jacoco
+          path: |
+            viday/**/build/reports/jacoco/**/*.xml
+            viday/**/build/reports/jacoco/**/html/**
+            viday/**/build/reports/jacoco/**/*.csv
           if-no-files-found: ignore
           retention-days: 7
 
@@ -249,6 +261,17 @@ jobs:
             vidayapi/domain/build/test-results/test/**/*.xml
             vidayapi/infrastructure/build/test-results/test/**/*.xml
             vidayapi/allure-history/
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Upload coverage (JaCoCo XML/HTML/CSV)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vidayapi-jacoco-unit
+          path: |
+            vidayapi/**/build/reports/jacoco/test/jacocoTestReport.xml
+            vidayapi/**/build/reports/jacoco/test/jacocoTestReport.csv
+            vidayapi/**/build/reports/jacoco/test/html/**
           if-no-files-found: ignore
           retention-days: 7
       - name: Save Gradle + Allure history cache
@@ -447,6 +470,7 @@ jobs:
         run: bash viday/scripts/ci-install-sdk.sh
         env:
           ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
+          INSTALL_EMULATOR: "1"
       - name: Login to GHCR and start device stand
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
@@ -476,6 +500,16 @@ jobs:
             timeout 240 bash -c 'until (echo > /dev/tcp/127.0.0.1/8080) 2>/dev/null; do sleep 3; done' \
               || echo "WARN: API не поднялся за 240s (лог: /tmp/viday-api.log)"
           fi
+      - name: Emulator environment check
+        run: |
+          ls -l /dev/kvm || true
+          "$ANDROID_HOME/emulator/emulator" -version 2>&1 | head -2 || true
+          "$ANDROID_HOME/emulator/emulator" -accel-check 2>&1 || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --list_installed 2>/dev/null \
+            | grep -E "system-images;|^emulator|platform-tools" || true
+        env:
+          ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
+          ANDROID_SDK_ROOT: ${{ github.workspace }}/viday/.android-sdk
       - name: Instrumented tests on emulator (Требование 7)
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -483,6 +517,11 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_4
+          cores: 2
+          memory: 2048
+          emulator-boot-timeout: 900
+          force-avd-creation: true
+          disable-animations: true
           working-directory: viday
           script: |
             adb reverse tcp:8080 tcp:8080 || echo "WARN: reverse failed (тест будет SKIPPED)"
@@ -493,6 +532,7 @@ jobs:
           GRADLE_USER_HOME: ${{ github.workspace }}/viday/.gradle
       - name: Publish JUnit report
         if: success() || failure()
+        continue-on-error: true   # эмулятор мог упасть до появления результатов
         uses: dorny/test-reporter@v1
         with:
           name: Device tests (JUnit)
@@ -559,6 +599,11 @@ jobs:
         continue-on-error: true
         with:
           name: vidayapi-e2e-results
+      - name: Download unit coverage (JaCoCo XML/HTML) для Allure
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: vidayapi-jacoco-unit
       - name: Generate Allure report from existing results (no re-run)
         run: |
           docker pull "$TEST_RUNNER_IMAGE"
@@ -579,6 +624,89 @@ jobs:
             vidayapi/allure-history/
           if-no-files-found: ignore
           retention-days: 14
+      - name: Save Gradle + Allure history cache
+        if: always()
+        continue-on-error: true   # параллельные джобы могут сохранять один ключ
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            vidayapi/.gradle-ci
+            vidayapi/allure-history
+          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
+
+  # ---------------------------------------------------------------------------
+  # STAGE: sonar — SonarQube анализ backend'а (coverage tree-view + quality).
+  # Сервер поднимается прямо в джобе через docker-compose.sonar.yml; токен
+  # генерируется через REST API (свежий сервер, admin/admin). Джоба НЕ блокирует
+  # конвейер (continue-on-error), результат скана публикуется артефактом.
+  # ---------------------------------------------------------------------------
+  sonar-vidayapi:
+    needs: [build-vidayapi]
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vidayapi
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set GHCR image names (lowercase)
+        run: |
+          REPO="${GITHUB_REPOSITORY,,}"
+          echo "TEST_RUNNER_IMAGE=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "POSTGRES_TEST_IMAGE=ghcr.io/${REPO}/postgres-test:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "IMAGE_NAME=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Restore Gradle + Allure history cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            vidayapi/.gradle-ci
+            vidayapi/allure-history
+          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
+      - name: Start SonarQube server
+        run: |
+          docker compose -f docker/docker-compose.sonar.yml up -d
+          timeout 600 bash -c \
+            'until curl -fsS http://localhost:9002/api/system/status | grep -q "UP"; do sleep 5; done' \
+            || { docker compose -f docker/docker-compose.sonar.yml logs; exit 1; }
+      - name: Generate SonarQube analysis token
+        run: |
+          # Если задан secret SONAR_TOKEN (свой сервер) — используем его,
+          # иначе генерируем токен на свежем локальном инстансе (admin/admin).
+          if [ -n "${{ secrets.SONAR_TOKEN }}" ]; then
+            echo "SONAR_TOKEN=${{ secrets.SONAR_TOKEN }}" >> "$GITHUB_ENV"
+          else
+            TOKEN=$(curl -fsS -u admin:admin -X POST "http://localhost:9002/api/user_tokens/generate" \
+              -d "name=ci-${{ github.run_id }}" \
+              | python3 -c 'import sys, json; print(json.load(sys.stdin)["token"])')
+            echo "SONAR_TOKEN=$TOKEN" >> "$GITHUB_ENV"
+          fi
+      - name: Run SonarQube analysis (unit tests + JaCoCo + scan)
+        run: |
+          docker pull "$TEST_RUNNER_IMAGE"
+          docker run --rm --network host -u root \
+            -v "$PWD:/workspace" \
+            -v "$PWD/$GRADLE_CACHE:/cache/.gradle" \
+            -e GRADLE_USER_HOME=/cache/.gradle \
+            -e SONAR_TOKEN="$SONAR_TOKEN" \
+            -e SONAR_HOST_URL="http://localhost:9002" \
+            "$TEST_RUNNER_IMAGE" sonar
+      - name: Upload SonarQube scanner report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vidayapi-sonar-report
+          path: vidayapi/build/sonar/
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Tear down SonarQube
+        if: always()
+        run: docker compose -f docker/docker-compose.sonar.yml down -v || true
       - name: Save Gradle + Allure history cache
         if: always()
         continue-on-error: true   # параллельные джобы могут сохранять один ключ

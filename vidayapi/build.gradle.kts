@@ -431,10 +431,58 @@ tasks.register<Copy>("collectAllureResultsCi") {
     }
 }
 
+// ---- Покрытие (JaCoCo) внутри Allure-отчёта ----
+// Создаёт синтетический allure-result «Coverage» и прикладывает HTML-отчёты JaCoCo
+// каждого модуля как attachment (type=text/html), чтобы покрытие было видно
+// прямо внутри агрегированного Allure-отчёта (не отдельным артефактом).
+// Данные берутся из <module>/build/reports/jacoco/test/html (в CI приходят
+// артефактом vidayapi-jacoco-unit). Если отчётов нет — задача ничего не делает.
+tasks.register("attachCoverageToAllure") {
+    group = "verification"
+    description = "Attach per-module JaCoCo HTML coverage to the aggregated Allure report"
+    mustRunAfter("collectAllureResultsCi")
+    doLast {
+        val targetDir = allureCiResults.get().asFile
+        targetDir.mkdirs()
+        val attachments = mutableListOf<String>()
+        subprojects.forEach { sub ->
+            val index = sub.layout.buildDirectory.file("reports/jacoco/test/html/index.html").get().asFile
+            if (index.exists()) {
+                val destDir = File(targetDir, "coverage/${sub.name}")
+                destDir.mkdirs()
+                // Копируем весь html-каталог (index.html + css/js/fonts).
+                index.parentFile.copyRecursively(destDir, overwrite = true)
+                attachments +=
+                    """{"name": "${sub.name} (JaCoCo HTML)", "source": "coverage/${sub.name}/index.html", "type": "text/html"}"""
+            }
+        }
+        if (attachments.isNotEmpty()) {
+            val now = System.currentTimeMillis()
+            val json = buildString {
+                appendLine("{")
+                appendLine("  \"uuid\": \"coverage-summary\",")
+                appendLine("  \"historyId\": \"coverage-summary\",")
+                appendLine("  \"name\": \"Coverage (JaCoCo, unit tests)\",")
+                appendLine("  \"status\": \"passed\",")
+                appendLine("  \"stage\": \"finished\",")
+                appendLine("  \"start\": $now,")
+                appendLine("  \"stop\": ${now + 1},")
+                appendLine("  \"labels\": [{\"name\": \"suite\", \"value\": \"Coverage\"}],")
+                appendLine("  \"attachments\": [${attachments.joinToString(",")}]")
+                appendLine("}")
+            }
+            File(targetDir, "coverage-summary-result.json").writeText(json.toString())
+            logger.lifecycle("attachCoverageToAllure: added ${attachments.size} coverage attachment(s)")
+        } else {
+            logger.lifecycle("attachCoverageToAllure: no JaCoCo HTML reports found, skipping")
+        }
+    }
+}
+
 tasks.register<Exec>("allureCiReport") {
     group = "verification"
     description = "Generate Allure HTML from existing allure-results* (no test re-run)"
-    dependsOn("collectAllureResultsCi", ":domain:downloadAllure")
+    dependsOn("collectAllureResultsCi", "attachCoverageToAllure", ":domain:downloadAllure")
     inputs.dir(allureCiResults)
     outputs.dir(allureCiReportDir)
     doFirst {

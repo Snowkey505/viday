@@ -1,7 +1,19 @@
+import org.gradle.testing.jacoco.tasks.JacocoReport
+
 plugins {
     id("java-library")
+    id("jacoco")
     kotlin("plugin.serialization") version "1.9.0"
     alias(libs.plugins.jetbrains.kotlin.jvm)
+}
+
+// JaCoCo-отчёт о покрытии unit-тестов (XML/HTML/CSV) для CI-артефактов.
+tasks.named<JacocoReport>("jacocoTestReport") {
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(true)
+    }
 }
 java {
     sourceCompatibility = JavaVersion.VERSION_11

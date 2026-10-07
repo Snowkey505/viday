@@ -14,6 +14,7 @@
 #   pipeline.sh e2e
 #   pipeline.sh report        # Allure из уже лежащих allure-results* (без тестов)
 #   pipeline.sh assemble      # compile / bootJar без тестов
+#   pipeline.sh sonar         # SonarQube анализ (нужны SONAR_TOKEN / SONAR_HOST_URL)
 #   pipeline.sh repeat        # только локально / make ci-runner
 # =============================================================================
 set -uo pipefail
@@ -79,6 +80,17 @@ step_e2e() {
   echo "e2e: OK"
 }
 
+step_sonar() {
+  section_start sonar "SonarQube анализ"
+  echo "### [sonar] SonarQube ($SONAR_HOST_URL) ($(date +%T))"
+  $GRADLE sonar \
+    -Dsonar.host.url="${SONAR_HOST_URL:-http://localhost:9002}" \
+    -Dsonar.token="$SONAR_TOKEN" \
+    -Dsonar.qualitygate.wait=false || { section_end sonar; return 1; }
+  section_end sonar
+  echo "sonar: OK"
+}
+
 step_report() {
   section_start report "Allure из существующих results"
   echo "### [report] агрегированный Allure-отчёт ($(date +%T))"
@@ -110,6 +122,7 @@ case "${1:-full}" in
   integration) step_integration ;;
   e2e)         step_e2e ;;
   report)      step_report ;;
+  sonar)       step_sonar ;;
   repeat)      step_repeat ;;
   full)
     ok=0
@@ -126,7 +139,7 @@ case "${1:-full}" in
     exit "$ok"
     ;;
   *)
-    echo "usage: pipeline.sh [full|unit|integration|e2e|report|assemble|repeat]"
+    echo "usage: pipeline.sh [full|unit|integration|e2e|report|assemble|sonar|repeat]"
     exit 2
     ;;
 esac
