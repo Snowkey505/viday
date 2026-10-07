@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthController.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">presentation</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.controller</a> &gt; <span class="el_source">AuthController.kt</span></div><h1>AuthController.kt</h1><pre class="source lang-java linenums">package com.vidayapi.controller
+
+import com.vidayapi.dto.requests.LoginRequest
+import com.vidayapi.dto.requests.SignUpRequest
+import com.vidayapi.dto.responses.LoginResponse
+import com.vidayapi.dto.responses.UserResponse
+import com.vidayapi.model.Error
+import com.vidayapi.port.PasswordEncoder
+import com.vidayapi.service.AuthService
+import com.vidayapi.usecase.RegisterUserUseCase
+import org.slf4j.LoggerFactory
+import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.*
+
+<span class="nc" id="L15">@RestController</span>
+@RequestMapping(&quot;/api/auth&quot;)
+<span class="nc" id="L17">class AuthController(</span>
+<span class="nc" id="L18">    private val registerUserUseCase: RegisterUserUseCase,</span>
+<span class="nc" id="L19">    private val authService: AuthService,</span>
+<span class="nc" id="L20">    private val passwordEncoder: PasswordEncoder</span>
+) {
+<span class="nc" id="L22">    private val logger = LoggerFactory.getLogger(AuthController::class.java)</span>
+
+
+    @PostMapping(&quot;/login&quot;)
+    fun login(@RequestBody request: LoginRequest): ResponseEntity&lt;Any&gt; =
+<span class="nc bnc" id="L27" title="All 2 branches missed.">        authService.login(request.username, request.password, passwordEncoder).fold(</span>
+<span class="nc" id="L28">            onSuccess = { token -&gt; ResponseEntity.ok(LoginResponse(token = token)) },</span>
+            onFailure = { error -&gt;
+<span class="nc" id="L30">                when (error) {</span>
+<span class="nc bnc" id="L31" title="All 2 branches missed.">                    is Error.Unauthorized -&gt;</span>
+<span class="nc" id="L32">                        ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Invalid credentials&quot;))</span>
+<span class="nc" id="L33">                    else -&gt; ResponseEntity.status(500).body(mapOf(&quot;error&quot; to &quot;Login failed&quot;))</span>
+<span class="nc" id="L34">                }</span>
+            }
+<span class="nc" id="L36">        )</span>
+
+    @PostMapping(&quot;/register&quot;)
+    fun register(@RequestBody request: SignUpRequest): ResponseEntity&lt;Any&gt; =
+<span class="nc bnc" id="L40" title="All 2 branches missed.">        registerUserUseCase.execute(request.username, request.password).fold(</span>
+            onSuccess = { user -&gt;
+<span class="nc" id="L42">                ResponseEntity.status(201).body(</span>
+<span class="nc" id="L43">                    UserResponse(</span>
+<span class="nc bnc" id="L44" title="All 2 branches missed.">                        id = user.id?.toLong() ?: 0L,</span>
+<span class="nc" id="L45">                        username = user.username,</span>
+<span class="nc" id="L46">                        role = user.role.name</span>
+                    )
+<span class="nc" id="L48">                )</span>
+            },
+            onFailure = { error -&gt;
+<span class="nc" id="L51">                when (error) {</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">                    is Error.AlreadyExists -&gt;</span>
+<span class="nc" id="L53">                        ResponseEntity.status(409).body(mapOf(&quot;error&quot; to &quot;User already exists&quot;))</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">                    is Error.ValidationFailed -&gt; ResponseEntity.status(400).body(</span>
+<span class="nc" id="L55">                        mapOf(</span>
+<span class="nc" id="L56">                            &quot;error&quot; to &quot;Invalid input&quot;,</span>
+<span class="nc" id="L57">                            &quot;details&quot; to error.details</span>
+                        )
+                    )
+                    else -&gt; {
+<span class="nc" id="L61">                        logger.error(&quot;Registration failed for username='{}' with error={}&quot;, request.username, error)</span>
+<span class="nc" id="L62">                        ResponseEntity.status(500).body(</span>
+<span class="nc" id="L63">                            mapOf(</span>
+<span class="nc" id="L64">                                &quot;error&quot; to &quot;Registration failed&quot;,</span>
+<span class="nc" id="L65">                                &quot;details&quot; to error.toString()</span>
+                            )
+                        )
+                    }
+<span class="nc" id="L69">                }</span>
+            }
+<span class="nc" id="L71">        )</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UploadVideoUseCase.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">application</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.usecase</a> &gt; <span class="el_source">UploadVideoUseCase.kt</span></div><h1>UploadVideoUseCase.kt</h1><pre class="source lang-java linenums">package com.vidayapi.usecase
+
+import com.vidayapi.cache.CacheKeys
+import com.vidayapi.config.VideoBusinessConfig
+import com.vidayapi.port.CachePort
+import com.vidayapi.dto.requests.UploadVideoRequest
+import com.vidayapi.model.Codec
+import com.vidayapi.model.Error
+import com.vidayapi.model.Result
+import com.vidayapi.model.Content
+import com.vidayapi.model.ContentType
+import com.vidayapi.model.MediaVariant
+import com.vidayapi.model.Video
+import com.vidayapi.model.left
+import com.vidayapi.model.right
+import com.vidayapi.port.ContentRepository
+import com.vidayapi.port.FileStoragePort
+import com.vidayapi.port.VideoProcessor
+import org.slf4j.Logger
+import java.util.UUID
+
+<span class="fc" id="L22">class UploadVideoUseCase(</span>
+<span class="fc" id="L23">    private val contentRepository: ContentRepository,</span>
+<span class="fc" id="L24">    private val fileStoragePort: FileStoragePort,</span>
+<span class="fc" id="L25">    private val videoProcessor: VideoProcessor,</span>
+<span class="fc" id="L26">    private val videoConfig: VideoBusinessConfig,</span>
+<span class="fc" id="L27">    private val cachePort: CachePort,</span>
+<span class="fc" id="L28">    private val logger: Logger,</span>
+) {
+
+    fun execute(request: UploadVideoRequest, ownerId: Int): Result&lt;Video&gt; {
+<span class="fc" id="L32">        logger.info(&quot;Starting video upload: name={}, size={}&quot;, request.name, request.file.size)</span>
+
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">        val contentType = request.file.contentType ?: &quot;video/mp4&quot;</span>
+<span class="pc bpc" id="L35" title="1 of 2 branches missed.">        if (contentType !in videoConfig.allowedFormats) {</span>
+<span class="nc" id="L36">            logger.warn(&quot;Invalid format: {} (allowed: {})&quot;, contentType, videoConfig.allowedFormats)</span>
+<span class="nc" id="L37">            return Error.InvalidInput.left()</span>
+        }
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">        val previewContentType = request.preview.contentType ?: &quot;&quot;</span>
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">        if (!previewContentType.startsWith(&quot;image/&quot;)) {</span>
+<span class="nc" id="L41">            logger.warn(&quot;Invalid preview format: {}&quot;, previewContentType)</span>
+<span class="nc" id="L42">            return Error.InvalidInput.left()</span>
+        }
+
+<span class="fc" id="L45">        val maxSizeBytes = videoConfig.maxFileSizeMb * 1024L * 1024L</span>
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">        if (request.file.size &gt; maxSizeBytes) {</span>
+<span class="nc" id="L47">            logger.warn(&quot;File too large: {} bytes (max: {} MB)&quot;, request.file.size, videoConfig.maxFileSizeMb)</span>
+<span class="nc" id="L48">            return Error.InvalidInput.left()</span>
+        }
+
+<span class="fc" id="L51">        val content = Content(</span>
+<span class="fc" id="L52">            type = ContentType.VIDEO,</span>
+<span class="fc" id="L53">            name = request.name,</span>
+<span class="fc" id="L54">            description = request.description,</span>
+<span class="fc" id="L55">            source = null,</span>
+<span class="fc" id="L56">            ownerId = ownerId,</span>
+<span class="fc" id="L57">            accessType = request.accessType</span>
+        )
+
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">        val savedContent = contentRepository.save(content).fold(</span>
+<span class="fc" id="L61">            onSuccess = { it },</span>
+            onFailure = { error -&gt;
+<span class="nc" id="L63">                logger.error(&quot;Failed to save content: {}&quot;, error)</span>
+<span class="nc" id="L64">                return (error as Error).left()</span>
+            }
+        )
+
+<span class="fc" id="L68">        logger.info(&quot;Content saved with ID: {}&quot;, savedContent.id)</span>
+
+<span class="fc" id="L70">        val videoObjectName = &quot;${savedContent.id}/${UUID.randomUUID()}.mp4&quot;</span>
+<span class="fc" id="L71">        logger.info(&quot;Uploading video to MinIO: bucket=videos, object={}&quot;, videoObjectName)</span>
+
+<span class="fc" id="L73">        val uploadResult = fileStoragePort.uploadFile(</span>
+<span class="fc" id="L74">            bucketName = &quot;videos&quot;,</span>
+<span class="fc" id="L75">            objectName = videoObjectName,</span>
+<span class="fc" id="L76">            inputStream = request.file.inputStream,</span>
+<span class="fc" id="L77">            contentType = contentType,</span>
+<span class="fc" id="L78">            size = request.file.size</span>
+        )
+
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">        val sourcePath = uploadResult.fold(</span>
+            onSuccess = { value -&gt;
+<span class="fc" id="L83">                logger.info(&quot;File uploaded successfully: {}&quot;, value)</span>
+<span class="fc" id="L84">                value</span>
+            },
+            onFailure = { error -&gt;
+<span class="nc" id="L87">                logger.error(&quot;Failed to upload to MinIO: {}&quot;, error)</span>
+<span class="nc" id="L88">                return Error.StorageFailure.left()</span>
+            }
+        )
+
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">        val previewExtension = request.preview.originalFilename</span>
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">            ?.substringAfterLast('.', &quot;&quot;)</span>
+<span class="pc bpc" id="L94" title="3 of 6 branches missed.">            ?.takeIf { it.isNotBlank() }</span>
+<span class="nc" id="L95">            ?: &quot;jpg&quot;</span>
+<span class="fc" id="L96">        val previewObjectName = &quot;${savedContent.id}/${UUID.randomUUID()}.$previewExtension&quot;</span>
+<span class="fc" id="L97">        val previewUploadResult = fileStoragePort.uploadFile(</span>
+<span class="fc" id="L98">            bucketName = &quot;previews&quot;,</span>
+<span class="fc" id="L99">            objectName = previewObjectName,</span>
+<span class="fc" id="L100">            inputStream = request.preview.inputStream,</span>
+<span class="fc" id="L101">            contentType = previewContentType,</span>
+<span class="fc" id="L102">            size = request.preview.size</span>
+        )
+
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">        val previewPath = previewUploadResult.fold(</span>
+<span class="fc" id="L106">            onSuccess = { it },</span>
+            onFailure = { error -&gt;
+<span class="nc" id="L108">                logger.error(&quot;Failed to upload preview to MinIO: {}&quot;, error)</span>
+<span class="nc" id="L109">                fileStoragePort.deleteFile(&quot;videos&quot;, videoObjectName)</span>
+<span class="nc" id="L110">                return Error.StorageFailure.left()</span>
+            }
+        )
+
+<span class="fc" id="L114">        logger.info(&quot;Analyzing video...&quot;)</span>
+<span class="fc" id="L115">        val videoMetadata = videoProcessor.analyze(</span>
+<span class="fc" id="L116">            request.file.inputStream,</span>
+<span class="fc" id="L117">            request.file.size</span>
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">        ).fold(</span>
+<span class="fc" id="L119">            onSuccess = { it },</span>
+            onFailure = { error -&gt;
+<span class="nc" id="L121">                logger.error(&quot;Video analysis failed: {}&quot;, error)</span>
+<span class="nc" id="L122">                fileStoragePort.deleteFile(&quot;videos&quot;, videoObjectName)</span>
+<span class="nc" id="L123">                fileStoragePort.deleteFile(&quot;previews&quot;, previewObjectName)</span>
+<span class="nc" id="L124">                return (error as Error).left()</span>
+            }
+        )
+
+<span class="fc" id="L128">        logger.info(</span>
+<span class="fc" id="L129">            &quot;Video analysis: duration={}s, {}x{}&quot;,</span>
+<span class="fc" id="L130">            videoMetadata.durationSeconds, videoMetadata.width, videoMetadata.height</span>
+        )
+
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">        if (videoMetadata.durationSeconds &gt; videoConfig.maxDurationSeconds) {</span>
+<span class="nc" id="L134">            logger.warn(&quot;Video too long: {}s (max: {}s)&quot;, videoMetadata.durationSeconds, videoConfig.maxDurationSeconds)</span>
+<span class="nc" id="L135">            fileStoragePort.deleteFile(&quot;videos&quot;, videoObjectName)</span>
+<span class="nc" id="L136">            fileStoragePort.deleteFile(&quot;previews&quot;, previewObjectName)</span>
+<span class="nc" id="L137">            return Error.InvalidInput.left()</span>
+        }
+
+<span class="fc" id="L140">        val video = Video(</span>
+<span class="fc" id="L141">            content = savedContent.copy(source = sourcePath),</span>
+<span class="fc" id="L142">            durationSeconds = videoMetadata.durationSeconds,</span>
+<span class="fc" id="L143">            preview = previewPath</span>
+        )
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">        val savedVideo = contentRepository.saveVideo(video).fold(</span>
+<span class="fc" id="L146">            onSuccess = { it },</span>
+            onFailure = { error -&gt;
+<span class="nc" id="L148">                logger.error(&quot;Failed to save video: {}&quot;, error)</span>
+<span class="nc" id="L149">                fileStoragePort.deleteFile(&quot;videos&quot;, videoObjectName)</span>
+<span class="nc" id="L150">                fileStoragePort.deleteFile(&quot;previews&quot;, previewObjectName)</span>
+<span class="nc" id="L151">                return (error as Error).left()</span>
+            }
+        )
+
+<span class="fc" id="L155">        val sourceVariant = MediaVariant(</span>
+<span class="fc" id="L156">            contentId = savedContent.id!!,</span>
+<span class="fc" id="L157">            width = videoMetadata.width,</span>
+<span class="fc" id="L158">            height = videoMetadata.height,</span>
+<span class="fc" id="L159">            bitrate = videoMetadata.bitrate,</span>
+<span class="fc" id="L160">            codec = Codec.H264,</span>
+<span class="fc" id="L161">            isSource = true,</span>
+<span class="fc" id="L162">            filePath = sourcePath,</span>
+<span class="fc" id="L163">            fileSizeBytes = request.file.size</span>
+        )
+
+<span class="pc bpc" id="L166" title="1 of 2 branches missed.">        contentRepository.saveMediaVariant(sourceVariant).fold(</span>
+<span class="fc" id="L167">            onSuccess = { logger.info(&quot;Media variant saved&quot;) },</span>
+            onFailure = { error -&gt;
+<span class="nc" id="L169">                logger.error(&quot;Failed to save media variant: {}&quot;, error)</span>
+<span class="nc" id="L170">                fileStoragePort.deleteFile(&quot;videos&quot;, videoObjectName)</span>
+<span class="nc" id="L171">                fileStoragePort.deleteFile(&quot;previews&quot;, previewObjectName)</span>
+<span class="nc" id="L172">                return (error as Error).left()</span>
+            }
+        )
+
+<span class="fc" id="L176">        cachePort.deleteByPrefix(CacheKeys.PUBLIC_VIDEOS_PREFIX)</span>
+<span class="fc" id="L177">        cachePort.deleteByPrefix(&quot;cache:videos:owner:$ownerId&quot;)</span>
+
+<span class="fc" id="L179">        logger.info(&quot;Video upload completed successfully&quot;)</span>
+<span class="fc" id="L180">        return savedVideo.right()</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

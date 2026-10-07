@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>toErrorMessageId.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.snowkey.viday.mapper</a> &gt; <span class="el_source">toErrorMessageId.kt</span></div><h1>toErrorMessageId.kt</h1><pre class="source lang-java linenums">package com.snowkey.viday.mapper
+
+import com.snowkey.viday.R
+import com.snowkey.viday.model.AuthError
+import com.snowkey.viday.model.PlaylistError
+import com.snowkey.viday.model.UserError
+import com.snowkey.viday.model.VideoError
+
+fun AuthError.toErrorMessageId(): Int {
+<span class="nc bnc" id="L10" title="All 5 branches missed.">    return when (this) {</span>
+<span class="nc" id="L11">        AuthError.OK -&gt; R.string.success</span>
+<span class="nc" id="L12">        AuthError.INVALID_CREDENTIALS -&gt; R.string.access_error</span>
+<span class="nc" id="L13">        AuthError.NETWORK_ERROR -&gt; R.string.network_error</span>
+<span class="nc" id="L14">        AuthError.SERVER_ERROR -&gt; R.string.server_error</span>
+<span class="nc" id="L15">        AuthError.UNKNOWN_ERROR -&gt; R.string.unknown_error</span>
+    }
+}
+
+fun VideoError.toErrorMessageId(): Int =
+<span class="nc bnc" id="L20" title="All 4 branches missed.">    when (this) {</span>
+<span class="nc" id="L21">        VideoError.SERVER_ERROR -&gt; R.string.server_error</span>
+<span class="nc" id="L22">        VideoError.ACCESS_ERROR -&gt; R.string.access_error</span>
+<span class="nc" id="L23">        VideoError.NETWORK_ERROR -&gt; R.string.network_error</span>
+<span class="nc" id="L24">        else -&gt; R.string.unknown_error</span>
+<span class="nc" id="L25">    }</span>
+
+fun PlaylistError.toErrorMessageId(): Int =
+<span class="nc bnc" id="L28" title="All 8 branches missed.">    when (this) {</span>
+<span class="nc" id="L29">        PlaylistError.OK -&gt; R.string.success</span>
+<span class="nc" id="L30">        PlaylistError.ACCESS_ERROR -&gt; R.string.access_error</span>
+<span class="nc" id="L31">        PlaylistError.FORBIDDEN -&gt; R.string.playlist_forbidden_error</span>
+<span class="nc" id="L32">        PlaylistError.NOT_FOUND -&gt; R.string.unknown_error</span>
+<span class="nc" id="L33">        PlaylistError.CONTENT_ALREADY_EXISTS -&gt; R.string.playlist_conflict_error</span>
+<span class="nc" id="L34">        PlaylistError.NETWORK_ERROR -&gt; R.string.network_error</span>
+<span class="nc" id="L35">        PlaylistError.SERVER_ERROR -&gt; R.string.server_error</span>
+<span class="nc" id="L36">        PlaylistError.UNKNOWN_ERROR -&gt; R.string.unknown_error</span>
+<span class="nc" id="L37">    }</span>
+
+fun UserError.toErrorMessageId(): Int =
+<span class="nc bnc" id="L40" title="All 8 branches missed.">    when (this) {</span>
+<span class="nc" id="L41">        UserError.OK -&gt; R.string.success</span>
+<span class="nc" id="L42">        UserError.ACCESS_ERROR -&gt; R.string.access_error</span>
+<span class="nc" id="L43">        UserError.ALREADY_FOLLOWING -&gt; R.string.already_following_error</span>
+<span class="nc" id="L44">        UserError.NOT_FOUND -&gt; R.string.unknown_error</span>
+<span class="nc" id="L45">        UserError.NETWORK_ERROR -&gt; R.string.network_error</span>
+<span class="nc" id="L46">        UserError.SERVER_ERROR -&gt; R.string.server_error</span>
+<span class="nc" id="L47">        UserError.UNKNOWN_ERROR -&gt; R.string.unknown_error</span>
+<span class="nc" id="L48">        UserError.ALREADY_CREATOR -&gt; R.string.unknown_error</span>
+<span class="nc" id="L49">    }</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

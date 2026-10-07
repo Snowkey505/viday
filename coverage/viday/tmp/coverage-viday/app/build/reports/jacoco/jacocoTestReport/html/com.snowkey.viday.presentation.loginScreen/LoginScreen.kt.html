@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LoginScreen.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.snowkey.viday.presentation.loginScreen</a> &gt; <span class="el_source">LoginScreen.kt</span></div><h1>LoginScreen.kt</h1><pre class="source lang-java linenums">package com.snowkey.viday.presentation.loginScreen
+
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
+import com.snowkey.viday.R
+import com.snowkey.viday.model.Navigation
+import com.snowkey.viday.presentation.signUpScreen.components.PasswordInputField
+import com.snowkey.viday.presentation.signUpScreen.components.PasswordRequirementsDialog
+import com.snowkey.viday.presentation.signUpScreen.components.UsernameInputField
+import com.snowkey.viday.ui.theme.VidayTheme
+import org.koin.androidx.compose.koinViewModel
+
+<span class="nc bnc" id="L49" title="All 2 branches missed.">@Composable</span>
+fun LoginScreen(
+<span class="nc" id="L51">    vm: LoginViewModel = koinViewModel(),</span>
+    navController: NavController
+<span class="nc bnc" id="L53" title="All 20 branches missed.">) {</span>
+<span class="nc" id="L54">    val state by vm.uiState.collectAsState()</span>
+<span class="nc" id="L55">    val username by vm.usernameField.collectAsStateWithLifecycle()</span>
+<span class="nc" id="L56">    val password by vm.passwordField.collectAsStateWithLifecycle()</span>
+<span class="nc" id="L57">    val showPasswordDialog by vm.showPasswordDialog.collectAsStateWithLifecycle()</span>
+
+<span class="nc" id="L59">    val snackbarHostState = remember { SnackbarHostState() }</span>
+<span class="nc" id="L60">    val actionLabelText = stringResource(R.string.repeat)</span>
+
+<span class="nc bnc" id="L62" title="All 2 branches missed.">    val errorState = state as? LoginUiState.Error</span>
+<span class="nc bnc" id="L63" title="All 2 branches missed.">    val errorMessage = errorState?.let { stringResource(it.messageResId) }</span>
+
+<span class="nc" id="L65">    LaunchedEffect(errorState, errorMessage) {</span>
+<span class="nc bnc" id="L66" title="All 4 branches missed.">        if (errorState != null &amp;&amp; errorMessage != null) {</span>
+<span class="nc" id="L67">            val result = snackbarHostState.showSnackbar(</span>
+<span class="nc" id="L68">                message = errorMessage,</span>
+<span class="nc" id="L69">                actionLabel = actionLabelText,</span>
+<span class="nc" id="L70">                duration = SnackbarDuration.Short</span>
+            )
+
+<span class="nc bnc" id="L73" title="All 2 branches missed.">            when (result) {</span>
+                SnackbarResult.ActionPerformed -&gt; {
+<span class="nc" id="L75">                    errorState.onRepeat.invoke()</span>
+                }
+
+                SnackbarResult.Dismissed -&gt; {}
+            }
+        }
+<span class="nc" id="L81">    }</span>
+
+<span class="nc" id="L83">    Scaffold(</span>
+<span class="nc" id="L84">        containerColor = MaterialTheme.colorScheme.surface,</span>
+<span class="nc" id="L85">        contentColor = MaterialTheme.colorScheme.onBackground,</span>
+<span class="nc" id="L86">        snackbarHost = {</span>
+<span class="nc" id="L87">            SnackbarHost(</span>
+<span class="nc" id="L88">                hostState = snackbarHostState</span>
+<span class="nc" id="L89">            ) { snackbarData -&gt;</span>
+<span class="nc" id="L90">                Snackbar(</span>
+<span class="nc" id="L91">                    snackbarData = snackbarData,</span>
+<span class="nc" id="L92">                    containerColor = MaterialTheme.colorScheme.surface,</span>
+<span class="nc" id="L93">                    contentColor = MaterialTheme.colorScheme.onBackground,</span>
+<span class="nc" id="L94">                    actionColor = MaterialTheme.colorScheme.primary</span>
+                )
+<span class="nc" id="L96">            }</span>
+<span class="nc" id="L97">        }</span>
+<span class="nc" id="L98">    ) { contentPadding -&gt;</span>
+<span class="nc" id="L99">        Box(modifier = Modifier.padding(contentPadding)) {</span>
+<span class="nc" id="L100">            LoginScreenContent(</span>
+<span class="nc" id="L101">                state = state,</span>
+<span class="nc" id="L102">                username = username,</span>
+<span class="nc" id="L103">                password = password,</span>
+<span class="nc" id="L104">                showPasswordDialog = showPasswordDialog,</span>
+<span class="nc" id="L105">                onUsernameChange = vm::updateUsername,</span>
+<span class="nc" id="L106">                onPasswordChange = vm::updatePassword,</span>
+<span class="nc" id="L107">                onLoginClick = vm::login,</span>
+<span class="nc" id="L108">                onTogglePasswordDialog = vm::togglePasswordDialog,</span>
+<span class="nc" id="L109">                toSignUp = { navController.navigate(Navigation.SIGNUP.route) },</span>
+<span class="nc" id="L110">                onDone = { userId -&gt;</span>
+<span class="nc" id="L111">                    val route = Navigation.createVideosRoute(</span>
+<span class="nc" id="L112">                        userId = userId,</span>
+<span class="nc" id="L113">                        playlistId = null</span>
+                    )
+<span class="nc" id="L115">                    navController.navigate(route) {</span>
+<span class="nc" id="L116">                        popUpTo(Navigation.LOGIN.route) { inclusive = true }</span>
+<span class="nc" id="L117">                    }</span>
+<span class="nc" id="L118">                }</span>
+            )
+<span class="nc" id="L120">        }</span>
+<span class="nc" id="L121">    }</span>
+<span class="nc" id="L122">}</span>
+
+@Composable
+fun LoginScreenContent(
+    state: LoginUiState,
+    username: String,
+    password: String,
+    showPasswordDialog: Boolean,
+    onUsernameChange: (String) -&gt; Unit,
+    onPasswordChange: (String) -&gt; Unit,
+    onLoginClick: () -&gt; Unit,
+    onTogglePasswordDialog: () -&gt; Unit,
+    toSignUp: () -&gt; Unit,
+    onDone: (Long) -&gt; Unit
+<span class="nc bnc" id="L136" title="All 44 branches missed.">) {</span>
+<span class="nc" id="L137">    when (state) {</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">        is LoginUiState.Loading -&gt; {</span>
+<span class="nc" id="L139">            LoginLoading()</span>
+        }
+
+<span class="nc bnc" id="L142" title="All 2 branches missed.">        is LoginUiState.Success -&gt; {</span>
+<span class="nc bnc" id="L143" title="All 4 branches missed.">            LaunchedEffect(Unit) {</span>
+<span class="nc" id="L144">                onDone(state.userId)</span>
+<span class="nc" id="L145">            }</span>
+        }
+
+<span class="nc" id="L148">        else -&gt; {</span>
+<span class="nc" id="L149">            LoginForm(</span>
+<span class="nc" id="L150">                username = username,</span>
+<span class="nc" id="L151">                password = password,</span>
+<span class="nc" id="L152">                showPasswordDialog = showPasswordDialog,</span>
+<span class="nc" id="L153">                isLoading = state is LoginUiState.Loading,</span>
+<span class="nc" id="L154">                onUsernameChange = onUsernameChange,</span>
+<span class="nc" id="L155">                onPasswordChange = onPasswordChange,</span>
+<span class="nc" id="L156">                onLoginClick = onLoginClick,</span>
+<span class="nc" id="L157">                toSignUp = toSignUp,</span>
+<span class="nc" id="L158">                onTogglePasswordDialog = onTogglePasswordDialog</span>
+            )
+        }
+    }
+<span class="nc" id="L162">}</span>
+
+@Composable
+<span class="nc bnc" id="L165" title="All 4 branches missed.">fun LoginLoading() {</span>
+<span class="nc" id="L166">    Box(</span>
+<span class="nc" id="L167">        modifier = Modifier.fillMaxSize(),</span>
+<span class="nc" id="L168">        contentAlignment = Alignment.Center</span>
+    ) {
+<span class="nc" id="L170">        CircularProgressIndicator()</span>
+<span class="nc" id="L171">    }</span>
+<span class="nc" id="L172">}</span>
+
+@Composable
+fun LoginForm(
+    username: String,
+    password: String,
+<span class="nc bnc" id="L178" title="All 2 branches missed.">    showPasswordDialog: Boolean = false,</span>
+<span class="nc bnc" id="L179" title="All 2 branches missed.">    isLoading: Boolean = false,</span>
+<span class="nc bnc" id="L180" title="All 2 branches missed.">    onUsernameChange: (String) -&gt; Unit = {},</span>
+<span class="nc bnc" id="L181" title="All 2 branches missed.">    onPasswordChange: (String) -&gt; Unit = {},</span>
+<span class="nc bnc" id="L182" title="All 2 branches missed.">    onLoginClick: () -&gt; Unit = {},</span>
+<span class="nc bnc" id="L183" title="All 2 branches missed.">    toSignUp: () -&gt; Unit = {},</span>
+<span class="nc" id="L184">    onTogglePasswordDialog: () -&gt; Unit = {}</span>
+<span class="nc bnc" id="L185" title="All 56 branches missed.">) {</span>
+<span class="nc" id="L186">    Column(</span>
+<span class="nc" id="L187">        modifier = Modifier</span>
+<span class="nc" id="L188">            .fillMaxSize()</span>
+<span class="nc" id="L189">            .background(color = MaterialTheme.colorScheme.surface)</span>
+<span class="nc" id="L190">            .padding(horizontal = 60.dp, vertical = 120.dp),</span>
+<span class="nc" id="L191">        horizontalAlignment = Alignment.CenterHorizontally,</span>
+<span class="nc" id="L192">        verticalArrangement = Arrangement.Center</span>
+    ) {
+<span class="nc" id="L194">        Column(</span>
+<span class="nc" id="L195">            modifier = Modifier</span>
+<span class="nc" id="L196">                .fillMaxSize()</span>
+<span class="nc" id="L197">                .padding(top = 100.dp),</span>
+<span class="nc" id="L198">            horizontalAlignment = Alignment.CenterHorizontally,</span>
+<span class="nc" id="L199">            verticalArrangement = Arrangement.spacedBy(60.dp)</span>
+        ) {
+
+<span class="nc" id="L202">            Column(</span>
+<span class="nc" id="L203">                horizontalAlignment = Alignment.CenterHorizontally,</span>
+<span class="nc" id="L204">                verticalArrangement = Arrangement.spacedBy(30.dp)</span>
+            ) {
+<span class="nc" id="L206">                Image(</span>
+<span class="nc" id="L207">                    modifier = Modifier</span>
+<span class="nc" id="L208">                        .size(120.dp),</span>
+<span class="nc" id="L209">                    painter = painterResource(id = R.drawable.logo),</span>
+<span class="nc" id="L210">                    contentDescription = stringResource(R.string.app_name)</span>
+                )
+<span class="nc" id="L212">                Text(</span>
+<span class="nc" id="L213">                    text = &quot;VIDAY&quot;,</span>
+<span class="nc" id="L214">                    style = MaterialTheme.typography.displayLarge,</span>
+<span class="nc" id="L215">                    textAlign = TextAlign.Center,</span>
+<span class="nc" id="L216">                    color = MaterialTheme.colorScheme.onBackground</span>
+                )
+<span class="nc" id="L218">            }</span>
+
+<span class="nc" id="L220">            Column() {</span>
+<span class="nc" id="L221">                UsernameInputField(</span>
+<span class="nc" id="L222">                    username = username,</span>
+<span class="nc" id="L223">                    onUsernameChange = onUsernameChange,</span>
+<span class="nc" id="L224">                    isLoading = isLoading</span>
+                )
+
+<span class="nc" id="L227">                PasswordInputField(</span>
+<span class="nc" id="L228">                    password = password,</span>
+<span class="nc" id="L229">                    onPasswordChange = onPasswordChange,</span>
+<span class="nc" id="L230">                    isLoading = isLoading</span>
+                )
+
+<span class="nc" id="L233">                TextButton(</span>
+<span class="nc" id="L234">                    modifier = Modifier.fillMaxWidth(),</span>
+<span class="nc" id="L235">                    onClick = onTogglePasswordDialog,</span>
+<span class="nc bnc" id="L236" title="All 2 branches missed.">                    enabled = !isLoading</span>
+<span class="nc" id="L237">                ) {</span>
+<span class="nc" id="L238">                    Row(</span>
+<span class="nc" id="L239">                        modifier = Modifier.fillMaxWidth(),</span>
+<span class="nc" id="L240">                        verticalAlignment = Alignment.CenterVertically,</span>
+<span class="nc" id="L241">                        horizontalArrangement = Arrangement.Center</span>
+                    ) {
+<span class="nc" id="L243">                        Spacer(modifier = Modifier.size(16.dp))</span>
+<span class="nc" id="L244">                    }</span>
+<span class="nc" id="L245">                }</span>
+
+<span class="nc" id="L247">                Button(</span>
+<span class="nc" id="L248">                    onClick = onLoginClick,</span>
+<span class="nc" id="L249">                    modifier = Modifier</span>
+<span class="nc" id="L250">                        .fillMaxWidth()</span>
+<span class="nc" id="L251">                        .height(50.dp),</span>
+<span class="nc bnc" id="L252" title="All 8 branches missed.">                    enabled = username.isNotBlank() &amp;&amp; password.length &gt;= 6 &amp;&amp; !isLoading,</span>
+<span class="nc" id="L253">                    shape = RoundedCornerShape(12.dp)</span>
+<span class="nc" id="L254">                ) {</span>
+<span class="nc bnc" id="L255" title="All 2 branches missed.">                    if (isLoading) {</span>
+<span class="nc" id="L256">                        CircularProgressIndicator(</span>
+<span class="nc" id="L257">                            modifier = Modifier.size(24.dp),</span>
+<span class="nc" id="L258">                            color = MaterialTheme.colorScheme.onPrimary,</span>
+<span class="nc" id="L259">                            strokeWidth = 2.dp</span>
+                        )
+<span class="nc" id="L261">                    } else {</span>
+<span class="nc" id="L262">                        Text(</span>
+<span class="nc" id="L263">                            text = stringResource(R.string.login),</span>
+<span class="nc" id="L264">                            style = MaterialTheme.typography.titleLarge,</span>
+                        )
+                    }
+<span class="nc" id="L267">                }</span>
+<span class="nc" id="L268">                TextButton(</span>
+<span class="nc bnc" id="L269" title="All 2 branches missed.">                    onClick = { toSignUp() },</span>
+<span class="nc bnc" id="L270" title="All 2 branches missed.">                    enabled = !isLoading</span>
+<span class="nc" id="L271">                ) {</span>
+<span class="nc" id="L272">                    Text(</span>
+<span class="nc" id="L273">                        text = stringResource(R.string.create_account),</span>
+<span class="nc" id="L274">                        color = MaterialTheme.colorScheme.primary,</span>
+<span class="nc" id="L275">                        modifier = Modifier.fillMaxWidth(),</span>
+<span class="nc" id="L276">                        style = MaterialTheme.typography.titleSmall,</span>
+<span class="nc" id="L277">                        textAlign = TextAlign.Center</span>
+                    )
+<span class="nc" id="L279">                }</span>
+<span class="nc" id="L280">            }</span>
+<span class="nc" id="L281">        }</span>
+<span class="nc" id="L282">    }</span>
+
+<span class="nc bnc" id="L284" title="All 2 branches missed.">    if (showPasswordDialog) {</span>
+<span class="nc" id="L285">        PasswordRequirementsDialog(onDismiss = onTogglePasswordDialog)</span>
+    }
+<span class="nc" id="L287">}</span>
+
+@Preview
+@Composable
+<span class="nc bnc" id="L291" title="All 4 branches missed.">fun LoginEmptyFormPreview() {</span>
+<span class="nc" id="L292">    VidayTheme(dynamicColor = false, darkTheme = false) {</span>
+<span class="nc" id="L293">        LoginForm(username = &quot;&quot;, password = &quot;&quot;)</span>
+<span class="nc" id="L294">    }</span>
+<span class="nc" id="L295">}</span>
+
+
+@Preview
+@Composable
+<span class="nc bnc" id="L300" title="All 4 branches missed.">fun LoginEmptyFormPreviewDark() {</span>
+<span class="nc" id="L301">    VidayTheme(dynamicColor = false, darkTheme = true) {</span>
+<span class="nc" id="L302">        LoginForm(username = &quot;&quot;, password = &quot;&quot;)</span>
+<span class="nc" id="L303">    }</span>
+<span class="nc" id="L304">}</span>
+
+@Preview
+@Composable
+<span class="nc bnc" id="L308" title="All 4 branches missed.">fun LoginFormPreview() {</span>
+<span class="nc" id="L309">    VidayTheme(dynamicColor = false, darkTheme = false) {</span>
+<span class="nc" id="L310">        LoginForm(username = &quot;ps&quot;, password = &quot;12345678&quot;)</span>
+<span class="nc" id="L311">    }</span>
+<span class="nc" id="L312">}</span>
+
+
+@Preview
+@Composable
+<span class="nc bnc" id="L317" title="All 4 branches missed.">fun LoginFormPreviewDark() {</span>
+<span class="nc" id="L318">    VidayTheme(dynamicColor = false, darkTheme = true) {</span>
+<span class="nc" id="L319">        LoginForm(username = &quot;ps&quot;, password = &quot;12345678&quot;)</span>
+<span class="nc" id="L320">    }</span>
+<span class="nc" id="L321">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

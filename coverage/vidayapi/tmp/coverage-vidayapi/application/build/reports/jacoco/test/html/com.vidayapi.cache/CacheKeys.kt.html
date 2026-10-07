@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CacheKeys.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">application</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.cache</a> &gt; <span class="el_source">CacheKeys.kt</span></div><h1>CacheKeys.kt</h1><pre class="source lang-java linenums">package com.vidayapi.cache
+
+object CacheKeys {
+    const val PUBLIC_VIDEOS_PREFIX = &quot;cache:videos:public:&quot;
+    const val VIDEO_BY_ID = &quot;cache:video:&quot;
+    const val USER_BY_ID = &quot;cache:user:&quot;
+    const val PLAYLIST_BY_ID = &quot;cache:playlist:&quot;
+    const val LIVE_STREAMS_PREFIX = &quot;cache:streams:live:&quot;
+    const val IS_FOLLOWING = &quot;cache:follow:&quot;
+
+<span class="nc" id="L11">    fun publicVideos(page: Int, size: Int) = &quot;${PUBLIC_VIDEOS_PREFIX}$page:$size&quot;</span>
+<span class="nc" id="L12">    fun liveStreams(page: Int, size: Int) = &quot;${LIVE_STREAMS_PREFIX}$page:$size&quot;</span>
+<span class="nc" id="L13">    fun video(id: Int, viewerKey: String = &quot;guest&quot;) = &quot;$VIDEO_BY_ID$id:viewer:$viewerKey&quot;</span>
+<span class="nc" id="L14">    fun videoPrefix(id: Int) = &quot;$VIDEO_BY_ID$id:viewer:&quot;</span>
+<span class="nc" id="L15">    fun user(id: Int) = &quot;$USER_BY_ID$id&quot;</span>
+<span class="nc" id="L16">    fun playlist(id: Int) = &quot;$PLAYLIST_BY_ID$id&quot;</span>
+<span class="nc" id="L17">    fun isFollowing(followerId: Int, followedId: Int) = &quot;$IS_FOLLOWING$followerId:$followedId&quot;</span>
+}
+
+object CacheTtl {
+    const val PUBLIC_VIDEOS_SEC = 300L
+    const val VIDEO_SEC = 600L
+    const val USER_SEC = 900L
+    const val PLAYLIST_SEC = 600L
+    const val LIVE_STREAMS_SEC = 30L
+    const val FOLLOW_CHECK_SEC = 3600L
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

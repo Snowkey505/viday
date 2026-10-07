@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UseCaseConfig.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">infrastructure</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.config</a> &gt; <span class="el_source">UseCaseConfig.kt</span></div><h1>UseCaseConfig.kt</h1><pre class="source lang-java linenums">package com.vidayapi.config
+
+import com.vidayapi.port.CachePort
+import com.vidayapi.port.ContentRepository
+import com.vidayapi.port.FileStoragePort
+import com.vidayapi.port.PasswordEncoder
+import com.vidayapi.port.PlaylistRepository
+import com.vidayapi.port.StreamRepository
+import com.vidayapi.port.UserRepository
+import com.vidayapi.port.VideoProcessor
+import com.vidayapi.port.ViewStatsRepository
+import com.vidayapi.service.ContentDeletionService
+import com.vidayapi.service.FFmpegVideoProcessor
+import com.vidayapi.service.VideoResponseMapper
+import com.vidayapi.usecase.ActivateChannelUseCase
+import com.vidayapi.usecase.AddContentToPlaylistUseCase
+import com.vidayapi.usecase.AdminDeleteContentUseCase
+import com.vidayapi.usecase.AdminDeletePlaylistUseCase
+import com.vidayapi.usecase.AdminDeleteUserUseCase
+import com.vidayapi.usecase.AssignAdminRoleUseCase
+import com.vidayapi.usecase.AssignAnalystRoleUseCase
+import com.vidayapi.usecase.CreatePlaylistUseCase
+import com.vidayapi.usecase.CreateStreamUseCase
+import com.vidayapi.usecase.DeleteStreamUseCase
+import com.vidayapi.usecase.DeleteVideoUseCase
+import com.vidayapi.usecase.FollowUserUseCase
+import com.vidayapi.usecase.GetViewStatsUseCase
+import com.vidayapi.usecase.RegisterUserUseCase
+import com.vidayapi.usecase.StartStreamUseCase
+import com.vidayapi.usecase.StopStreamUseCase
+import com.vidayapi.usecase.UnfollowUserUseCase
+import com.vidayapi.usecase.UpdateStreamUseCase
+import com.vidayapi.usecase.UploadVideoUseCase
+import org.slf4j.LoggerFactory
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+
+<span class="nc" id="L38">@Configuration(proxyBeanMethods = false)</span>
+class UseCaseConfig {
+    @Bean
+    fun registerUserUseCase(
+        userRepository: UserRepository,
+        passwordEncoder: PasswordEncoder,
+<span class="nc" id="L44">    ): RegisterUserUseCase = RegisterUserUseCase(userRepository, passwordEncoder)</span>
+
+    @Bean
+    fun activateChannelUseCase(userRepository: UserRepository): ActivateChannelUseCase =
+<span class="nc" id="L48">        ActivateChannelUseCase(userRepository)</span>
+
+    @Bean
+    fun assignAdminRoleUseCase(userRepository: UserRepository): AssignAdminRoleUseCase =
+<span class="nc" id="L52">        AssignAdminRoleUseCase(userRepository)</span>
+
+    @Bean
+    fun assignAnalystRoleUseCase(userRepository: UserRepository): AssignAnalystRoleUseCase =
+<span class="nc" id="L56">        AssignAnalystRoleUseCase(userRepository)</span>
+
+    @Bean
+    fun createPlaylistUseCase(playlistRepository: PlaylistRepository): CreatePlaylistUseCase =
+<span class="nc" id="L60">        CreatePlaylistUseCase(playlistRepository)</span>
+
+    @Bean
+    fun addContentToPlaylistUseCase(playlistRepository: PlaylistRepository): AddContentToPlaylistUseCase =
+<span class="nc" id="L64">        AddContentToPlaylistUseCase(playlistRepository)</span>
+
+    @Bean
+    fun followUserUseCase(userRepository: UserRepository): FollowUserUseCase =
+<span class="nc" id="L68">        FollowUserUseCase(userRepository)</span>
+
+    @Bean
+    fun unfollowUserUseCase(userRepository: UserRepository): UnfollowUserUseCase =
+<span class="nc" id="L72">        UnfollowUserUseCase(userRepository)</span>
+
+    @Bean
+<span class="nc" id="L75">    fun videoProcessor(): VideoProcessor = FFmpegVideoProcessor()</span>
+
+    @Bean
+    fun contentDeletionService(
+        contentRepository: ContentRepository,
+        fileStoragePort: FileStoragePort,
+        cachePort: CachePort,
+<span class="nc" id="L82">    ): ContentDeletionService = ContentDeletionService(contentRepository, fileStoragePort, cachePort)</span>
+
+    @Bean
+    fun uploadVideoUseCase(
+        contentRepository: ContentRepository,
+        fileStoragePort: FileStoragePort,
+        videoProcessor: VideoProcessor,
+        videoConfig: VideoBusinessConfig,
+        cachePort: CachePort,
+    ): UploadVideoUseCase =
+<span class="nc" id="L92">        UploadVideoUseCase(</span>
+<span class="nc" id="L93">            contentRepository,</span>
+<span class="nc" id="L94">            fileStoragePort,</span>
+<span class="nc" id="L95">            videoProcessor,</span>
+<span class="nc" id="L96">            videoConfig,</span>
+<span class="nc" id="L97">            cachePort,</span>
+<span class="nc" id="L98">            LoggerFactory.getLogger(UploadVideoUseCase::class.java),</span>
+<span class="nc" id="L99">        )</span>
+
+    @Bean
+    fun deleteVideoUseCase(contentDeletionService: ContentDeletionService): DeleteVideoUseCase =
+<span class="nc" id="L103">        DeleteVideoUseCase(contentDeletionService)</span>
+
+    @Bean
+    fun adminDeleteUserUseCase(userRepository: UserRepository): AdminDeleteUserUseCase =
+<span class="nc" id="L107">        AdminDeleteUserUseCase(userRepository)</span>
+
+    @Bean
+    fun adminDeleteContentUseCase(
+        userRepository: UserRepository,
+        contentDeletionService: ContentDeletionService,
+<span class="nc" id="L113">    ): AdminDeleteContentUseCase = AdminDeleteContentUseCase(userRepository, contentDeletionService)</span>
+
+    @Bean
+    fun adminDeletePlaylistUseCase(
+        userRepository: UserRepository,
+        playlistRepository: PlaylistRepository,
+<span class="nc" id="L119">    ): AdminDeletePlaylistUseCase = AdminDeletePlaylistUseCase(userRepository, playlistRepository)</span>
+
+    @Bean
+    fun getViewStatsUseCase(
+        userRepository: UserRepository,
+        viewStatsRepository: ViewStatsRepository,
+<span class="nc" id="L125">    ): GetViewStatsUseCase = GetViewStatsUseCase(userRepository, viewStatsRepository)</span>
+
+    @Bean
+    fun createStreamUseCase(
+        streamRepository: StreamRepository,
+        cachePort: CachePort,
+<span class="nc" id="L131">    ): CreateStreamUseCase = CreateStreamUseCase(streamRepository, cachePort)</span>
+
+    @Bean
+    fun updateStreamUseCase(
+        streamRepository: StreamRepository,
+        cachePort: CachePort,
+<span class="nc" id="L137">    ): UpdateStreamUseCase = UpdateStreamUseCase(streamRepository, cachePort)</span>
+
+    @Bean
+    fun startStreamUseCase(
+        streamRepository: StreamRepository,
+        cachePort: CachePort,
+<span class="nc" id="L143">    ): StartStreamUseCase = StartStreamUseCase(streamRepository, cachePort)</span>
+
+    @Bean
+    fun stopStreamUseCase(
+        streamRepository: StreamRepository,
+        cachePort: CachePort,
+<span class="nc" id="L149">    ): StopStreamUseCase = StopStreamUseCase(streamRepository, cachePort)</span>
+
+    @Bean
+    fun deleteStreamUseCase(
+        streamRepository: StreamRepository,
+        cachePort: CachePort,
+<span class="nc" id="L155">    ): DeleteStreamUseCase = DeleteStreamUseCase(streamRepository, cachePort)</span>
+
+    @Bean
+    fun videoResponseMapper(fileStoragePort: FileStoragePort): VideoResponseMapper =
+<span class="nc" id="L159">        VideoResponseMapper(fileStoragePort)</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

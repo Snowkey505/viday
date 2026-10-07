@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PlaylistController.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">presentation</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.controller</a> &gt; <span class="el_source">PlaylistController.kt</span></div><h1>PlaylistController.kt</h1><pre class="source lang-java linenums">package com.vidayapi.controller
+
+import com.vidayapi.dto.requests.AddContentToPlaylistRequest
+import com.vidayapi.dto.requests.CreatePlaylistRequest
+import com.vidayapi.dto.requests.UpdatePlaylistRequest
+import com.vidayapi.dto.responses.PageResponse
+import com.vidayapi.dto.responses.PlaylistResponse
+import com.vidayapi.model.AccessType
+import com.vidayapi.model.PageRequest
+import com.vidayapi.model.Error
+import com.vidayapi.model.Playlist
+import com.vidayapi.model.Result
+import com.vidayapi.model.left
+import com.vidayapi.port.PlaylistRepository
+import com.vidayapi.usecase.AddContentToPlaylistUseCase
+import com.vidayapi.usecase.CreatePlaylistUseCase
+import com.vidayapi.usecase.UpdatePlaylistUseCase
+import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.core.userdetails.UserDetails
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
+import java.time.ZoneOffset
+
+<span class="nc" id="L32">@RestController</span>
+@RequestMapping(&quot;/api/playlists&quot;)
+<span class="nc" id="L34">class PlaylistController(</span>
+<span class="nc" id="L35">    private val createPlaylistUseCase: CreatePlaylistUseCase,</span>
+<span class="nc" id="L36">    private val updatePlaylistUseCase: UpdatePlaylistUseCase,</span>
+<span class="nc" id="L37">    private val addContentToPlaylistUseCase: AddContentToPlaylistUseCase,</span>
+<span class="nc" id="L38">    private val playlistRepository: PlaylistRepository</span>
+) {
+    @PostMapping
+    fun createPlaylist(
+        @RequestBody request: CreatePlaylistRequest,
+        @AuthenticationPrincipal userDetails: UserDetails?
+    ): ResponseEntity&lt;Any&gt; {
+<span class="nc bnc" id="L45" title="All 6 branches missed.">        val userId = userDetails?.username?.toIntOrNull()</span>
+<span class="nc" id="L46">            ?: return ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Unauthorized&quot;))</span>
+
+<span class="nc" id="L48">        return createPlaylistUseCase.execute(</span>
+<span class="nc" id="L49">            name = request.name,</span>
+<span class="nc" id="L50">            ownerId = userId,</span>
+<span class="nc" id="L51">            accessType = request.accessType</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        ).fold(</span>
+<span class="nc" id="L53">            onSuccess = { playlist -&gt; ResponseEntity.status(201).body(playlist.toResponse()) },</span>
+            onFailure = { error -&gt;
+<span class="nc" id="L55">                when (error) {</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">                    is Error.ValidationFailed -&gt;</span>
+<span class="nc" id="L57">                        ResponseEntity.badRequest().body(mapOf(&quot;error&quot; to &quot;Invalid playlist name&quot;))</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">                    is Error.Unauthorized -&gt; ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Unauthorized&quot;))</span>
+<span class="nc" id="L59">                    else -&gt; ResponseEntity.status(500).body(mapOf(&quot;error&quot; to &quot;Failed to create playlist&quot;))</span>
+<span class="nc" id="L60">                }</span>
+            }
+        )
+    }
+
+    @GetMapping
+    fun getPlaylists(
+        @AuthenticationPrincipal userDetails: UserDetails?,
+        @RequestParam(defaultValue = &quot;0&quot;) page: Int,
+        @RequestParam(defaultValue = &quot;20&quot;) size: Int,
+    ): ResponseEntity&lt;Any&gt; {
+<span class="nc" id="L71">        val pageRequest = PageRequest(page, size).normalized()</span>
+
+<span class="nc bnc" id="L73" title="All 4 branches missed.">        val result = if (userDetails?.username != null) {</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">            val userId = userDetails.username.toIntOrNull()</span>
+<span class="nc" id="L75">                ?: return ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Unauthorized&quot;))</span>
+<span class="nc" id="L76">            playlistRepository.findPlaylistsByOwnerIdPage(userId, pageRequest)</span>
+        } else {
+<span class="nc" id="L78">            playlistRepository.findPublicPlaylistsPage(pageRequest)</span>
+        }
+
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        return result.fold(</span>
+            onSuccess = { page -&gt;
+<span class="nc" id="L83">                ResponseEntity.ok(PageResponse.from(page.map { it.toResponse() }))</span>
+            },
+<span class="nc" id="L85">            onFailure = { ResponseEntity.status(500).body(mapOf(&quot;error&quot; to &quot;Failed to fetch playlists&quot;)) }</span>
+        )
+    }
+
+    @GetMapping(&quot;/{playlistId}&quot;)
+    fun getPlaylistById(@PathVariable playlistId: Int): ResponseEntity&lt;Any&gt; =
+<span class="nc bnc" id="L91" title="All 2 branches missed.">        playlistRepository.findById(playlistId).fold(</span>
+<span class="nc" id="L92">            onSuccess = { playlist -&gt; ResponseEntity.ok(playlist.toResponse()) },</span>
+            onFailure = { error -&gt;
+<span class="nc" id="L94">                when (error) {</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">                    is Error.NotFound -&gt; ResponseEntity.notFound().build()</span>
+<span class="nc" id="L96">                    else -&gt; ResponseEntity.status(500).body(mapOf(&quot;error&quot; to &quot;Failed to fetch playlist&quot;))</span>
+<span class="nc" id="L97">                }</span>
+            }
+<span class="nc" id="L99">        )</span>
+
+    @PostMapping(&quot;/{playlistId}/contents&quot;)
+    fun addContentToPlaylist(
+        @PathVariable playlistId: Int,
+        @RequestBody request: AddContentToPlaylistRequest,
+        @AuthenticationPrincipal userDetails: UserDetails?
+    ): ResponseEntity&lt;Any&gt; {
+<span class="nc bnc" id="L107" title="All 2 branches missed.">        if (userDetails == null) {</span>
+<span class="nc" id="L108">            return ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Unauthorized&quot;))</span>
+        }
+<span class="nc bnc" id="L110" title="All 2 branches missed.">        val ownerId = userDetails.username.toIntOrNull()</span>
+<span class="nc" id="L111">            ?: return ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Unauthorized&quot;))</span>
+
+<span class="nc bnc" id="L113" title="All 4 branches missed.">        val position = if (request.position == -1) null else request.position</span>
+<span class="nc" id="L114">        return addContentToPlaylistUseCase.execute(</span>
+<span class="nc" id="L115">            ownerId = ownerId,</span>
+<span class="nc" id="L116">            playlistId = playlistId,</span>
+<span class="nc" id="L117">            contentId = request.contentId.toInt(),</span>
+<span class="nc" id="L118">            position = position,</span>
+<span class="nc bnc" id="L119" title="All 2 branches missed.">        ).fold(</span>
+<span class="nc" id="L120">            onSuccess = { ResponseEntity.ok(mapOf(&quot;message&quot; to &quot;Content added successfully&quot;)) },</span>
+            onFailure = { error -&gt;
+<span class="nc" id="L122">                when (error) {</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">                    Error.PlaylistPositionConflict -&gt;</span>
+<span class="nc" id="L124">                        ResponseEntity.status(409).body(mapOf(&quot;error&quot; to &quot;Content position conflict&quot;))</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">                    Error.StorageFailure -&gt;</span>
+<span class="nc" id="L126">                        ResponseEntity.status(500).body(mapOf(&quot;error&quot; to &quot;Failed to add content&quot;))</span>
+<span class="nc" id="L127">                    else -&gt; playlistAccessErrorResponse(error as Error)</span>
+<span class="nc" id="L128">                }</span>
+            }
+        )
+    }
+
+    @DeleteMapping(&quot;/{playlistId}&quot;)
+    fun deletePlaylist(
+        @PathVariable playlistId: Int,
+        @AuthenticationPrincipal userDetails: UserDetails?
+    ): ResponseEntity&lt;Any&gt; {
+<span class="nc bnc" id="L138" title="All 2 branches missed.">        if (userDetails == null) {</span>
+<span class="nc" id="L139">            return ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Unauthorized&quot;))</span>
+        }
+<span class="nc bnc" id="L141" title="All 4 branches missed.">        val ownerId = userDetails.username?.toIntOrNull()</span>
+<span class="nc" id="L142">            ?: return ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Unauthorized&quot;))</span>
+
+<span class="nc bnc" id="L144" title="All 2 branches missed.">        return playlistRepository.deletePlaylist(playlistId, ownerId).fold(</span>
+<span class="nc" id="L145">            onSuccess = { ResponseEntity.noContent().build() },</span>
+<span class="nc" id="L146">            onFailure = { error -&gt; playlistAccessErrorResponse(error as Error) }</span>
+        )
+    }
+
+    @DeleteMapping(&quot;/{playlistId}/contents/{contentId}&quot;)
+    fun removeContentFromPlaylist(
+        @PathVariable playlistId: Int,
+        @PathVariable contentId: Int,
+        @AuthenticationPrincipal userDetails: UserDetails?
+    ): ResponseEntity&lt;Any&gt; {
+<span class="nc bnc" id="L156" title="All 2 branches missed.">        if (userDetails == null) {</span>
+<span class="nc" id="L157">            return ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Unauthorized&quot;))</span>
+        }
+<span class="nc bnc" id="L159" title="All 4 branches missed.">        val ownerId = userDetails.username?.toIntOrNull()</span>
+<span class="nc" id="L160">            ?: return ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Unauthorized&quot;))</span>
+
+<span class="nc bnc" id="L162" title="All 2 branches missed.">        return ensurePlaylistOwner(playlistId, ownerId).fold(</span>
+            onSuccess = {
+<span class="nc" id="L164">                playlistRepository.removeContentFromPlaylist(</span>
+<span class="nc" id="L165">                    contentId = contentId,</span>
+<span class="nc" id="L166">                    playlistId = playlistId</span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">                ).fold(</span>
+<span class="nc" id="L168">                    onSuccess = { ResponseEntity.noContent().build() },</span>
+                    onFailure = { error -&gt;
+<span class="nc" id="L170">                        when (error) {</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">                            is Error.NotFound -&gt; ResponseEntity.notFound().build()</span>
+<span class="nc" id="L172">                            else -&gt; ResponseEntity.status(500).body(mapOf(&quot;error&quot; to &quot;Failed to remove content&quot;))</span>
+<span class="nc" id="L173">                        }</span>
+                    }
+<span class="nc" id="L175">                )</span>
+            },
+<span class="nc" id="L177">            onFailure = { error -&gt; playlistAccessErrorResponse(error as Error) }</span>
+        )
+    }
+
+    private fun ensurePlaylistOwner(playlistId: Int, userId: Int): Result&lt;Playlist&gt; =
+<span class="nc bnc" id="L182" title="All 2 branches missed.">        playlistRepository.findById(playlistId).fold(</span>
+            onSuccess = { playlist -&gt;
+<span class="nc bnc" id="L184" title="All 2 branches missed.">                if (playlist.ownerId != userId) {</span>
+<span class="nc" id="L185">                    Error.Forbidden.left()</span>
+                } else {
+<span class="nc" id="L187">                    Result.success(playlist)</span>
+<span class="nc" id="L188">                }</span>
+            },
+<span class="nc" id="L190">            onFailure = { Result.failure(it) }</span>
+<span class="nc" id="L191">        )</span>
+
+    private fun playlistAccessErrorResponse(err: Error): ResponseEntity&lt;Any&gt; =
+<span class="nc" id="L194">        when (err) {</span>
+<span class="nc bnc" id="L195" title="All 2 branches missed.">            is Error.NotFound -&gt; ResponseEntity.notFound().build()</span>
+<span class="nc bnc" id="L196" title="All 2 branches missed.">            is Error.Forbidden -&gt;</span>
+<span class="nc" id="L197">                ResponseEntity.status(403).body(mapOf(&quot;error&quot; to &quot;Forbidden&quot;))</span>
+
+<span class="nc" id="L199">            else -&gt; ResponseEntity.status(500).body(mapOf(&quot;error&quot; to &quot;Request failed&quot;))</span>
+<span class="nc" id="L200">        }</span>
+
+    private fun Playlist.toResponse(): PlaylistResponse {
+<span class="nc" id="L203">        return PlaylistResponse(</span>
+<span class="nc bnc" id="L204" title="All 2 branches missed.">            id = id?.toLong() ?: 0L,</span>
+<span class="nc" id="L205">            name = name,</span>
+<span class="nc" id="L206">            ownerId = ownerId.toLong(),</span>
+<span class="nc" id="L207">            ownerName = &quot;&quot;,</span>
+<span class="nc" id="L208">            accessType = accessType,</span>
+<span class="nc" id="L209">            contentIds = emptyList(),</span>
+<span class="nc" id="L210">            createdAt = createdAt.atZoneSameInstant(ZoneOffset.UTC).toLocalDateTime()</span>
+        )
+    }
+
+    @GetMapping(&quot;/available&quot;)
+    fun getAvailablePlaylists(
+        @AuthenticationPrincipal userDetails: UserDetails?
+    ): ResponseEntity&lt;Any&gt; {
+<span class="nc bnc" id="L218" title="All 4 branches missed.">        val userId = userDetails?.username?.toIntOrNull()</span>
+
+<span class="nc bnc" id="L220" title="All 2 branches missed.">        return playlistRepository.findAvailablePlaylists(userId).fold(</span>
+<span class="nc" id="L221">            onSuccess = { playlists -&gt; ResponseEntity.ok(playlists.map { it.toResponse() }) },</span>
+<span class="nc" id="L222">            onFailure = { ResponseEntity.status(500).body(mapOf(&quot;error&quot; to &quot;Failed to fetch playlists&quot;)) }</span>
+        )
+    }
+
+    @PutMapping(&quot;/{id}&quot;)
+    fun updatePlaylist(
+        @PathVariable id: Int,
+        @RequestParam(required = false) name: String?,
+        @RequestParam(required = false) accessType: AccessType?,
+        @AuthenticationPrincipal userDetails: UserDetails?,
+    ): ResponseEntity&lt;Any&gt; {
+<span class="nc bnc" id="L233" title="All 6 branches missed.">        val userId = userDetails?.username?.toIntOrNull()</span>
+<span class="nc" id="L234">            ?: return ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Unauthorized&quot;))</span>
+
+<span class="nc" id="L236">        val request = UpdatePlaylistRequest(</span>
+<span class="nc" id="L237">            name = name,</span>
+<span class="nc" id="L238">            accessType = accessType,</span>
+        )
+
+<span class="nc bnc" id="L241" title="All 2 branches missed.">        return updatePlaylistUseCase.execute(id, userId, request).fold(</span>
+<span class="nc" id="L242">            onSuccess = { ResponseEntity.ok(it) },</span>
+            onFailure = { error -&gt;
+<span class="nc" id="L244">                when (error) {</span>
+<span class="nc bnc" id="L245" title="All 2 branches missed.">                    is Error.NotFound -&gt; ResponseEntity.notFound().build()</span>
+<span class="nc bnc" id="L246" title="All 2 branches missed.">                    is Error.Forbidden -&gt;</span>
+<span class="nc" id="L247">                        ResponseEntity.status(403).body(mapOf(&quot;error&quot; to &quot;You are not the owner of this playlist&quot;))</span>
+<span class="nc bnc" id="L248" title="All 2 branches missed.">                    is Error.AlreadyExists -&gt;</span>
+<span class="nc" id="L249">                        ResponseEntity.status(409).body(mapOf(&quot;error&quot; to &quot;You already have a playlist with this name&quot;))</span>
+<span class="nc bnc" id="L250" title="All 2 branches missed.">                    is Error.StorageFailure -&gt;</span>
+<span class="nc" id="L251">                        ResponseEntity.internalServerError().body(mapOf(&quot;error&quot; to &quot;Failed to update playlist&quot;))</span>
+                    else -&gt;
+<span class="nc" id="L253">                        ResponseEntity.internalServerError().body(mapOf(&quot;error&quot; to &quot;Failed to update playlist&quot;))</span>
+<span class="nc" id="L254">                }</span>
+            }
+        )
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

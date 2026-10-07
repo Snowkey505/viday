@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ListVideosUseCase.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">application</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.usecase</a> &gt; <span class="el_source">ListVideosUseCase.kt</span></div><h1>ListVideosUseCase.kt</h1><pre class="source lang-java linenums">package com.vidayapi.usecase
+
+import com.vidayapi.model.flatMap
+import com.vidayapi.model.right
+import com.vidayapi.cache.CacheKeys
+import com.vidayapi.cache.CacheTtl
+import com.vidayapi.dto.responses.PageResponse
+import com.vidayapi.dto.responses.VideoResponse
+import com.vidayapi.model.PageRequest
+import com.vidayapi.model.Result
+import com.vidayapi.port.CachePort
+import com.vidayapi.port.ContentRepository
+import com.vidayapi.service.VideoResponseMapper
+import tools.jackson.databind.ObjectMapper
+
+<span class="nc" id="L16">class ListVideosUseCase(</span>
+<span class="nc" id="L17">    private val contentRepository: ContentRepository,</span>
+<span class="nc" id="L18">    private val cachePort: CachePort,</span>
+<span class="nc" id="L19">    private val videoResponseMapper: VideoResponseMapper,</span>
+<span class="nc" id="L20">    private val objectMapper: ObjectMapper,</span>
+) {
+    fun execute(
+        userId: Int?,
+        playlistId: Int?,
+        page: Int,
+        size: Int,
+    ): Result&lt;PageResponse&lt;VideoResponse&gt;&gt; {
+<span class="nc" id="L28">        val pageRequest = PageRequest(page, size).normalized()</span>
+<span class="nc bnc" id="L29" title="All 4 branches missed.">        val isPublicFeed = userId == null &amp;&amp; playlistId == null</span>
+
+<span class="nc bnc" id="L31" title="All 2 branches missed.">        if (isPublicFeed) {</span>
+<span class="nc" id="L32">            val cacheKey = CacheKeys.publicVideos(pageRequest.page, pageRequest.size)</span>
+<span class="nc bnc" id="L33" title="All 2 branches missed.">            cachePort.get(cacheKey)?.let { cached -&gt;</span>
+<span class="nc" id="L34">                return readPage(cached).right()</span>
+            }
+        }
+
+<span class="nc" id="L38">        val dataResult = when {</span>
+<span class="nc bnc" id="L39" title="All 2 branches missed.">            playlistId != null -&gt;</span>
+<span class="nc" id="L40">                contentRepository.findVideosByPlaylistIdPage(playlistId, pageRequest)</span>
+<span class="nc bnc" id="L41" title="All 2 branches missed.">            userId != null -&gt;</span>
+<span class="nc" id="L42">                contentRepository.findVideosByOwnerIdPage(userId, pageRequest)</span>
+            else -&gt;
+<span class="nc" id="L44">                contentRepository.findPublicVideosPage(pageRequest)</span>
+        }
+
+<span class="nc" id="L47">        return dataResult.flatMap { videoPage -&gt;</span>
+<span class="nc" id="L48">            val response = PageResponse.from(</span>
+<span class="nc" id="L49">                videoPage.map { videoResponseMapper.toResponse(it) },</span>
+            )
+<span class="nc bnc" id="L51" title="All 2 branches missed.">            if (isPublicFeed) {</span>
+<span class="nc" id="L52">                val cacheKey = CacheKeys.publicVideos(pageRequest.page, pageRequest.size)</span>
+<span class="nc" id="L53">                cachePort.set(</span>
+<span class="nc" id="L54">                    cacheKey,</span>
+<span class="nc" id="L55">                    objectMapper.writeValueAsString(response),</span>
+<span class="nc" id="L56">                    CacheTtl.PUBLIC_VIDEOS_SEC,</span>
+                )
+            }
+<span class="nc" id="L59">            response.right()</span>
+        }
+    }
+
+    private fun readPage(json: String): PageResponse&lt;VideoResponse&gt; {
+<span class="nc" id="L64">        val type = objectMapper.typeFactory.constructParametricType(</span>
+<span class="nc" id="L65">            PageResponse::class.java,</span>
+<span class="nc" id="L66">            VideoResponse::class.java,</span>
+        )
+<span class="nc" id="L68">        return objectMapper.readValue(json, type)</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

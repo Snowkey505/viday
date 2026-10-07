@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChannelController.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">presentation</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.controller</a> &gt; <span class="el_source">ChannelController.kt</span></div><h1>ChannelController.kt</h1><pre class="source lang-java linenums">package com.vidayapi.controller
+
+import com.vidayapi.dto.responses.LoginResponse
+import com.vidayapi.dto.responses.UserResponse
+import com.vidayapi.model.Error
+import com.vidayapi.service.AuthService
+import com.vidayapi.usecase.ActivateChannelUseCase
+import com.vidayapi.controller.support.authenticatedUser
+import com.vidayapi.controller.support.unauthorizedResponse
+import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.core.userdetails.UserDetails
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
+
+<span class="nc" id="L17">@RestController</span>
+@RequestMapping(&quot;/api/users/me&quot;)
+<span class="nc" id="L19">class ChannelController(</span>
+<span class="nc" id="L20">    private val activateChannelUseCase: ActivateChannelUseCase,</span>
+<span class="nc" id="L21">    private val authService: AuthService,</span>
+) {
+    @PostMapping(&quot;/channel/activate&quot;)
+    fun activateChannel(@AuthenticationPrincipal userDetails: UserDetails?): ResponseEntity&lt;Any&gt; {
+<span class="nc bnc" id="L25" title="All 4 branches missed.">        val (userId, _) = authService.authenticatedUser(userDetails).getOrNull()</span>
+<span class="nc" id="L26">            ?: return unauthorizedResponse()</span>
+
+<span class="nc bnc" id="L28" title="All 2 branches missed.">        return activateChannelUseCase.execute(userId).fold(</span>
+            onSuccess = { user -&gt;
+<span class="nc" id="L30">                ResponseEntity.ok(</span>
+<span class="nc" id="L31">                    mapOf(</span>
+<span class="nc" id="L32">                        &quot;message&quot; to &quot;Channel activated. You are now a CREATOR.&quot;,</span>
+<span class="nc" id="L33">                        &quot;user&quot; to UserResponse(</span>
+<span class="nc bnc" id="L34" title="All 2 branches missed.">                            id = user.id?.toLong() ?: 0L,</span>
+<span class="nc" id="L35">                            username = user.username,</span>
+<span class="nc" id="L36">                            role = user.role.name,</span>
+                        ),
+<span class="nc" id="L38">                        &quot;hint&quot; to &quot;Call POST /api/users/me/token/refresh to update JWT&quot;,</span>
+                    ),
+<span class="nc" id="L40">                )</span>
+            },
+            onFailure = { error -&gt;
+<span class="nc" id="L43">                when (error) {</span>
+<span class="nc bnc" id="L44" title="All 2 branches missed.">                    is Error.AlreadyCreator -&gt;</span>
+<span class="nc" id="L45">                        ResponseEntity.status(409).body(mapOf(&quot;error&quot; to &quot;Channel already activated&quot;))</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">                    is Error.InvalidRoleTransition -&gt;</span>
+<span class="nc" id="L47">                        ResponseEntity.status(403).body(mapOf(&quot;error&quot; to &quot;Role cannot be upgraded to CREATOR&quot;))</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">                    is Error.ValidationFailed -&gt;</span>
+<span class="nc" id="L49">                        ResponseEntity.badRequest().body(mapOf(&quot;error&quot; to error.details))</span>
+                    else -&gt;
+<span class="nc" id="L51">                        ResponseEntity.status(500).body(mapOf(&quot;error&quot; to &quot;Activation failed&quot;))</span>
+<span class="nc" id="L52">                }</span>
+            }
+        )
+    }
+
+    @PostMapping(&quot;/token/refresh&quot;)
+    fun refreshToken(
+        @AuthenticationPrincipal userDetails: UserDetails?,
+        @org.springframework.web.bind.annotation.RequestHeader(&quot;Authorization&quot;) authHeader: String?,
+    ): ResponseEntity&lt;Any&gt; {
+<span class="nc bnc" id="L62" title="All 6 branches missed.">        if (userDetails == null || authHeader == null || !authHeader.startsWith(&quot;Bearer &quot;)) {</span>
+<span class="nc" id="L63">            return unauthorizedResponse()</span>
+        }
+<span class="nc" id="L65">        val token = authHeader.substring(7)</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        return authService.refreshToken(token).fold(</span>
+<span class="nc" id="L67">            onSuccess = { newToken -&gt; ResponseEntity.ok(LoginResponse(token = newToken)) },</span>
+            onFailure = {
+<span class="nc" id="L69">                ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Failed to refresh token&quot;))</span>
+            }
+        )
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RlsAwareDataSource.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">infrastructure</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.security</a> &gt; <span class="el_source">RlsAwareDataSource.kt</span></div><h1>RlsAwareDataSource.kt</h1><pre class="source lang-java linenums">package com.vidayapi.security
+
+import java.sql.Connection
+import javax.sql.DataSource
+
+<span class="nc" id="L6">class RlsAwareDataSource(</span>
+<span class="nc" id="L7">    private val delegate: DataSource,</span>
+) : DataSource by delegate {
+
+    override fun getConnection(): Connection =
+<span class="nc" id="L11">        configure(delegate.connection)</span>
+
+    override fun getConnection(username: String?, password: String?): Connection =
+<span class="nc" id="L14">        configure(delegate.getConnection(username, password))</span>
+
+    private fun configure(connection: Connection): Connection {
+<span class="nc bnc" id="L17" title="All 2 branches missed.">        val context = RlsContextHolder.get() ?: return connection</span>
+<span class="nc" id="L18">        connection.createStatement().use { statement -&gt;</span>
+<span class="nc" id="L19">            statement.execute(&quot;SET ROLE ${context.pgRole.sqlName}&quot;)</span>
+<span class="nc bnc" id="L20" title="All 2 branches missed.">            if (context.userId != null) {</span>
+<span class="nc" id="L21">                connection.prepareStatement(&quot;SELECT set_config('app.current_user_id', ?, false)&quot;).use { ps -&gt;</span>
+<span class="nc" id="L22">                    ps.setString(1, context.userId.toString())</span>
+<span class="nc" id="L23">                    ps.execute()</span>
+                }
+            } else {
+<span class="nc" id="L26">                statement.execute(&quot;RESET app.current_user_id&quot;)</span>
+<span class="nc" id="L27">            }</span>
+        }
+<span class="nc" id="L29">        return connection</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

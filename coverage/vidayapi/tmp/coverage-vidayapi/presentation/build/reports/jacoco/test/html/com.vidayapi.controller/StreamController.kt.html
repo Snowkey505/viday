@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StreamController.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">presentation</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.controller</a> &gt; <span class="el_source">StreamController.kt</span></div><h1>StreamController.kt</h1><pre class="source lang-java linenums">package com.vidayapi.controller
+
+import com.vidayapi.dto.requests.CreateStreamRequest
+import com.vidayapi.dto.requests.UpdateStreamRequest
+import com.vidayapi.dto.responses.StreamResponse
+import com.vidayapi.model.Error
+import com.vidayapi.port.StreamRepository
+import com.vidayapi.usecase.CreateStreamUseCase
+import com.vidayapi.usecase.DeleteStreamUseCase
+import com.vidayapi.usecase.ListLiveStreamsUseCase
+import com.vidayapi.usecase.StartStreamUseCase
+import com.vidayapi.usecase.StopStreamUseCase
+import com.vidayapi.usecase.UpdateStreamUseCase
+import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.core.userdetails.UserDetails
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
+
+<span class="nc" id="L27">@RestController</span>
+@RequestMapping(&quot;/api/streams&quot;)
+<span class="nc" id="L29">class StreamController(</span>
+<span class="nc" id="L30">    private val createStreamUseCase: CreateStreamUseCase,</span>
+<span class="nc" id="L31">    private val updateStreamUseCase: UpdateStreamUseCase,</span>
+<span class="nc" id="L32">    private val startStreamUseCase: StartStreamUseCase,</span>
+<span class="nc" id="L33">    private val stopStreamUseCase: StopStreamUseCase,</span>
+<span class="nc" id="L34">    private val deleteStreamUseCase: DeleteStreamUseCase,</span>
+<span class="nc" id="L35">    private val listLiveStreamsUseCase: ListLiveStreamsUseCase,</span>
+<span class="nc" id="L36">    private val streamRepository: StreamRepository,</span>
+) {
+    @GetMapping(&quot;/live&quot;)
+    fun listLiveStreams(
+        @RequestParam(defaultValue = &quot;0&quot;) page: Int,
+        @RequestParam(defaultValue = &quot;20&quot;) size: Int,
+    ): ResponseEntity&lt;Any&gt; =
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        listLiveStreamsUseCase.execute(page, size).fold(</span>
+<span class="nc" id="L44">            onSuccess = { ResponseEntity.ok(it) },</span>
+<span class="nc" id="L45">            onFailure = { ResponseEntity.internalServerError().body(mapOf(&quot;error&quot; to &quot;Failed to fetch live streams&quot;)) }</span>
+<span class="nc" id="L46">        )</span>
+
+    @GetMapping(&quot;/me&quot;)
+    fun myStreams(@AuthenticationPrincipal userDetails: UserDetails?): ResponseEntity&lt;Any&gt; {
+<span class="nc bnc" id="L50" title="All 6 branches missed.">        val userId = userDetails?.username?.toIntOrNull()</span>
+<span class="nc" id="L51">            ?: return ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Unauthorized&quot;))</span>
+
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        return streamRepository.findByOwnerId(userId).fold(</span>
+<span class="nc" id="L54">            onSuccess = { streams -&gt; ResponseEntity.ok(streams.map { StreamResponse.from(it) }) },</span>
+<span class="nc" id="L55">            onFailure = { ResponseEntity.internalServerError().body(mapOf(&quot;error&quot; to &quot;Failed to fetch streams&quot;)) }</span>
+        )
+    }
+
+    @GetMapping(&quot;/{contentId}&quot;)
+    fun getStream(@PathVariable contentId: Int): ResponseEntity&lt;Any&gt; =
+<span class="nc bnc" id="L61" title="All 2 branches missed.">        streamRepository.findByContentId(contentId).fold(</span>
+<span class="nc" id="L62">            onSuccess = { stream -&gt; ResponseEntity.ok(StreamResponse.from(stream)) },</span>
+            onFailure = { error -&gt;
+<span class="nc" id="L64">                when (error) {</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">                    is Error.StreamNotFound -&gt; ResponseEntity.notFound().build()</span>
+<span class="nc" id="L66">                    else -&gt; ResponseEntity.internalServerError().body(mapOf(&quot;error&quot; to &quot;Failed to fetch stream&quot;))</span>
+<span class="nc" id="L67">                }</span>
+            }
+<span class="nc" id="L69">        )</span>
+
+    @PostMapping
+    fun createStream(
+        @RequestBody request: CreateStreamRequest,
+        @AuthenticationPrincipal userDetails: UserDetails?,
+    ): ResponseEntity&lt;Any&gt; {
+<span class="nc bnc" id="L76" title="All 6 branches missed.">        val userId = userDetails?.username?.toIntOrNull()</span>
+<span class="nc" id="L77">            ?: return ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Unauthorized&quot;))</span>
+
+<span class="nc" id="L79">        return createStreamUseCase.execute(</span>
+<span class="nc" id="L80">            name = request.name,</span>
+<span class="nc" id="L81">            description = request.description,</span>
+<span class="nc" id="L82">            source = request.source,</span>
+<span class="nc" id="L83">            ownerId = userId,</span>
+<span class="nc" id="L84">            accessType = request.accessType,</span>
+<span class="nc" id="L85">            scheduledAt = request.scheduledAt,</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        ).fold(</span>
+<span class="nc" id="L87">            onSuccess = { stream -&gt; ResponseEntity.status(201).body(StreamResponse.from(stream)) },</span>
+<span class="nc" id="L88">            onFailure = { error -&gt; streamErrorResponse(error as Error) }</span>
+        )
+    }
+
+    @PutMapping(&quot;/{contentId}&quot;)
+    fun updateStream(
+        @PathVariable contentId: Int,
+        @RequestBody request: UpdateStreamRequest,
+        @AuthenticationPrincipal userDetails: UserDetails?,
+    ): ResponseEntity&lt;Any&gt; {
+<span class="nc bnc" id="L98" title="All 6 branches missed.">        val userId = userDetails?.username?.toIntOrNull()</span>
+<span class="nc" id="L99">            ?: return ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Unauthorized&quot;))</span>
+
+<span class="nc bnc" id="L101" title="All 2 branches missed.">        return updateStreamUseCase.execute(contentId, userId, request).fold(</span>
+<span class="nc" id="L102">            onSuccess = { stream -&gt; ResponseEntity.ok(StreamResponse.from(stream)) },</span>
+<span class="nc" id="L103">            onFailure = { error -&gt; streamErrorResponse(error as Error) }</span>
+        )
+    }
+
+    @PostMapping(&quot;/{contentId}/start&quot;)
+    fun startStream(
+        @PathVariable contentId: Int,
+        @AuthenticationPrincipal userDetails: UserDetails?,
+    ): ResponseEntity&lt;Any&gt; {
+<span class="nc bnc" id="L112" title="All 6 branches missed.">        val userId = userDetails?.username?.toIntOrNull()</span>
+<span class="nc" id="L113">            ?: return ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Unauthorized&quot;))</span>
+
+<span class="nc bnc" id="L115" title="All 2 branches missed.">        return startStreamUseCase.execute(contentId, userId).fold(</span>
+<span class="nc" id="L116">            onSuccess = { stream -&gt; ResponseEntity.ok(StreamResponse.from(stream)) },</span>
+<span class="nc" id="L117">            onFailure = { error -&gt; streamErrorResponse(error as Error) }</span>
+        )
+    }
+
+    @PostMapping(&quot;/{contentId}/stop&quot;)
+    fun stopStream(
+        @PathVariable contentId: Int,
+        @AuthenticationPrincipal userDetails: UserDetails?,
+    ): ResponseEntity&lt;Any&gt; {
+<span class="nc bnc" id="L126" title="All 6 branches missed.">        val userId = userDetails?.username?.toIntOrNull()</span>
+<span class="nc" id="L127">            ?: return ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Unauthorized&quot;))</span>
+
+<span class="nc bnc" id="L129" title="All 2 branches missed.">        return stopStreamUseCase.execute(contentId, userId).fold(</span>
+<span class="nc" id="L130">            onSuccess = { stream -&gt; ResponseEntity.ok(StreamResponse.from(stream)) },</span>
+<span class="nc" id="L131">            onFailure = { error -&gt; streamErrorResponse(error as Error) }</span>
+        )
+    }
+
+    @DeleteMapping(&quot;/{contentId}&quot;)
+    fun deleteStream(
+        @PathVariable contentId: Int,
+        @AuthenticationPrincipal userDetails: UserDetails?,
+    ): ResponseEntity&lt;Any&gt; {
+<span class="nc bnc" id="L140" title="All 6 branches missed.">        val userId = userDetails?.username?.toIntOrNull()</span>
+<span class="nc" id="L141">            ?: return ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Unauthorized&quot;))</span>
+
+<span class="nc bnc" id="L143" title="All 2 branches missed.">        return deleteStreamUseCase.execute(contentId, userId).fold(</span>
+<span class="nc" id="L144">            onSuccess = { ResponseEntity.noContent().build() },</span>
+<span class="nc" id="L145">            onFailure = { error -&gt; streamErrorResponse(error as Error) }</span>
+        )
+    }
+
+    private fun streamErrorResponse(error: Error): ResponseEntity&lt;Any&gt; =
+<span class="nc" id="L150">        when (error) {</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">            is Error.StreamNotFound -&gt; ResponseEntity.notFound().build()</span>
+<span class="nc bnc" id="L152" title="All 2 branches missed.">            is Error.Forbidden -&gt; ResponseEntity.status(403).body(mapOf(&quot;error&quot; to &quot;Forbidden&quot;))</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">            is Error.StreamAlreadyLive -&gt;</span>
+<span class="nc" id="L154">                ResponseEntity.status(409).body(mapOf(&quot;error&quot; to &quot;Stream is already live or another live stream exists&quot;))</span>
+<span class="nc bnc" id="L155" title="All 2 branches missed.">            is Error.StreamNotLive -&gt;</span>
+<span class="nc" id="L156">                ResponseEntity.status(409).body(mapOf(&quot;error&quot; to &quot;Stream is not live&quot;))</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">            is Error.ValidationFailed -&gt;</span>
+<span class="nc" id="L158">                ResponseEntity.badRequest().body(mapOf(&quot;error&quot; to error.details))</span>
+<span class="nc" id="L159">            else -&gt; ResponseEntity.internalServerError().body(mapOf(&quot;error&quot; to &quot;Request failed&quot;))</span>
+<span class="nc" id="L160">        }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

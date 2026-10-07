@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MainActivity.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.snowkey.viday</a> &gt; <span class="el_source">MainActivity.kt</span></div><h1>MainActivity.kt</h1><pre class="source lang-java linenums">package com.snowkey.viday
+
+import android.os.Bundle
+import android.util.Log
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.snowkey.viday.data.PreferencesLocalDataSource
+import com.snowkey.viday.model.Navigation
+import com.snowkey.viday.presentation.navigationBar.MainScreen
+import com.snowkey.viday.presentation.loginScreen.LoginScreen
+import com.snowkey.viday.presentation.loginScreen.LoginViewModel
+import com.snowkey.viday.presentation.playlistScreen.PlaylistScreen
+import com.snowkey.viday.presentation.profileScreen.ProfileScreen
+import com.snowkey.viday.presentation.signUpScreen.SignUpScreen
+import com.snowkey.viday.presentation.videoScreen.VideoScreen
+import com.snowkey.viday.presentation.videoScreen.VideoViewModel
+import com.snowkey.viday.presentation.videosScreen.VideosScreen
+import com.snowkey.viday.presentation.videosScreen.VideosViewModel
+import com.snowkey.viday.ui.theme.VidayTheme
+import kotlinx.coroutines.launch
+import org.koin.android.ext.android.inject
+import org.koin.androidx.compose.koinViewModel
+import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.koin.core.parameter.parametersOf
+import kotlin.getValue
+
+<span class="nc" id="L34">class MainActivity : ComponentActivity() {</span>
+<span class="nc" id="L35">    private val loginViewModel: LoginViewModel by viewModel&lt;LoginViewModel&gt;()</span>
+<span class="nc" id="L36">    private val prefsDataSource: PreferencesLocalDataSource by inject()</span>
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+<span class="nc" id="L39">        super.onCreate(savedInstanceState)</span>
+<span class="nc" id="L40">        enableEdgeToEdge()</span>
+
+<span class="nc" id="L42">        lifecycleScope.launch {</span>
+<span class="nc" id="L43">            val authData = prefsDataSource.getAuthData()</span>
+<span class="nc" id="L44">            Log.d(&quot;AUTH&quot;, authData.toString())</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">            val userId = if (authData != null) {</span>
+<span class="nc" id="L46">                loginViewModel.loginBackground(authData.login, authData.password)</span>
+<span class="nc" id="L47">            } else null</span>
+<span class="nc" id="L48">            setContent {</span>
+<span class="nc" id="L49">                VidayTheme {</span>
+<span class="nc" id="L50">                    val navController = rememberNavController()</span>
+<span class="nc" id="L51">                    NavHost(</span>
+<span class="nc" id="L52">                        navController = navController,</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">                        startDestination = if (userId != null) {</span>
+<span class="nc" id="L54">                            Navigation.createVideosRoute(</span>
+<span class="nc" id="L55">                                userId = userId,</span>
+<span class="nc" id="L56">                                playlistId = null</span>
+                            )
+<span class="nc" id="L58">                        } else Navigation.LOGIN.route</span>
+<span class="nc" id="L59">                    ) {</span>
+<span class="nc" id="L60">                        composable(Navigation.LOGIN.route) {</span>
+<span class="nc" id="L61">                            LoginScreen(</span>
+<span class="nc" id="L62">                                vm = koinViewModel(),</span>
+<span class="nc" id="L63">                                navController = navController</span>
+
+                            )
+<span class="nc" id="L66">                        }</span>
+
+<span class="nc" id="L68">                        composable(Navigation.SIGNUP.route) {</span>
+<span class="nc" id="L69">                            SignUpScreen(</span>
+<span class="nc" id="L70">                                vm = koinViewModel(),</span>
+<span class="nc" id="L71">                                navController = navController</span>
+                            )
+<span class="nc" id="L73">                        }</span>
+
+<span class="nc" id="L75">                        composable(</span>
+<span class="nc" id="L76">                            route = Navigation.VIDEOS.route,</span>
+<span class="nc" id="L77">                            arguments = listOf(</span>
+<span class="nc" id="L78">                                navArgument(&quot;userId&quot;) {</span>
+<span class="nc" id="L79">                                    type = NavType.LongType</span>
+<span class="nc" id="L80">                                    defaultValue = -1L</span>
+<span class="nc" id="L81">                                    nullable = false</span>
+<span class="nc" id="L82">                                },</span>
+<span class="nc" id="L83">                                navArgument(&quot;playlistId&quot;) {</span>
+<span class="nc" id="L84">                                    type = NavType.LongType</span>
+<span class="nc" id="L85">                                    defaultValue = -1L</span>
+<span class="nc" id="L86">                                    nullable = false</span>
+<span class="nc" id="L87">                                })</span>
+<span class="nc" id="L88">                        ) { backStackEntry -&gt;</span>
+<span class="nc" id="L89">                            val userId =</span>
+<span class="nc bnc" id="L90" title="All 6 branches missed.">                                backStackEntry.arguments?.getLong(&quot;userId&quot;)?.takeIf { it != -1L }</span>
+<span class="nc" id="L91">                            val playlistId =</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">                                backStackEntry.arguments?.getLong(&quot;playlistId&quot;)</span>
+<span class="nc bnc" id="L93" title="All 4 branches missed.">                                    ?.takeIf { it != -1L }</span>
+
+<span class="nc" id="L95">                            val vm: VideosViewModel = koinViewModel(</span>
+<span class="nc" id="L96">                                viewModelStoreOwner = backStackEntry,</span>
+<span class="nc" id="L97">                                parameters = { parametersOf(userId, playlistId) }</span>
+                            )
+
+<span class="nc" id="L100">                            MainScreen(</span>
+<span class="nc" id="L101">                                navController = navController,</span>
+<span class="nc" id="L102">                                userId = userId,</span>
+<span class="nc" id="L103">                                playlistId = playlistId</span>
+<span class="nc" id="L104">                            ) {</span>
+<span class="nc" id="L105">                                VideosScreen(</span>
+<span class="nc" id="L106">                                    vm = vm,</span>
+<span class="nc" id="L107">                                    navController = navController</span>
+                                )
+<span class="nc" id="L109">                            }</span>
+<span class="nc" id="L110">                        }</span>
+
+<span class="nc" id="L112">                        composable(</span>
+<span class="nc" id="L113">                            route = Navigation.VIDEO.route,</span>
+<span class="nc" id="L114">                            arguments = listOf(</span>
+<span class="nc" id="L115">                                navArgument(&quot;userId&quot;) {</span>
+<span class="nc" id="L116">                                    type = NavType.LongType</span>
+<span class="nc" id="L117">                                    defaultValue = -1L</span>
+<span class="nc" id="L118">                                    nullable = false</span>
+<span class="nc" id="L119">                                },</span>
+<span class="nc" id="L120">                                navArgument(&quot;videoId&quot;) {</span>
+<span class="nc" id="L121">                                    type = NavType.LongType</span>
+<span class="nc" id="L122">                                    defaultValue = -1L</span>
+<span class="nc" id="L123">                                    nullable = false</span>
+<span class="nc" id="L124">                                },</span>
+<span class="nc" id="L125">                                navArgument(&quot;playlistId&quot;) {</span>
+<span class="nc" id="L126">                                    type = NavType.LongType</span>
+<span class="nc" id="L127">                                    defaultValue = -1L</span>
+<span class="nc" id="L128">                                    nullable = false</span>
+<span class="nc" id="L129">                                }</span>
+                            )
+<span class="nc" id="L131">                        ) { backStackEntry -&gt;</span>
+<span class="nc bnc" id="L132" title="All 6 branches missed.">                            val userId = backStackEntry.arguments?.getLong(&quot;userId&quot;)?.takeIf { it != -1L }</span>
+<span class="nc bnc" id="L133" title="All 6 branches missed.">                            val videoId = backStackEntry.arguments?.getLong(&quot;videoId&quot;)?.takeIf { it != -1L }</span>
+<span class="nc bnc" id="L134" title="All 6 branches missed.">                            val playlistId = backStackEntry.arguments?.getLong(&quot;playlistId&quot;)?.takeIf { it != -1L }</span>
+
+<span class="nc" id="L136">                            val vm: VideoViewModel = koinViewModel(</span>
+<span class="nc" id="L137">                                viewModelStoreOwner = backStackEntry,</span>
+<span class="nc" id="L138">                                parameters = { parametersOf(userId, videoId, playlistId) }</span>
+                            )
+
+<span class="nc" id="L141">                            MainScreen(</span>
+<span class="nc" id="L142">                                navController = navController,</span>
+<span class="nc" id="L143">                                userId = userId,</span>
+<span class="nc" id="L144">                                playlistId = playlistId</span>
+<span class="nc" id="L145">                            ) {</span>
+<span class="nc" id="L146">                                VideoScreen(</span>
+<span class="nc" id="L147">                                    vm = vm,</span>
+<span class="nc" id="L148">                                    navController = navController</span>
+                                )
+<span class="nc" id="L150">                            }</span>
+<span class="nc" id="L151">                        }</span>
+
+<span class="nc" id="L153">                        composable(</span>
+<span class="nc" id="L154">                            route = Navigation.PLAYLISTS.route,</span>
+<span class="nc" id="L155">                            arguments = listOf(</span>
+<span class="nc" id="L156">                                navArgument(&quot;userId&quot;) {</span>
+<span class="nc" id="L157">                                    type = NavType.LongType</span>
+<span class="nc" id="L158">                                    defaultValue = -1L</span>
+<span class="nc" id="L159">                                    nullable = false</span>
+<span class="nc" id="L160">                                }</span>
+                            )
+<span class="nc" id="L162">                        ) { backStackEntry -&gt;</span>
+<span class="nc bnc" id="L163" title="All 6 branches missed.">                            val userId = backStackEntry.arguments?.getLong(&quot;userId&quot;)?.takeIf { it != -1L }</span>
+
+<span class="nc" id="L165">                            MainScreen(</span>
+<span class="nc" id="L166">                                navController = navController,</span>
+<span class="nc" id="L167">                                userId = userId</span>
+<span class="nc" id="L168">                            ) {</span>
+<span class="nc" id="L169">                                PlaylistScreen(</span>
+<span class="nc" id="L170">                                    vm = koinViewModel(</span>
+<span class="nc" id="L171">                                        viewModelStoreOwner = backStackEntry,</span>
+<span class="nc" id="L172">                                        parameters = { parametersOf(userId) }</span>
+                                    ),
+<span class="nc" id="L174">                                    navController = navController,</span>
+                                )
+<span class="nc" id="L176">                            }</span>
+<span class="nc" id="L177">                        }</span>
+
+<span class="nc" id="L179">                        composable(Navigation.PROFILE.route) {</span>
+<span class="nc" id="L180">                            MainScreen(</span>
+<span class="nc" id="L181">                                navController = navController,</span>
+<span class="nc" id="L182">                                userId = userId</span>
+<span class="nc" id="L183">                            ) {</span>
+<span class="nc" id="L184">                                ProfileScreen(</span>
+<span class="nc" id="L185">                                    vm = koinViewModel(),</span>
+<span class="nc" id="L186">                                    navController = navController</span>
+                                )
+<span class="nc" id="L188">                            }</span>
+<span class="nc" id="L189">                        }</span>
+<span class="nc" id="L190">                    }</span>
+<span class="nc" id="L191">                }</span>
+<span class="nc" id="L192">            }</span>
+<span class="nc" id="L193">        }</span>
+<span class="nc" id="L194">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

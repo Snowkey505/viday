@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RlsContext.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">infrastructure</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.security</a> &gt; <span class="el_source">RlsContext.kt</span></div><h1>RlsContext.kt</h1><pre class="source lang-java linenums">package com.vidayapi.security
+
+import com.vidayapi.model.Role
+import jakarta.servlet.http.HttpServletRequest
+import org.springframework.security.authentication.AnonymousAuthenticationToken
+import org.springframework.security.core.Authentication
+import org.springframework.security.core.context.SecurityContextHolder
+
+<span class="nc" id="L9">enum class PgRole(val sqlName: String) {</span>
+<span class="nc" id="L10">    GUEST(&quot;viday_guest&quot;),</span>
+<span class="nc" id="L11">    USER(&quot;viday_user&quot;),</span>
+<span class="nc" id="L12">    CREATOR(&quot;viday_creator&quot;),</span>
+<span class="nc" id="L13">    ADMIN(&quot;viday_admin&quot;),</span>
+<span class="nc" id="L14">    ANALYST(&quot;viday_analyst&quot;),</span>
+    ;
+
+    companion object {
+<span class="nc bnc" id="L18" title="All 5 branches missed.">        fun fromAppRole(role: Role): PgRole = when (role) {</span>
+<span class="nc" id="L19">            Role.GUEST -&gt; GUEST</span>
+<span class="nc" id="L20">            Role.USER -&gt; USER</span>
+<span class="nc" id="L21">            Role.CREATOR -&gt; CREATOR</span>
+<span class="nc" id="L22">            Role.ADMIN -&gt; ADMIN</span>
+<span class="nc" id="L23">            Role.ANALYST -&gt; ANALYST</span>
+<span class="nc" id="L24">        }</span>
+    }
+}
+
+<span class="nc" id="L28">data class RlsContext(</span>
+<span class="nc" id="L29">    val pgRole: PgRole,</span>
+<span class="nc" id="L30">    val userId: Int? = null,</span>
+<span class="nc" id="L31">) {</span>
+<span class="nc" id="L32">    fun cacheViewerKey(): String = when {</span>
+<span class="nc bnc" id="L33" title="All 2 branches missed.">        pgRole == PgRole.ADMIN -&gt; &quot;admin&quot;</span>
+<span class="nc bnc" id="L34" title="All 2 branches missed.">        userId == null -&gt; pgRole.name.lowercase()</span>
+<span class="nc" id="L35">        else -&gt; &quot;${pgRole.name.lowercase()}:$userId&quot;</span>
+<span class="nc" id="L36">    }</span>
+
+    companion object {
+<span class="nc" id="L39">        val GUEST = RlsContext(PgRole.GUEST)</span>
+<span class="nc" id="L40">        val REGISTRATION = RlsContext(PgRole.USER)</span>
+<span class="nc" id="L41">        val ADMIN = RlsContext(PgRole.ADMIN)</span>
+    }
+}
+
+object RlsContextHolder {
+<span class="nc" id="L46">    private val holder = ThreadLocal&lt;RlsContext?&gt;()</span>
+
+<span class="nc" id="L48">    fun get(): RlsContext? = holder.get()</span>
+
+    fun set(context: RlsContext?) {
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        if (context == null) {</span>
+<span class="nc" id="L52">            holder.remove()</span>
+        } else {
+<span class="nc" id="L54">            holder.set(context)</span>
+        }
+<span class="nc" id="L56">    }</span>
+
+    fun clear() {
+<span class="nc" id="L59">        holder.remove()</span>
+<span class="nc" id="L60">    }</span>
+
+    fun &lt;T&gt; withContext(context: RlsContext, block: () -&gt; T): T {
+<span class="nc" id="L63">        set(context)</span>
+<span class="nc" id="L64">        try {</span>
+<span class="nc" id="L65">            return block()</span>
+        } finally {
+<span class="nc" id="L67">            clear()</span>
+        }
+    }
+}
+
+object RlsContextResolver {
+<span class="nc" id="L73">    fun guestBootstrap(): RlsContext = RlsContext.GUEST</span>
+
+    fun resolve(request: HttpServletRequest): RlsContext {
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        if (isRegisterRequest(request)) {</span>
+<span class="nc" id="L77">            return RlsContext.REGISTRATION</span>
+        }
+
+<span class="nc" id="L80">        val authentication = SecurityContextHolder.getContext().authentication</span>
+<span class="nc bnc" id="L81" title="All 4 branches missed.">        if (authentication == null || authentication is AnonymousAuthenticationToken) {</span>
+<span class="nc" id="L82">            return RlsContext.GUEST</span>
+        }
+
+<span class="nc" id="L85">        val userId = authentication.name.toIntOrNull()</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        val roleName = authentication.authorities</span>
+<span class="nc" id="L87">            .firstOrNull()</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">            ?.authority</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">            ?.removePrefix(&quot;ROLE_&quot;)</span>
+<span class="nc" id="L90">            ?: return RlsContext.GUEST</span>
+
+<span class="nc bnc" id="L92" title="All 4 branches missed.">        val appRole = runCatching { Role.valueOf(roleName) }.getOrNull() ?: return RlsContext.GUEST</span>
+<span class="nc" id="L93">        return RlsContext(PgRole.fromAppRole(appRole), userId)</span>
+    }
+
+    fun resolveCacheViewerKey(): String =
+<span class="nc bnc" id="L97" title="All 4 branches missed.">        get()?.cacheViewerKey() ?: RlsContext.GUEST.cacheViewerKey()</span>
+
+    fun resolveCacheViewerKey(authentication: Authentication?): String {
+<span class="nc bnc" id="L100" title="All 6 branches missed.">        val context = get() ?: authentication?.let { auth -&gt;</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">            if (auth is AnonymousAuthenticationToken) {</span>
+<span class="nc" id="L102">                RlsContext.GUEST</span>
+            } else {
+<span class="nc" id="L104">                val userId = auth.name.toIntOrNull()</span>
+<span class="nc bnc" id="L105" title="All 4 branches missed.">                val roleName = auth.authorities.firstOrNull()?.authority?.removePrefix(&quot;ROLE_&quot;)</span>
+<span class="nc bnc" id="L106" title="All 4 branches missed.">                val appRole = roleName?.let { runCatching { Role.valueOf(it) }.getOrNull() }</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">                if (appRole == null) RlsContext.GUEST else RlsContext(PgRole.fromAppRole(appRole), userId)</span>
+<span class="nc" id="L108">            }</span>
+<span class="nc" id="L109">        } ?: RlsContext.GUEST</span>
+<span class="nc" id="L110">        return context.cacheViewerKey()</span>
+    }
+
+<span class="nc" id="L113">    private fun get(): RlsContext? = RlsContextHolder.get()</span>
+
+    private fun isRegisterRequest(request: HttpServletRequest): Boolean {
+<span class="nc bnc" id="L116" title="All 6 branches missed.">        val path = request.servletPath.takeIf { it.isNotBlank() } ?: request.requestURI</span>
+<span class="nc" id="L117">        return path.removeSuffix(&quot;/&quot;).endsWith(&quot;/api/auth/register&quot;)</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

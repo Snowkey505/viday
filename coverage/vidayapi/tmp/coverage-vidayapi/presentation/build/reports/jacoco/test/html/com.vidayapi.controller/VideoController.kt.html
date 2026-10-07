@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VideoController.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">presentation</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.controller</a> &gt; <span class="el_source">VideoController.kt</span></div><h1>VideoController.kt</h1><pre class="source lang-java linenums">package com.vidayapi.controller
+
+import com.vidayapi.cache.CacheKeys
+import com.vidayapi.cache.CacheTtl
+import com.vidayapi.dto.requests.UpdateVideoRequest
+import com.vidayapi.dto.requests.UploadVideoRequest
+import com.vidayapi.dto.responses.VideoResponse
+import com.vidayapi.model.AccessType
+import com.vidayapi.model.Error
+import com.vidayapi.port.CachePort
+import com.vidayapi.port.ContentRepository
+import com.vidayapi.service.VideoResponseMapper
+import com.vidayapi.usecase.DeleteVideoUseCase
+import com.vidayapi.usecase.ListVideosUseCase
+import com.vidayapi.usecase.UpdateVideoUseCase
+import com.vidayapi.usecase.UploadVideoUseCase
+import com.vidayapi.security.RlsContextResolver
+import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.core.userdetails.UserDetails
+import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartFile
+import tools.jackson.databind.ObjectMapper
+
+<span class="nc" id="L26">@RestController</span>
+@RequestMapping(&quot;/api/videos&quot;)
+<span class="nc" id="L28">class VideoController(</span>
+<span class="nc" id="L29">    private val uploadVideoUseCase: UploadVideoUseCase,</span>
+<span class="nc" id="L30">    private val deleteVideoUseCase: DeleteVideoUseCase,</span>
+<span class="nc" id="L31">    private val updateVideoUseCase: UpdateVideoUseCase,</span>
+<span class="nc" id="L32">    private val listVideosUseCase: ListVideosUseCase,</span>
+<span class="nc" id="L33">    private val contentRepository: ContentRepository,</span>
+<span class="nc" id="L34">    private val videoResponseMapper: VideoResponseMapper,</span>
+<span class="nc" id="L35">    private val cachePort: CachePort,</span>
+<span class="nc" id="L36">    private val objectMapper: ObjectMapper,</span>
+) {
+    @GetMapping
+    fun getVideos(
+        @RequestParam(required = false) userId: Int?,
+        @RequestParam(required = false) playlistId: Int?,
+        @RequestParam(defaultValue = &quot;0&quot;) page: Int,
+        @RequestParam(defaultValue = &quot;20&quot;) size: Int,
+    ): ResponseEntity&lt;Any&gt; =
+<span class="nc bnc" id="L45" title="All 2 branches missed.">        listVideosUseCase.execute(userId, playlistId, page, size).fold(</span>
+<span class="nc" id="L46">            onSuccess = { ResponseEntity.ok(it) },</span>
+            onFailure = { error -&gt;
+<span class="nc" id="L48">                when (error) {</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">                    is Error.Unauthorized -&gt; ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Unauthorized&quot;))</span>
+<span class="nc" id="L50">                    else -&gt; ResponseEntity.status(500).body(mapOf(&quot;error&quot; to &quot;Failed to fetch videos&quot;))</span>
+<span class="nc" id="L51">                }</span>
+            }
+<span class="nc" id="L53">        )</span>
+
+    @DeleteMapping(&quot;/{id}&quot;)
+    fun deleteVideo(
+        @PathVariable id: Int,
+        @AuthenticationPrincipal userDetails: UserDetails?,
+    ): ResponseEntity&lt;Any&gt; {
+<span class="nc bnc" id="L60" title="All 6 branches missed.">        val userId = userDetails?.username?.toIntOrNull()</span>
+<span class="nc" id="L61">            ?: return ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Unauthorized&quot;))</span>
+
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        return deleteVideoUseCase.execute(id, userId).fold(</span>
+<span class="nc" id="L64">            onSuccess = { ResponseEntity.noContent().build() },</span>
+            onFailure = { error -&gt;
+<span class="nc" id="L66">                when (error) {</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">                    is Error.NotFound -&gt; ResponseEntity.notFound().build()</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">                    is Error.NotVideoOwner -&gt;</span>
+<span class="nc" id="L69">                        ResponseEntity.status(403).body(mapOf(&quot;error&quot; to &quot;You are not the owner of this video&quot;))</span>
+<span class="nc" id="L70">                    else -&gt; ResponseEntity.internalServerError().body(mapOf(&quot;error&quot; to &quot;Failed to delete video&quot;))</span>
+<span class="nc" id="L71">                }</span>
+            }
+        )
+    }
+
+    @PostMapping(&quot;/upload&quot;, consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    fun uploadVideo(
+        @RequestParam(&quot;file&quot;) file: MultipartFile,
+        @RequestParam(&quot;preview&quot;) preview: MultipartFile,
+        @RequestParam(&quot;name&quot;) name: String,
+        @RequestParam(&quot;description&quot;, required = false) description: String?,
+        @RequestParam(&quot;accessType&quot;, defaultValue = &quot;PUBLIC&quot;) accessType: AccessType,
+        @AuthenticationPrincipal userDetails: UserDetails?,
+    ): ResponseEntity&lt;Any&gt; {
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        if (userDetails == null) {</span>
+<span class="nc" id="L86">            return ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Unauthorized&quot;))</span>
+        }
+
+<span class="nc" id="L89">        val request = UploadVideoRequest(</span>
+<span class="nc" id="L90">            name = name,</span>
+<span class="nc" id="L91">            description = description,</span>
+<span class="nc" id="L92">            accessType = accessType,</span>
+<span class="nc" id="L93">            file = file,</span>
+<span class="nc" id="L94">            preview = preview,</span>
+        )
+
+<span class="nc" id="L97">        val userId = userDetails.username.toInt()</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">        return uploadVideoUseCase.execute(request, userId).fold(</span>
+<span class="nc" id="L99">            onSuccess = { video -&gt; ResponseEntity.ok(videoResponseMapper.toResponse(video)) },</span>
+            onFailure = { error -&gt;
+<span class="nc" id="L101">                when (error) {</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">                    is Error.InvalidInput -&gt; ResponseEntity.badRequest().body(&quot;Invalid video file&quot;)</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">                    is Error.StorageFailure -&gt; ResponseEntity.internalServerError().body(&quot;Storage error occurred&quot;)</span>
+<span class="nc" id="L104">                    else -&gt; ResponseEntity.internalServerError().body(&quot;Unknown error&quot;)</span>
+<span class="nc" id="L105">                }</span>
+            }
+        )
+    }
+
+    @GetMapping(&quot;/{id}&quot;)
+    fun getVideo(@PathVariable id: Int): ResponseEntity&lt;Any&gt; {
+<span class="nc" id="L112">        val cacheKey = CacheKeys.video(id, RlsContextResolver.resolveCacheViewerKey())</span>
+<span class="nc bnc" id="L113" title="All 2 branches missed.">        cachePort.get(cacheKey)?.let { cached -&gt;</span>
+<span class="nc" id="L114">            return ResponseEntity.ok(objectMapper.readValue(cached, VideoResponse::class.java))</span>
+        }
+
+<span class="nc bnc" id="L117" title="All 2 branches missed.">        return contentRepository.findVideoByContentId(id).fold(</span>
+            onSuccess = { video -&gt;
+<span class="nc" id="L119">                val response = videoResponseMapper.toResponse(video)</span>
+<span class="nc" id="L120">                cachePort.set(cacheKey, objectMapper.writeValueAsString(response), CacheTtl.VIDEO_SEC)</span>
+<span class="nc" id="L121">                ResponseEntity.ok(response)</span>
+            },
+            onFailure = { error -&gt;
+<span class="nc" id="L124">                when (error) {</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">                    is Error.NotFound -&gt; ResponseEntity.notFound().build()</span>
+<span class="nc" id="L126">                    else -&gt; ResponseEntity.internalServerError().body(&quot;Error occurred&quot;)</span>
+<span class="nc" id="L127">                }</span>
+            }
+        )
+    }
+
+    @PutMapping(&quot;/{id}&quot;)
+    fun updateVideo(
+        @PathVariable id: Int,
+        @RequestParam(required = false) name: String?,
+        @RequestParam(required = false) description: String?,
+        @RequestParam(required = false, defaultValue = &quot;PUBLIC&quot;) accessType: AccessType?,
+        @AuthenticationPrincipal userDetails: UserDetails?,
+    ): ResponseEntity&lt;Any&gt; {
+<span class="nc bnc" id="L140" title="All 6 branches missed.">        val userId = userDetails?.username?.toIntOrNull()</span>
+<span class="nc" id="L141">            ?: return ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Unauthorized&quot;))</span>
+
+<span class="nc" id="L143">        val request = UpdateVideoRequest(</span>
+<span class="nc" id="L144">            name = name,</span>
+<span class="nc" id="L145">            description = description,</span>
+<span class="nc" id="L146">            accessType = accessType,</span>
+        )
+
+<span class="nc bnc" id="L149" title="All 2 branches missed.">        return updateVideoUseCase.execute(id, userId, request).fold(</span>
+            onSuccess = { video -&gt;
+<span class="nc" id="L151">                cachePort.deleteByPrefix(CacheKeys.videoPrefix(id))</span>
+<span class="nc" id="L152">                ResponseEntity.ok(videoResponseMapper.toResponse(video))</span>
+            },
+            onFailure = { error -&gt;
+<span class="nc" id="L155">                when (error) {</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">                    is Error.NotFound -&gt; ResponseEntity.notFound().build()</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">                    is Error.NotVideoOwner -&gt;</span>
+<span class="nc" id="L158">                        ResponseEntity.status(403).body(mapOf(&quot;error&quot; to &quot;You are not the owner of this video&quot;))</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">                    is Error.InvalidInput -&gt;</span>
+<span class="nc" id="L160">                        ResponseEntity.badRequest().body(mapOf(&quot;error&quot; to &quot;Invalid input data&quot;))</span>
+                    else -&gt;
+<span class="nc" id="L162">                        ResponseEntity.internalServerError().body(mapOf(&quot;error&quot; to &quot;Failed to update video&quot;))</span>
+<span class="nc" id="L163">                }</span>
+            }
+        )
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

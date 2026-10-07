@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReferenceDataInitializer.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">infrastructure</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.config</a> &gt; <span class="el_source">ReferenceDataInitializer.kt</span></div><h1>ReferenceDataInitializer.kt</h1><pre class="source lang-java linenums">package com.vidayapi.config
+
+import com.vidayapi.security.RlsContext
+import com.vidayapi.security.RlsContextHolder
+import org.springframework.boot.ApplicationRunner
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.jdbc.core.JdbcTemplate
+
+<span class="nc" id="L10">@Configuration(proxyBeanMethods = false)</span>
+class ReferenceDataInitializer {
+    @Bean
+    fun referenceDataRunner(jdbcTemplate: JdbcTemplate): ApplicationRunner {
+<span class="nc" id="L14">        return ApplicationRunner {</span>
+<span class="nc" id="L15">            RlsContextHolder.withContext(RlsContext.ADMIN) {</span>
+<span class="nc" id="L16">                jdbcTemplate.update(</span>
+                    &quot;&quot;&quot;
+                    INSERT INTO viday.role(id, name)
+                    VALUES (1, 'GUEST'), (2, 'USER'), (3, 'CREATOR'), (4, 'ADMIN'), (5, 'ANALYST')
+                    ON CONFLICT (id) DO NOTHING
+<span class="nc" id="L21">                    &quot;&quot;&quot;.trimIndent()</span>
+                )
+
+<span class="nc" id="L24">                jdbcTemplate.update(</span>
+                    &quot;&quot;&quot;
+                    INSERT INTO viday.access_type(id, name)
+                    VALUES (1, 'PUBLIC'), (2, 'PRIVATE'), (3, 'FOLLOWERS')
+                    ON CONFLICT (id) DO NOTHING
+<span class="nc" id="L29">                    &quot;&quot;&quot;.trimIndent()</span>
+                )
+
+<span class="nc" id="L32">                jdbcTemplate.update(</span>
+                    &quot;&quot;&quot;
+                    INSERT INTO viday.content_type(id, name)
+                    VALUES (1, 'VIDEO'), (2, 'STREAM')
+                    ON CONFLICT (id) DO NOTHING
+<span class="nc" id="L37">                    &quot;&quot;&quot;.trimIndent()</span>
+                )
+
+<span class="nc" id="L40">                jdbcTemplate.update(</span>
+                    &quot;&quot;&quot;
+                    INSERT INTO viday.stream_status(id, name)
+                    VALUES (1, 'SCHEDULED'), (2, 'LIVE'), (3, 'ENDED'), (4, 'ERROR')
+                    ON CONFLICT (id) DO NOTHING
+<span class="nc" id="L45">                    &quot;&quot;&quot;.trimIndent()</span>
+                )
+<span class="nc" id="L47">            }</span>
+<span class="nc" id="L48">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

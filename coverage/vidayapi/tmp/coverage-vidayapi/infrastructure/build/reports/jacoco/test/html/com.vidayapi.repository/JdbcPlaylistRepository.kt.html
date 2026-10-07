@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JdbcPlaylistRepository.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">infrastructure</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.repository</a> &gt; <span class="el_source">JdbcPlaylistRepository.kt</span></div><h1>JdbcPlaylistRepository.kt</h1><pre class="source lang-java linenums">package com.vidayapi.repository
+
+import com.vidayapi.model.AccessType
+import com.vidayapi.model.Error
+import com.vidayapi.model.Page
+import com.vidayapi.model.PageRequest
+import com.vidayapi.model.Result
+import com.vidayapi.model.Playlist
+import com.vidayapi.model.PlaylistItem
+import com.vidayapi.model.left
+import com.vidayapi.model.right
+import com.vidayapi.port.PlaylistRepository
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.springframework.dao.DataAccessException
+import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.dao.DuplicateKeyException
+import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.jdbc.core.RowMapper
+import org.springframework.stereotype.Repository
+import java.time.OffsetDateTime
+
+<span class="fc" id="L23">@Repository</span>
+<span class="pc" id="L24">class JdbcPlaylistRepository(</span>
+<span class="fc" id="L25">    private val jdbcTemplate: JdbcTemplate,</span>
+<span class="pc" id="L26">    private val logger: Logger = LoggerFactory.getLogger(JdbcPlaylistRepository::class.java),</span>
+<span class="nc" id="L27">) : PlaylistRepository {</span>
+
+<span class="fc" id="L29">    private val playlistRowMapper = RowMapper { rs, _ -&gt;</span>
+<span class="fc" id="L30">        Playlist(</span>
+<span class="fc" id="L31">            id = rs.getInt(&quot;id&quot;),</span>
+<span class="fc" id="L32">            name = rs.getString(&quot;name&quot;),</span>
+<span class="fc" id="L33">            ownerId = rs.getInt(&quot;owner_id&quot;),</span>
+<span class="fc" id="L34">            accessType = AccessType.valueOf(rs.getString(&quot;access_type_name&quot;)),</span>
+<span class="fc" id="L35">            createdAt = rs.getObject(&quot;created_at&quot;, OffsetDateTime::class.java)</span>
+<span class="fc" id="L36">        )</span>
+    }
+
+    override fun findById(id: Int): Result&lt;Playlist&gt; {
+<span class="fc" id="L40">        val sql = &quot;&quot;&quot;</span>
+            SELECT p.id, p.name, p.owner_id, p.created_at, at.name AS access_type_name
+            FROM viday.playlist p
+            JOIN viday.access_type at ON p.access_type_id = at.id
+            WHERE p.id = ?
+<span class="fc" id="L45">        &quot;&quot;&quot;.trimIndent()</span>
+<span class="fc" id="L46">        return try {</span>
+<span class="fc" id="L47">            val playlist = jdbcTemplate.queryForObject(sql, playlistRowMapper, id)</span>
+<span class="fc" id="L48">            playlist?.right() ?: Error.NotFound.left()</span>
+<span class="nc" id="L49">        } catch (e: DataAccessException) {</span>
+<span class="pc" id="L50">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun save(playlist: Playlist): Result&lt;Playlist&gt; {
+<span class="fc" id="L55">        val sql = &quot;&quot;&quot;</span>
+            INSERT INTO viday.playlist (name, owner_id, access_type_id, created_at)
+            SELECT ?, ?, id, ?
+            FROM viday.access_type
+            WHERE name = ?
+            RETURNING id
+<span class="fc" id="L61">        &quot;&quot;&quot;.trimIndent()</span>
+
+<span class="fc" id="L63">        return try {</span>
+<span class="fc" id="L64">            val generatedId = jdbcTemplate.query(sql, { rs, _ -&gt; rs.getInt(&quot;id&quot;) },</span>
+<span class="fc" id="L65">                playlist.name,</span>
+<span class="fc" id="L66">                playlist.ownerId,</span>
+<span class="fc" id="L67">                playlist.createdAt,</span>
+<span class="fc" id="L68">                playlist.accessType.name</span>
+<span class="fc" id="L69">            ).firstOrNull()</span>
+
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">            if (generatedId == null) {</span>
+<span class="nc" id="L72">                logger.warn(&quot;Access type '{}' not found in viday.access_type&quot;, playlist.accessType.name)</span>
+<span class="nc" id="L73">                return Error.ValidationFailed(&quot;&quot;).left()</span>
+            }
+
+<span class="fc" id="L76">            playlist.copy(id = generatedId).right()</span>
+<span class="nc" id="L77">        } catch (e: DataIntegrityViolationException) {</span>
+<span class="nc bnc" id="L78" title="All 4 branches missed.">            logger.error(&quot;DB Integrity Violation {}&quot;, e.rootCause?.message ?: e.message)</span>
+<span class="nc" id="L79">            Error.StorageFailure.left()</span>
+<span class="nc" id="L80">        } catch (e: DataAccessException) {</span>
+<span class="nc bnc" id="L81" title="All 4 branches missed.">            logger.error(&quot;DB Error {}: {}&quot;, e.javaClass.simpleName, e.rootCause?.message ?: e.message)</span>
+<span class="pc" id="L82">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun addContentToPlaylist(contentId: Int, playlistId: Int, position: Int?): Result&lt;PlaylistItem&gt; {
+<span class="pc bpc" id="L87" title="3 of 4 branches missed.">        val finalPosition = if (position == null || position == -1) {</span>
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">            countItemsInPlaylist(playlistId).fold(</span>
+<span class="fc" id="L89">                onSuccess = { it + 1 },</span>
+<span class="nc" id="L90">                onFailure = { return Result.failure(it) }</span>
+            )
+        } else {
+<span class="nc" id="L93">            position</span>
+        }
+
+<span class="fc" id="L96">        val sql = &quot;&quot;&quot;</span>
+        INSERT INTO viday.content_to_playlist (content_id, playlist_id, position, added_at)
+        VALUES (?, ?, ?, ?)
+<span class="fc" id="L99">    &quot;&quot;&quot;.trimIndent()</span>
+
+<span class="fc" id="L101">        return try {</span>
+<span class="fc" id="L102">            jdbcTemplate.update(sql, contentId, playlistId, finalPosition, OffsetDateTime.now())</span>
+<span class="fc" id="L103">            PlaylistItem(contentId, playlistId, finalPosition).right()</span>
+<span class="nc" id="L104">        } catch (e: DuplicateKeyException) {</span>
+<span class="nc" id="L105">            Error.PlaylistPositionConflict.left()</span>
+<span class="nc" id="L106">        } catch (e: DataAccessException) {</span>
+<span class="pc" id="L107">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun countItemsInPlaylist(playlistId: Int): Result&lt;Int&gt; {
+<span class="fc" id="L112">        val sql = &quot;SELECT COUNT(*) FROM viday.content_to_playlist WHERE playlist_id = ?&quot;</span>
+<span class="fc" id="L113">        return try {</span>
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">            val count = jdbcTemplate.queryForObject(sql, Int::class.java, playlistId) ?: 0</span>
+<span class="fc" id="L115">            count.right()</span>
+<span class="nc" id="L116">        } catch (e: DataAccessException) {</span>
+<span class="pc" id="L117">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun findByOwnerId(ownerId: Int): Result&lt;List&lt;Playlist&gt;&gt; {
+<span class="nc" id="L122">        val sql = &quot;&quot;&quot;</span>
+            SELECT p.id, p.name, p.owner_id, p.created_at, at.name AS access_type_name
+            FROM viday.playlist p
+            JOIN viday.access_type at ON p.access_type_id = at.id
+            WHERE p.owner_id = ?
+<span class="nc" id="L127">        &quot;&quot;&quot;.trimIndent()</span>
+<span class="nc" id="L128">        return try {</span>
+<span class="nc" id="L129">            val list = jdbcTemplate.query(sql, playlistRowMapper, ownerId)</span>
+<span class="nc" id="L130">            list.right()</span>
+<span class="nc" id="L131">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L132">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun findPlaylistsByOwnerIdPage(ownerId: Int, pageRequest: PageRequest): Result&lt;Page&lt;Playlist&gt;&gt; {
+<span class="nc" id="L137">        val countSql = &quot;SELECT COUNT(*) FROM viday.playlist WHERE owner_id = ?&quot;</span>
+<span class="nc" id="L138">        val dataSql = &quot;&quot;&quot;</span>
+            SELECT p.id, p.name, p.owner_id, p.created_at, at.name AS access_type_name
+            FROM viday.playlist p
+            JOIN viday.access_type at ON p.access_type_id = at.id
+            WHERE p.owner_id = ?
+            ORDER BY p.created_at DESC
+            LIMIT ? OFFSET ?
+<span class="nc" id="L145">        &quot;&quot;&quot;.trimIndent()</span>
+<span class="nc" id="L146">        return queryPlaylistPage(countSql, arrayOf(ownerId), dataSql, pageRequest, ownerId)</span>
+    }
+
+    override fun findPublicPlaylistsPage(pageRequest: PageRequest): Result&lt;Page&lt;Playlist&gt;&gt; {
+<span class="nc" id="L150">        val countSql = &quot;&quot;&quot;</span>
+            SELECT COUNT(*)
+            FROM viday.playlist p
+            JOIN viday.access_type at ON p.access_type_id = at.id
+            WHERE at.name = 'PUBLIC'
+<span class="nc" id="L155">        &quot;&quot;&quot;.trimIndent()</span>
+<span class="nc" id="L156">        val dataSql = &quot;&quot;&quot;</span>
+            SELECT p.id, p.name, p.owner_id, p.created_at, at.name AS access_type_name
+            FROM viday.playlist p
+            JOIN viday.access_type at ON p.access_type_id = at.id
+            WHERE at.name = 'PUBLIC'
+            ORDER BY p.created_at DESC
+            LIMIT ? OFFSET ?
+<span class="nc" id="L163">        &quot;&quot;&quot;.trimIndent()</span>
+<span class="nc" id="L164">        return queryPlaylistPage(countSql, emptyArray(), dataSql, pageRequest)</span>
+    }
+
+    private fun queryPlaylistPage(
+        countSql: String,
+        countArgs: Array&lt;Any?&gt;,
+        dataSql: String,
+        pageRequest: PageRequest,
+        vararg dataFilterArgs: Any?,
+    ): Result&lt;Page&lt;Playlist&gt;&gt; {
+<span class="nc" id="L174">        return try {</span>
+<span class="nc bnc" id="L175" title="All 2 branches missed.">            val total = jdbcTemplate.queryForObject(countSql, Long::class.java, *countArgs) ?: 0L</span>
+<span class="nc" id="L176">            val queryArgs = dataFilterArgs.toMutableList()</span>
+<span class="nc" id="L177">            queryArgs.add(pageRequest.size)</span>
+<span class="nc" id="L178">            queryArgs.add(pageRequest.offset)</span>
+<span class="nc" id="L179">            val items = jdbcTemplate.query(dataSql, playlistRowMapper, *queryArgs.toTypedArray())</span>
+<span class="nc" id="L180">            Page(</span>
+<span class="nc" id="L181">                items = items,</span>
+<span class="nc" id="L182">                page = pageRequest.page,</span>
+<span class="nc" id="L183">                size = pageRequest.size,</span>
+<span class="nc" id="L184">                totalElements = total,</span>
+<span class="nc" id="L185">            ).right()</span>
+<span class="nc" id="L186">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L187">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun findPublicPlaylists(): Result&lt;List&lt;Playlist&gt;&gt; {
+<span class="nc" id="L192">        val sql = &quot;&quot;&quot;</span>
+            SELECT p.id, p.name, p.owner_id, p.created_at, at.name AS access_type_name
+            FROM viday.playlist p
+            JOIN viday.access_type at ON p.access_type_id = at.id
+            WHERE at.name = 'PUBLIC'
+<span class="nc" id="L197">        &quot;&quot;&quot;.trimIndent()</span>
+<span class="nc" id="L198">        return try {</span>
+<span class="nc" id="L199">            val list = jdbcTemplate.query(sql, playlistRowMapper)</span>
+<span class="nc" id="L200">            list.right()</span>
+<span class="nc" id="L201">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L202">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun existsByNameAndOwnerId(name: String, ownerId: Int): Result&lt;Boolean&gt; {
+<span class="fc" id="L207">        val sql = &quot;&quot;&quot;</span>
+            SELECT COUNT(*) FROM viday.playlist 
+            WHERE name = ? AND owner_id = ?
+<span class="fc" id="L210">        &quot;&quot;&quot;.trimIndent()</span>
+<span class="fc" id="L211">        return try {</span>
+<span class="pc bpc" id="L212" title="1 of 2 branches missed.">            val count = jdbcTemplate.queryForObject(sql, Int::class.java, name, ownerId) ?: 0</span>
+<span class="fc bfc" id="L213" title="All 2 branches covered.">            (count &gt; 0).right()</span>
+<span class="nc" id="L214">        } catch (e: DataAccessException) {</span>
+<span class="pc" id="L215">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun deletePlaylist(playlistId: Int, ownerId: Int): Result&lt;Unit&gt; =
+<span class="nc bnc" id="L220" title="All 2 branches missed.">        findById(playlistId).fold(</span>
+            onSuccess = { playlist -&gt;
+<span class="nc bnc" id="L222" title="All 2 branches missed.">                if (playlist.ownerId != ownerId) {</span>
+<span class="nc" id="L223">                    Error.Forbidden.left()</span>
+                } else {
+<span class="nc" id="L225">                    try {</span>
+<span class="nc" id="L226">                        val sql = &quot;DELETE FROM viday.playlist WHERE id = ? AND owner_id = ?&quot;</span>
+<span class="nc" id="L227">                        val rows = jdbcTemplate.update(sql, playlistId, ownerId)</span>
+<span class="nc bnc" id="L228" title="All 2 branches missed.">                        if (rows &gt; 0) Unit.right() else Error.NotFound.left()</span>
+<span class="nc" id="L229">                    } catch (e: DataAccessException) {</span>
+<span class="nc" id="L230">                        Error.StorageFailure.left()</span>
+                    }
+<span class="nc" id="L232">                }</span>
+            },
+<span class="nc" id="L234">            onFailure = { Result.failure(it) }</span>
+<span class="nc" id="L235">        )</span>
+
+    override fun removeContentFromPlaylist(contentId: Int, playlistId: Int): Result&lt;Unit&gt; {
+<span class="nc" id="L238">        val sql =</span>
+<span class="nc" id="L239">            &quot;DELETE FROM viday.content_to_playlist WHERE content_id = ? AND playlist_id = ?&quot;</span>
+<span class="nc" id="L240">        return try {</span>
+<span class="nc" id="L241">            val rows = jdbcTemplate.update(sql, contentId, playlistId)</span>
+<span class="nc bnc" id="L242" title="All 2 branches missed.">            if (rows &gt; 0) Unit.right() else Error.NotFound.left()</span>
+<span class="nc" id="L243">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L244">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun deleteByIdAsAdmin(playlistId: Int): Result&lt;Unit&gt; {
+<span class="nc" id="L249">        val sql = &quot;DELETE FROM viday.playlist WHERE id = ?&quot;</span>
+<span class="nc" id="L250">        return try {</span>
+<span class="nc" id="L251">            val rows = jdbcTemplate.update(sql, playlistId)</span>
+<span class="nc bnc" id="L252" title="All 2 branches missed.">            if (rows &gt; 0) Unit.right() else Error.NotFound.left()</span>
+<span class="nc" id="L253">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L254">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun findAvailablePlaylists(currentUserId: Int?): Result&lt;List&lt;Playlist&gt;&gt; {
+<span class="nc bnc" id="L259" title="All 2 branches missed.">        val sql = if (currentUserId != null) {</span>
+            &quot;&quot;&quot;
+            SELECT DISTINCT p.id, p.name, p.owner_id, p.created_at, at.name AS access_type_name
+            FROM viday.playlist p
+            JOIN viday.access_type at ON p.access_type_id = at.id
+            WHERE 
+                -- 1. Свои плейлисты
+                p.owner_id = ?
+                
+                UNION
+                
+                -- 2. Публичные плейлисты других пользователей
+                SELECT p.id, p.name, p.owner_id, p.created_at, at.name AS access_type_name
+                FROM viday.playlist p
+                JOIN viday.access_type at ON p.access_type_id = at.id
+                WHERE at.name = 'PUBLIC' AND p.owner_id != ?
+                
+                UNION
+                
+                -- 3. Плейлисты с доступом для подписчиков (если текущий пользователь подписан)
+                SELECT p.id, p.name, p.owner_id, p.created_at, at.name AS access_type_name
+                FROM viday.playlist p
+                JOIN viday.access_type at ON p.access_type_id = at.id
+                INNER JOIN viday.user_follows uf ON uf.followed_user_id = p.owner_id
+                WHERE at.name = 'SUBSCRIBERS_ONLY' 
+                  AND uf.following_user_id = ?
+                  AND p.owner_id != ?
+<span class="nc" id="L286">        &quot;&quot;&quot;.trimIndent()</span>
+        } else {
+            &quot;&quot;&quot;
+            -- Для неавторизованных пользователей только публичные плейлисты
+            SELECT p.id, p.name, p.owner_id, p.created_at, at.name AS access_type_name
+            FROM viday.playlist p
+            JOIN viday.access_type at ON p.access_type_id = at.id
+            WHERE at.name = 'PUBLIC'
+<span class="nc" id="L294">        &quot;&quot;&quot;.trimIndent()</span>
+        }
+
+<span class="nc" id="L297">        return try {</span>
+<span class="nc bnc" id="L298" title="All 2 branches missed.">            val playlists = if (currentUserId != null) {</span>
+<span class="nc" id="L299">                jdbcTemplate.query(sql, playlistRowMapper, currentUserId, currentUserId, currentUserId, currentUserId)</span>
+            } else {
+<span class="nc" id="L301">                jdbcTemplate.query(sql, playlistRowMapper)</span>
+            }
+<span class="nc" id="L303">            playlists.right()</span>
+<span class="nc" id="L304">        } catch (e: DataAccessException) {</span>
+<span class="nc bnc" id="L305" title="All 4 branches missed.">            logger.error(&quot;DB Error {}: {}&quot;, e.javaClass.simpleName, e.rootCause?.message ?: e.message)</span>
+<span class="nc" id="L306">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun updatePlaylist(playlist: Playlist): Result&lt;Playlist&gt; {
+<span class="nc bnc" id="L311" title="All 2 branches missed.">        val existingPlaylist = findById(playlist.id!!).fold(</span>
+<span class="nc" id="L312">            onSuccess = { it },</span>
+<span class="nc" id="L313">            onFailure = { return Error.NotFound.left() }</span>
+        )
+
+<span class="nc bnc" id="L316" title="All 2 branches missed.">        if (existingPlaylist.ownerId != playlist.ownerId) {</span>
+<span class="nc" id="L317">            return Error.Forbidden.left()</span>
+        }
+
+<span class="nc" id="L320">        val sql = &quot;&quot;&quot;</span>
+        UPDATE viday.playlist 
+        SET name = ?, 
+            access_type_id = (SELECT id FROM viday.access_type WHERE name = ?)
+        WHERE id = ? AND owner_id = ?
+<span class="nc" id="L325">    &quot;&quot;&quot;.trimIndent()</span>
+
+<span class="nc" id="L327">        return try {</span>
+<span class="nc" id="L328">            val rowsAffected = jdbcTemplate.update(</span>
+<span class="nc" id="L329">                sql,</span>
+<span class="nc" id="L330">                playlist.name,</span>
+<span class="nc" id="L331">                playlist.accessType.name,</span>
+<span class="nc" id="L332">                playlist.id,</span>
+<span class="nc" id="L333">                playlist.ownerId</span>
+            )
+<span class="nc bnc" id="L335" title="All 2 branches missed.">            if (rowsAffected == 0) Error.NotFound.left() else playlist.right()</span>
+<span class="nc" id="L336">        } catch (e: DuplicateKeyException) {</span>
+<span class="nc" id="L337">            Error.AlreadyExists.left()</span>
+<span class="nc" id="L338">        } catch (e: DataAccessException) {</span>
+<span class="nc bnc" id="L339" title="All 4 branches missed.">            logger.error(&quot;DB Error {}: {}&quot;, e.javaClass.simpleName, e.rootCause?.message ?: e.message)</span>
+<span class="nc" id="L340">            Error.StorageFailure.left()</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

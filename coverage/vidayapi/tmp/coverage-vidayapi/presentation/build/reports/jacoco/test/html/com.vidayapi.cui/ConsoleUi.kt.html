@@ -1,0 +1,634 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConsoleUi.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">presentation</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.cui</a> &gt; <span class="el_source">ConsoleUi.kt</span></div><h1>ConsoleUi.kt</h1><pre class="source lang-java linenums">package com.vidayapi.cui
+
+import com.vidayapi.dto.requests.UploadVideoRequest
+import com.vidayapi.model.AccessType
+import com.vidayapi.model.Error
+import com.vidayapi.model.fold
+import com.vidayapi.port.PlaylistRepository
+import com.vidayapi.port.UserRepository
+import com.vidayapi.usecase.CreatePlaylistUseCase
+import com.vidayapi.usecase.RegisterUserUseCase
+import com.vidayapi.usecase.UploadVideoUseCase
+import org.springframework.boot.CommandLineRunner
+import org.springframework.stereotype.Component
+import org.springframework.mock.web.MockMultipartFile
+import java.io.File
+import java.io.FileInputStream
+import com.vidayapi.model.Role
+import com.vidayapi.service.AuthService
+import com.vidayapi.usecase.ActivateChannelUseCase
+import com.vidayapi.port.PasswordEncoder
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import java.util.Scanner
+
+<span class="nc" id="L24">@Component</span>
+@ConditionalOnProperty(
+    prefix = &quot;viday.console&quot;,
+    name = [&quot;enabled&quot;],
+    havingValue = &quot;true&quot;,
+    matchIfMissing = false
+)
+<span class="nc" id="L31">class ConsoleUi(</span>
+<span class="nc" id="L32">    private val registerUserUseCase: RegisterUserUseCase,</span>
+<span class="nc" id="L33">    private val createPlaylistUseCase: CreatePlaylistUseCase,</span>
+<span class="nc" id="L34">    private val uploadVideoUseCase: UploadVideoUseCase,</span>
+<span class="nc" id="L35">    private val activateChannelUseCase: ActivateChannelUseCase,</span>
+<span class="nc" id="L36">    private val authService: AuthService,</span>
+<span class="nc" id="L37">    private val passwordEncoder: PasswordEncoder,</span>
+<span class="nc" id="L38">    private val playlistRepository: PlaylistRepository,</span>
+<span class="nc" id="L39">    private val userFollowRepository: UserRepository,</span>
+) : CommandLineRunner {
+
+    private var currentToken: String? = null
+
+    override fun run(vararg args: String) {
+<span class="nc" id="L45">        println(&quot;VidayApi Console&quot;)</span>
+<span class="nc" id="L46">        val scanner = Scanner(System.`in`)</span>
+
+<span class="nc" id="L48">        while (true) {</span>
+<span class="nc" id="L49">            val role = getCurrentRole()</span>
+<span class="nc bnc" id="L50" title="All 6 branches missed.">            println(&quot;\nCurrent: ${getCurrentUsername() ?: &quot;guest&quot;} (${role?.name ?: &quot;GUEST&quot;})&quot;)</span>
+<span class="nc" id="L51">            println(&quot;1. Login&quot;)</span>
+<span class="nc" id="L52">            println(&quot;2. Register user&quot;)</span>
+<span class="nc" id="L53">            println(&quot;3. Create playlist&quot;)</span>
+<span class="nc" id="L54">            println(&quot;4. Delete playlist&quot;)</span>
+<span class="nc" id="L55">            println(&quot;5. Add content to playlist&quot;)</span>
+<span class="nc" id="L56">            println(&quot;6. Remove content from playlist&quot;)</span>
+<span class="nc" id="L57">            println(&quot;7. Follow creator&quot;)</span>
+<span class="nc" id="L58">            println(&quot;8. Unfollow creator&quot;)</span>
+<span class="nc" id="L59">            println(&quot;9. Upload video&quot;)</span>
+<span class="nc" id="L60">            println(&quot;10. Upload test video&quot;)</span>
+<span class="nc" id="L61">            println(&quot;11. Activate channel&quot;)</span>
+<span class="nc" id="L62">            println(&quot;12. Logout&quot;)</span>
+<span class="nc" id="L63">            println(&quot;0. Exit&quot;)</span>
+<span class="nc" id="L64">            print(&quot;Choose: &quot;)</span>
+
+<span class="nc bnc" id="L66" title="All 14 branches missed.">            when (scanner.nextLine()) {</span>
+<span class="nc" id="L67">                &quot;1&quot; -&gt; loginFlow(scanner)</span>
+<span class="nc" id="L68">                &quot;2&quot; -&gt; registerUserFlow(scanner)</span>
+<span class="nc" id="L69">                &quot;3&quot; -&gt; createPlaylistFlow(scanner)</span>
+<span class="nc" id="L70">                &quot;4&quot; -&gt; deletePlaylistFlow(scanner)</span>
+<span class="nc" id="L71">                &quot;5&quot; -&gt; addContentToPlaylistFlow(scanner)</span>
+<span class="nc" id="L72">                &quot;6&quot; -&gt; removeContentFromPlaylistFlow(scanner)</span>
+<span class="nc" id="L73">                &quot;7&quot; -&gt; followCreatorFlow(scanner)</span>
+<span class="nc" id="L74">                &quot;8&quot; -&gt; unfollowCreatorFlow(scanner)</span>
+<span class="nc" id="L75">                &quot;9&quot; -&gt; uploadVideoFlow(scanner)</span>
+<span class="nc" id="L76">                &quot;10&quot; -&gt; uploadTestVideo()</span>
+<span class="nc" id="L77">                &quot;11&quot; -&gt; activateChannelFlow()</span>
+<span class="nc" id="L78">                &quot;12&quot; -&gt; logoutFlow()</span>
+                &quot;0&quot; -&gt; {
+<span class="nc" id="L80">                    println(&quot;Goodbye!&quot;)</span>
+<span class="nc" id="L81">                    break</span>
+                }
+<span class="nc" id="L83">                else -&gt; println(&quot;Unknown option&quot;)</span>
+            }
+        }
+<span class="nc" id="L86">    }</span>
+
+    private fun getCurrentUsername(): String? {
+<span class="nc bnc" id="L89" title="All 2 branches missed.">        val token = currentToken ?: return null</span>
+<span class="nc" id="L90">        val userIdResult = authService.validateToken(token)</span>
+<span class="nc" id="L91">        return userIdResult.fold(</span>
+<span class="nc" id="L92">            ifLeft = { null },</span>
+<span class="nc" id="L93">            ifRight = { userId -&gt; &quot;user_$userId&quot; }</span>
+        )
+    }
+
+    private fun getCurrentRole(): Role? {
+<span class="nc bnc" id="L98" title="All 2 branches missed.">        val token = currentToken ?: return null</span>
+<span class="nc" id="L99">        val roleResult = authService.getCurrentUserRole(token)</span>
+<span class="nc" id="L100">        return roleResult.fold(</span>
+<span class="nc" id="L101">            ifLeft = { null },</span>
+<span class="nc" id="L102">            ifRight = { it }</span>
+        )
+    }
+
+    private fun loginFlow(scanner: Scanner) {
+<span class="nc" id="L107">        print(&quot;Username: &quot;)</span>
+<span class="nc" id="L108">        val username = scanner.nextLine()</span>
+<span class="nc" id="L109">        print(&quot;Password: &quot;)</span>
+<span class="nc" id="L110">        val password = scanner.nextLine()</span>
+
+<span class="nc bnc" id="L112" title="All 2 branches missed.">        authService.login(username, password, passwordEncoder).fold(</span>
+            onSuccess = { token -&gt;
+<span class="nc" id="L114">                currentToken = token</span>
+<span class="nc" id="L115">                println(&quot;Login successful!&quot;)</span>
+<span class="nc" id="L116">                val role = getCurrentRole()</span>
+<span class="nc bnc" id="L117" title="All 2 branches missed.">                println(&quot;Role: ${role?.name}&quot;)</span>
+<span class="nc" id="L118">            },</span>
+<span class="nc" id="L119">            onFailure = { error -&gt; println(&quot;Login failed: $error&quot;) }</span>
+        )
+<span class="nc" id="L121">    }</span>
+
+    private fun logoutFlow() {
+<span class="nc" id="L124">        currentToken = null</span>
+<span class="nc" id="L125">        println(&quot;Logged out&quot;)</span>
+<span class="nc" id="L126">    }</span>
+
+    private fun registerUserFlow(scanner: Scanner) {
+<span class="nc" id="L129">        print(&quot;Username: &quot;)</span>
+<span class="nc" id="L130">        val username = scanner.nextLine()</span>
+<span class="nc" id="L131">        print(&quot;Password: &quot;)</span>
+<span class="nc" id="L132">        val password = scanner.nextLine()</span>
+
+<span class="nc bnc" id="L134" title="All 2 branches missed.">        registerUserUseCase.execute(username, password).fold(</span>
+            onSuccess = { user -&gt;
+<span class="nc" id="L136">                println(&quot;User registered successfully with ID: ${user.id}&quot;)</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">                authService.login(username, password, passwordEncoder).fold(</span>
+                    onSuccess = { token -&gt;
+<span class="nc" id="L139">                        currentToken = token</span>
+<span class="nc" id="L140">                        println(&quot;Auto-logged in!&quot;)</span>
+<span class="nc" id="L141">                    },</span>
+<span class="nc" id="L142">                    onFailure = { println(&quot;Auto-login failed&quot;) }</span>
+                )
+<span class="nc" id="L144">            },</span>
+<span class="nc" id="L145">            onFailure = { error -&gt; println(&quot;Registration failed: $error&quot;) }</span>
+        )
+<span class="nc" id="L147">    }</span>
+
+    private fun createPlaylistFlow(scanner: Scanner) {
+<span class="nc" id="L150">        val token = currentToken</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">        if (token == null) {</span>
+<span class="nc" id="L152">            println(&quot;Please login first&quot;)</span>
+<span class="nc" id="L153">            return</span>
+        }
+
+<span class="nc" id="L156">        val permission = authService.canCreatePlaylist(token)</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">        if (permission.isFailure) {</span>
+<span class="nc" id="L158">            println(&quot;Cannot create playlist: ${permission.exceptionOrNull()}&quot;)</span>
+<span class="nc" id="L159">            return</span>
+        }
+
+<span class="nc" id="L162">        print(&quot;Playlist name: &quot;)</span>
+<span class="nc" id="L163">        val name = scanner.nextLine()</span>
+
+<span class="nc" id="L165">        print(&quot;Access type (PUBLIC/PRIVATE/FOLLOWERS): &quot;)</span>
+<span class="nc" id="L166">        val accessTypeStr = scanner.nextLine().uppercase()</span>
+<span class="nc" id="L167">        val accessType =</span>
+<span class="nc" id="L168">            try {</span>
+<span class="nc" id="L169">                AccessType.valueOf(accessTypeStr)</span>
+<span class="nc" id="L170">            } catch (_: IllegalArgumentException) {</span>
+<span class="nc" id="L171">                println(&quot;Invalid access type, using PRIVATE&quot;)</span>
+<span class="nc" id="L172">                AccessType.PRIVATE</span>
+            }
+
+<span class="nc" id="L175">        val userId =</span>
+<span class="nc bnc" id="L176" title="All 2 branches missed.">            resolveUserIdOrNull(token) ?: run {</span>
+<span class="nc" id="L177">                println(&quot;Invalid token&quot;)</span>
+<span class="nc" id="L178">                return</span>
+            }
+
+<span class="nc" id="L181">        val result = createPlaylistUseCase.execute(</span>
+<span class="nc" id="L182">            name = name,</span>
+<span class="nc" id="L183">            ownerId = userId,</span>
+<span class="nc" id="L184">            accessType = accessType,</span>
+        )
+
+<span class="nc bnc" id="L187" title="All 2 branches missed.">        result.fold(</span>
+            onSuccess = { playlist -&gt;
+<span class="nc" id="L189">                println(</span>
+<span class="nc" id="L190">                    &quot;Playlist created: ${playlist.name} (ID: ${playlist.id}), access=${playlist.accessType}&quot;,</span>
+                )
+<span class="nc" id="L192">            },</span>
+<span class="nc" id="L193">            onFailure = { error -&gt; println(&quot;Create failed: $error&quot;) }</span>
+        )
+<span class="nc" id="L195">    }</span>
+
+    private fun deletePlaylistFlow(scanner: Scanner) {
+<span class="nc" id="L198">        val token = currentToken</span>
+<span class="nc bnc" id="L199" title="All 2 branches missed.">        if (token == null) {</span>
+<span class="nc" id="L200">            println(&quot;Please login first&quot;)</span>
+<span class="nc" id="L201">            return</span>
+        }
+<span class="nc" id="L203">        val userId =</span>
+<span class="nc bnc" id="L204" title="All 2 branches missed.">            resolveUserIdOrNull(token) ?: run {</span>
+<span class="nc" id="L205">                println(&quot;Invalid token&quot;)</span>
+<span class="nc" id="L206">                return</span>
+            }
+
+<span class="nc" id="L209">        print(&quot;Playlist id to delete: &quot;)</span>
+<span class="nc" id="L210">        val playlistId =</span>
+<span class="nc bnc" id="L211" title="All 2 branches missed.">            scanner.nextLine().toIntOrNull() ?: run {</span>
+<span class="nc" id="L212">                println(&quot;Invalid playlist id&quot;)</span>
+<span class="nc" id="L213">                return</span>
+            }
+
+<span class="nc bnc" id="L216" title="All 2 branches missed.">        playlistRepository.deletePlaylist(playlistId, userId).fold(</span>
+<span class="nc" id="L217">            onSuccess = { println(&quot;Playlist deleted.&quot;) },</span>
+            onFailure = { error -&gt;
+<span class="nc" id="L219">                println(</span>
+<span class="nc" id="L220">                    &quot;Delete failed: ${explainPlaylistCliError(error as Error)}&quot;,</span>
+                )
+<span class="nc" id="L222">            }</span>
+        )
+<span class="nc" id="L224">    }</span>
+
+    private fun addContentToPlaylistFlow(scanner: Scanner) {
+<span class="nc" id="L227">        val token = currentToken</span>
+<span class="nc bnc" id="L228" title="All 2 branches missed.">        if (token == null) {</span>
+<span class="nc" id="L229">            println(&quot;Please login first&quot;)</span>
+<span class="nc" id="L230">            return</span>
+        }
+<span class="nc" id="L232">        val userId =</span>
+<span class="nc bnc" id="L233" title="All 2 branches missed.">            resolveUserIdOrNull(token) ?: run {</span>
+<span class="nc" id="L234">                println(&quot;Invalid token&quot;)</span>
+<span class="nc" id="L235">                return</span>
+            }
+
+<span class="nc" id="L238">        print(&quot;Playlist id: &quot;)</span>
+<span class="nc" id="L239">        val playlistId =</span>
+<span class="nc bnc" id="L240" title="All 2 branches missed.">            scanner.nextLine().toIntOrNull() ?: run {</span>
+<span class="nc" id="L241">                println(&quot;Invalid playlist id&quot;)</span>
+<span class="nc" id="L242">                return</span>
+            }
+
+<span class="nc bnc" id="L245" title="All 2 branches missed.">        if (!ensurePlaylistOwnedByCli(playlistId, userId)) return</span>
+
+<span class="nc" id="L247">        print(&quot;Content id: &quot;)</span>
+<span class="nc" id="L248">        val contentId =</span>
+<span class="nc bnc" id="L249" title="All 2 branches missed.">            scanner.nextLine().toIntOrNull() ?: run {</span>
+<span class="nc" id="L250">                println(&quot;Invalid content id&quot;)</span>
+<span class="nc" id="L251">                return</span>
+            }
+
+<span class="nc" id="L254">        print(&quot;Position (1-based): &quot;)</span>
+<span class="nc" id="L255">        val position =</span>
+<span class="nc bnc" id="L256" title="All 2 branches missed.">            scanner.nextLine().toIntOrNull() ?: run {</span>
+<span class="nc" id="L257">                println(&quot;Invalid position&quot;)</span>
+<span class="nc" id="L258">                return</span>
+            }
+
+<span class="nc bnc" id="L261" title="All 2 branches missed.">        playlistRepository.addContentToPlaylist(contentId, playlistId, position).fold(</span>
+<span class="nc" id="L262">            onSuccess = { println(&quot;Content added to playlist.&quot;) },</span>
+            onFailure = { error -&gt;
+<span class="nc" id="L264">                println(</span>
+<span class="nc" id="L265">                    &quot;Add failed: ${explainPlaylistCliError(error as Error)}&quot;,</span>
+                )
+<span class="nc" id="L267">            }</span>
+        )
+<span class="nc" id="L269">    }</span>
+
+    private fun removeContentFromPlaylistFlow(scanner: Scanner) {
+<span class="nc" id="L272">        val token = currentToken</span>
+<span class="nc bnc" id="L273" title="All 2 branches missed.">        if (token == null) {</span>
+<span class="nc" id="L274">            println(&quot;Please login first&quot;)</span>
+<span class="nc" id="L275">            return</span>
+        }
+<span class="nc" id="L277">        val userId =</span>
+<span class="nc bnc" id="L278" title="All 2 branches missed.">            resolveUserIdOrNull(token) ?: run {</span>
+<span class="nc" id="L279">                println(&quot;Invalid token&quot;)</span>
+<span class="nc" id="L280">                return</span>
+            }
+
+<span class="nc" id="L283">        print(&quot;Playlist id: &quot;)</span>
+<span class="nc" id="L284">        val playlistId =</span>
+<span class="nc bnc" id="L285" title="All 2 branches missed.">            scanner.nextLine().toIntOrNull() ?: run {</span>
+<span class="nc" id="L286">                println(&quot;Invalid playlist id&quot;)</span>
+<span class="nc" id="L287">                return</span>
+            }
+
+<span class="nc bnc" id="L290" title="All 2 branches missed.">        if (ensurePlaylistOwnedByCli(playlistId, userId) != true) return</span>
+
+<span class="nc" id="L292">        print(&quot;Content id to remove: &quot;)</span>
+<span class="nc" id="L293">        val contentId =</span>
+<span class="nc bnc" id="L294" title="All 2 branches missed.">            scanner.nextLine().toIntOrNull() ?: run {</span>
+<span class="nc" id="L295">                println(&quot;Invalid content id&quot;)</span>
+<span class="nc" id="L296">                return</span>
+            }
+
+<span class="nc bnc" id="L299" title="All 2 branches missed.">        playlistRepository.removeContentFromPlaylist(contentId, playlistId).fold(</span>
+<span class="nc" id="L300">            onSuccess = { println(&quot;Content removed.&quot;) },</span>
+            onFailure = { error -&gt;
+<span class="nc" id="L302">                println(</span>
+<span class="nc" id="L303">                    &quot;Remove failed: ${explainPlaylistCliError(error as Error)}&quot;,</span>
+                )
+<span class="nc" id="L305">            }</span>
+        )
+<span class="nc" id="L307">    }</span>
+
+    private fun followCreatorFlow(scanner: Scanner) {
+<span class="nc" id="L310">        val token = currentToken</span>
+<span class="nc bnc" id="L311" title="All 2 branches missed.">        if (token == null) {</span>
+<span class="nc" id="L312">            println(&quot;Please login first&quot;)</span>
+<span class="nc" id="L313">            return</span>
+        }
+<span class="nc" id="L315">        val followerId =</span>
+<span class="nc bnc" id="L316" title="All 2 branches missed.">            resolveUserIdOrNull(token) ?: run {</span>
+<span class="nc" id="L317">                println(&quot;Invalid token&quot;)</span>
+<span class="nc" id="L318">                return</span>
+            }
+
+<span class="nc" id="L321">        print(&quot;Creator user id (to follow): &quot;)</span>
+<span class="nc" id="L322">        val creatorId =</span>
+<span class="nc bnc" id="L323" title="All 2 branches missed.">            scanner.nextLine().toIntOrNull() ?: run {</span>
+<span class="nc" id="L324">                println(&quot;Invalid user id&quot;)</span>
+<span class="nc" id="L325">                return</span>
+            }
+
+<span class="nc bnc" id="L328" title="All 2 branches missed.">        if (followerId == creatorId) {</span>
+<span class="nc" id="L329">            println(&quot;Cannot follow yourself&quot;)</span>
+<span class="nc" id="L330">            return</span>
+        }
+
+<span class="nc bnc" id="L333" title="All 2 branches missed.">        userFollowRepository.follow(followerId, creatorId).fold(</span>
+<span class="nc" id="L334">            onSuccess = { println(&quot;Subscribed.&quot;) },</span>
+<span class="nc" id="L335">            onFailure = { error -&gt; println(followExplain(error as Error)) }</span>
+        )
+<span class="nc" id="L337">    }</span>
+
+    private fun unfollowCreatorFlow(scanner: Scanner) {
+<span class="nc" id="L340">        val token = currentToken</span>
+<span class="nc bnc" id="L341" title="All 2 branches missed.">        if (token == null) {</span>
+<span class="nc" id="L342">            println(&quot;Please login first&quot;)</span>
+<span class="nc" id="L343">            return</span>
+        }
+<span class="nc" id="L345">        val followerId =</span>
+<span class="nc bnc" id="L346" title="All 2 branches missed.">            resolveUserIdOrNull(token) ?: run {</span>
+<span class="nc" id="L347">                println(&quot;Invalid token&quot;)</span>
+<span class="nc" id="L348">                return</span>
+            }
+
+<span class="nc" id="L351">        print(&quot;Creator user id (to unfollow): &quot;)</span>
+<span class="nc" id="L352">        val creatorId =</span>
+<span class="nc bnc" id="L353" title="All 2 branches missed.">            scanner.nextLine().toIntOrNull() ?: run {</span>
+<span class="nc" id="L354">                println(&quot;Invalid user id&quot;)</span>
+<span class="nc" id="L355">                return</span>
+            }
+
+<span class="nc bnc" id="L358" title="All 2 branches missed.">        if (followerId == creatorId) {</span>
+<span class="nc" id="L359">            println(&quot;Cannot unfollow yourself&quot;)</span>
+<span class="nc" id="L360">            return</span>
+        }
+
+<span class="nc bnc" id="L363" title="All 2 branches missed.">        userFollowRepository.unfollow(followerId, creatorId).fold(</span>
+<span class="nc" id="L364">            onSuccess = { println(&quot;Unsubscribed.&quot;) },</span>
+<span class="nc" id="L365">            onFailure = { error -&gt; println(followExplain(error as Error)) }</span>
+        )
+<span class="nc" id="L367">    }</span>
+
+    private fun resolveUserIdOrNull(token: String): Int? =
+<span class="nc bnc" id="L370" title="All 2 branches missed.">        authService.validateToken(token).getOrNull()</span>
+
+    private fun ensurePlaylistOwnedByCli(playlistId: Int, userId: Int): Boolean =
+<span class="nc bnc" id="L373" title="All 2 branches missed.">        playlistRepository.findById(playlistId).fold(</span>
+            onSuccess = { playlist -&gt;
+<span class="nc bnc" id="L375" title="All 2 branches missed.">                if (playlist.ownerId != userId) {</span>
+<span class="nc" id="L376">                    println(</span>
+<span class="nc" id="L377">                        &quot;You are not the owner of this playlist.&quot;,</span>
+                    )
+<span class="nc" id="L379">                    false</span>
+                } else {
+<span class="nc" id="L381">                    true</span>
+<span class="nc" id="L382">                }</span>
+            },
+            onFailure = { error -&gt;
+<span class="nc" id="L385">                println(</span>
+<span class="nc" id="L386">                    &quot;Playlist lookup failed: ${explainPlaylistCliError(error as Error)}&quot;,</span>
+                )
+<span class="nc" id="L388">                false</span>
+            }
+<span class="nc" id="L390">        )</span>
+
+    private fun explainPlaylistCliError(err: Error): String =
+<span class="nc" id="L393">        when (err) {</span>
+<span class="nc bnc" id="L394" title="All 2 branches missed.">            is Error.NotFound -&gt; &quot;Not found.&quot;</span>
+<span class="nc bnc" id="L395" title="All 2 branches missed.">            is Error.Forbidden -&gt; &quot;Forbidden.&quot;</span>
+<span class="nc bnc" id="L396" title="All 2 branches missed.">            is Error.PlaylistPositionConflict -&gt;</span>
+<span class="nc" id="L397">                &quot;Position conflict (playlist already has something at this index).&quot;</span>
+
+<span class="nc" id="L399">            else -&gt; &quot;$err&quot;</span>
+<span class="nc" id="L400">        }</span>
+
+    private fun followExplain(err: Error): String =
+<span class="nc" id="L403">        when (err) {</span>
+<span class="nc bnc" id="L404" title="All 2 branches missed.">            is Error.UserAlreadyFollowed -&gt; &quot;Already following.&quot;</span>
+<span class="nc bnc" id="L405" title="All 2 branches missed.">            is Error.NotFound -&gt; &quot;Not following.&quot;</span>
+<span class="nc" id="L406">            else -&gt; &quot;$err&quot;</span>
+<span class="nc" id="L407">        }</span>
+
+    private fun uploadVideoFlow(scanner: Scanner) {
+<span class="nc" id="L410">        val token = currentToken</span>
+<span class="nc bnc" id="L411" title="All 2 branches missed.">        if (token == null) {</span>
+<span class="nc" id="L412">            println(&quot;Please login first&quot;)</span>
+<span class="nc" id="L413">            return</span>
+        }
+
+<span class="nc" id="L416">        val permission = authService.canUploadVideo(token)</span>
+<span class="nc bnc" id="L417" title="All 2 branches missed.">        if (permission.isFailure) {</span>
+<span class="nc" id="L418">            val error = permission.exceptionOrNull()</span>
+<span class="nc" id="L419">            println(&quot;Cannot upload video: $error&quot;)</span>
+<span class="nc" id="L420">            when (error) {</span>
+<span class="nc bnc" id="L421" title="All 2 branches missed.">                Error.CreatorRequired -&gt; println(&quot;Use option 11 to activate channel&quot;)</span>
+<span class="nc" id="L422">                else -&gt; Unit</span>
+            }
+<span class="nc" id="L424">            return</span>
+        }
+
+<span class="nc" id="L427">        print(&quot;Video file path: &quot;)</span>
+<span class="nc" id="L428">        val filePath = scanner.nextLine()</span>
+<span class="nc" id="L429">        val file = File(filePath)</span>
+
+<span class="nc bnc" id="L431" title="All 2 branches missed.">        if (!file.exists()) {</span>
+<span class="nc" id="L432">            println(&quot;File not found: $filePath&quot;)</span>
+<span class="nc" id="L433">            return</span>
+        }
+
+<span class="nc" id="L436">        print(&quot;Video name: &quot;)</span>
+<span class="nc" id="L437">        val name = scanner.nextLine()</span>
+
+<span class="nc" id="L439">        print(&quot;Description (optional): &quot;)</span>
+<span class="nc bnc" id="L440" title="All 4 branches missed.">        val description = scanner.nextLine().takeIf { it.isNotBlank() }</span>
+
+<span class="nc" id="L442">        print(&quot;Preview image path: &quot;)</span>
+<span class="nc" id="L443">        val previewPath = scanner.nextLine()</span>
+<span class="nc" id="L444">        val previewFile = File(previewPath)</span>
+<span class="nc bnc" id="L445" title="All 2 branches missed.">        if (!previewFile.exists()) {</span>
+<span class="nc" id="L446">            println(&quot;Preview file not found: $previewPath&quot;)</span>
+<span class="nc" id="L447">            return</span>
+        }
+
+<span class="nc" id="L450">        print(&quot;Access type (PUBLIC/PRIVATE/FOLLOWERS): &quot;)</span>
+<span class="nc" id="L451">        val accessTypeStr = scanner.nextLine().uppercase()</span>
+<span class="nc" id="L452">        val accessType = try {</span>
+<span class="nc" id="L453">            AccessType.valueOf(accessTypeStr)</span>
+<span class="nc" id="L454">        } catch (e: IllegalArgumentException) {</span>
+<span class="nc" id="L455">            println(&quot;Invalid access type, using PUBLIC&quot;)</span>
+<span class="nc" id="L456">            AccessType.PUBLIC</span>
+        }
+
+<span class="nc" id="L459">        val multipartFile = MockMultipartFile(</span>
+<span class="nc" id="L460">            &quot;file&quot;,</span>
+<span class="nc" id="L461">            file.name,</span>
+<span class="nc" id="L462">            &quot;video/mp4&quot;,</span>
+<span class="nc" id="L463">            FileInputStream(file)</span>
+        )
+<span class="nc" id="L465">        val previewMultipartFile = MockMultipartFile(</span>
+<span class="nc" id="L466">            &quot;preview&quot;,</span>
+<span class="nc" id="L467">            previewFile.name,</span>
+<span class="nc" id="L468">            &quot;image/jpeg&quot;,</span>
+<span class="nc" id="L469">            FileInputStream(previewFile)</span>
+        )
+
+<span class="nc" id="L472">        val request = UploadVideoRequest(</span>
+<span class="nc" id="L473">            name = name,</span>
+<span class="nc" id="L474">            description = description,</span>
+<span class="nc" id="L475">            accessType = accessType,</span>
+<span class="nc" id="L476">            file = multipartFile,</span>
+<span class="nc" id="L477">            preview = previewMultipartFile</span>
+        )
+
+<span class="nc" id="L480">        val userIdResult = authService.validateToken(token)</span>
+<span class="nc" id="L481">        val userId = userIdResult.fold(</span>
+            ifLeft = {
+<span class="nc" id="L483">                println(&quot;Invalid token&quot;)</span>
+<span class="nc" id="L484">                return</span>
+            },
+<span class="nc" id="L486">            ifRight = { it }</span>
+        )
+
+<span class="nc" id="L489">        println(&quot;Uploading video...&quot;)</span>
+<span class="nc bnc" id="L490" title="All 2 branches missed.">        uploadVideoUseCase.execute(request, userId).fold(</span>
+            onSuccess = { video -&gt;
+<span class="nc" id="L492">                println(&quot;Video uploaded successfully!&quot;)</span>
+<span class="nc" id="L493">                println(&quot;Content ID: ${video.content.id}&quot;)</span>
+<span class="nc" id="L494">                println(&quot;Name: ${video.content.name}&quot;)</span>
+<span class="nc" id="L495">                println(&quot;Duration: ${video.durationSeconds}s&quot;)</span>
+<span class="nc" id="L496">                println(&quot;Preview: ${video.preview}&quot;)</span>
+<span class="nc" id="L497">            },</span>
+<span class="nc" id="L498">            onFailure = { error -&gt; println(&quot;Upload failed: $error&quot;) }</span>
+        )
+<span class="nc" id="L500">    }</span>
+
+    private fun uploadTestVideo() {
+<span class="nc" id="L503">        val token = currentToken</span>
+<span class="nc bnc" id="L504" title="All 2 branches missed.">        if (token == null) {</span>
+<span class="nc" id="L505">            println(&quot;Please login first&quot;)</span>
+<span class="nc" id="L506">            return</span>
+        }
+
+<span class="nc" id="L509">        val permission = authService.canUploadVideo(token)</span>
+<span class="nc bnc" id="L510" title="All 2 branches missed.">        if (permission.isFailure) {</span>
+<span class="nc" id="L511">            println(&quot;Cannot upload video: ${permission.exceptionOrNull()}&quot;)</span>
+<span class="nc" id="L512">            println(&quot;Use option 11 to activate channel first!&quot;)</span>
+<span class="nc" id="L513">            return</span>
+        }
+
+<span class="nc" id="L516">        val testFile = File.createTempFile(&quot;test_video_&quot;, &quot;.mp4&quot;)</span>
+<span class="nc" id="L517">        testFile.writeBytes(ByteArray(1024 * 100))</span>
+
+<span class="nc" id="L519">        println(&quot;Test video created: ${testFile.absolutePath}&quot;)</span>
+<span class="nc" id="L520">        println(&quot;Size: ${testFile.length()} bytes&quot;)</span>
+
+<span class="nc" id="L522">        val multipartFile = MockMultipartFile(</span>
+<span class="nc" id="L523">            &quot;file&quot;,</span>
+<span class="nc" id="L524">            &quot;test_video.mp4&quot;,</span>
+<span class="nc" id="L525">            &quot;video/mp4&quot;,</span>
+<span class="nc" id="L526">            FileInputStream(testFile)</span>
+        )
+<span class="nc" id="L528">        val previewMultipartFile = MockMultipartFile(</span>
+<span class="nc" id="L529">            &quot;preview&quot;,</span>
+<span class="nc" id="L530">            &quot;test_preview.jpg&quot;,</span>
+<span class="nc" id="L531">            &quot;image/jpeg&quot;,</span>
+<span class="nc bnc" id="L532" title="All 2 branches missed.">            ByteArray(1024) { 1 }</span>
+        )
+
+<span class="nc" id="L535">        val request = UploadVideoRequest(</span>
+<span class="nc" id="L536">            name = &quot;Test Video ${System.currentTimeMillis()}&quot;,</span>
+<span class="nc" id="L537">            description = &quot;Auto-generated test video&quot;,</span>
+<span class="nc" id="L538">            accessType = AccessType.PUBLIC,</span>
+<span class="nc" id="L539">            file = multipartFile,</span>
+<span class="nc" id="L540">            preview = previewMultipartFile</span>
+        )
+
+<span class="nc" id="L543">        val userIdResult = authService.validateToken(token)</span>
+<span class="nc" id="L544">        val userId = userIdResult.fold(</span>
+            ifLeft = {
+<span class="nc" id="L546">                println(&quot;Invalid token&quot;)</span>
+<span class="nc" id="L547">                return</span>
+            },
+<span class="nc" id="L549">            ifRight = { it }</span>
+        )
+
+<span class="nc" id="L552">        println(&quot;Uploading test video...&quot;)</span>
+<span class="nc bnc" id="L553" title="All 2 branches missed.">        uploadVideoUseCase.execute(request, userId).fold(</span>
+            onSuccess = { video -&gt;
+<span class="nc" id="L555">                println(&quot;Test video uploaded successfully!&quot;)</span>
+<span class="nc" id="L556">                println(&quot;Content ID: ${video.content.id}&quot;)</span>
+<span class="nc" id="L557">                println(&quot;Name: ${video.content.name}&quot;)</span>
+<span class="nc" id="L558">                println(&quot;Duration: ${video.durationSeconds}s&quot;)</span>
+<span class="nc" id="L559">                println(&quot;Preview: ${video.preview}&quot;)</span>
+<span class="nc" id="L560">            },</span>
+<span class="nc" id="L561">            onFailure = { error -&gt; println(&quot;Upload failed: $error&quot;) }</span>
+        )
+
+<span class="nc" id="L564">        testFile.deleteOnExit()</span>
+<span class="nc" id="L565">    }</span>
+
+
+    private fun activateChannelFlow() {
+<span class="nc" id="L569">        val token = currentToken</span>
+<span class="nc bnc" id="L570" title="All 2 branches missed.">        if (token == null) {</span>
+<span class="nc" id="L571">            println(&quot;Please login first&quot;)</span>
+<span class="nc" id="L572">            return</span>
+        }
+
+<span class="nc" id="L575">        val roleResult = authService.getCurrentUserRole(token)</span>
+<span class="nc" id="L576">        val currentRole = roleResult.fold(</span>
+            ifLeft = {
+<span class="nc" id="L578">                println(&quot;Error: ${roleResult.exceptionOrNull()}&quot;)</span>
+<span class="nc" id="L579">                return</span>
+            },
+<span class="nc" id="L581">            ifRight = { it }</span>
+        )
+
+<span class="nc bnc" id="L584" title="All 2 branches missed.">        if (currentRole == Role.CREATOR) {</span>
+<span class="nc" id="L585">            println(&quot;You are already a CREATOR!&quot;)</span>
+<span class="nc" id="L586">            return</span>
+        }
+
+<span class="nc bnc" id="L589" title="All 2 branches missed.">        if (currentRole != Role.USER) {</span>
+<span class="nc" id="L590">            println(&quot;Only USER role can activate channel. Please register first.&quot;)</span>
+<span class="nc" id="L591">            return</span>
+        }
+
+<span class="nc" id="L594">        val userIdResult = authService.validateToken(token)</span>
+<span class="nc" id="L595">        val userId = userIdResult.fold(</span>
+            ifLeft = {
+<span class="nc" id="L597">                println(&quot;Invalid token&quot;)</span>
+<span class="nc" id="L598">                return</span>
+            },
+<span class="nc" id="L600">            ifRight = { it }</span>
+        )
+
+<span class="nc" id="L603">        println(&quot;Channel Activation - This will make you a CREATOR&quot;)</span>
+<span class="nc" id="L604">        print(&quot;Confirm? (y/n): &quot;)</span>
+
+<span class="nc" id="L606">        val scanner = Scanner(System.`in`)</span>
+<span class="nc bnc" id="L607" title="All 2 branches missed.">        if (scanner.nextLine().lowercase() != &quot;y&quot;) {</span>
+<span class="nc" id="L608">            println(&quot;Cancelled&quot;)</span>
+<span class="nc" id="L609">            return</span>
+        }
+
+<span class="nc bnc" id="L612" title="All 2 branches missed.">        activateChannelUseCase.execute(userId).fold(</span>
+            onSuccess = {
+<span class="nc" id="L614">                println(&quot;Channel activated! You are now a CREATOR and can upload videos!&quot;)</span>
+
+<span class="nc bnc" id="L616" title="All 2 branches missed.">                authService.refreshToken(token).fold(</span>
+                    onSuccess = { newToken -&gt;
+<span class="nc" id="L618">                        currentToken = newToken</span>
+<span class="nc" id="L619">                        println(&quot;Token refreshed! You can now upload videos.&quot;)</span>
+<span class="nc" id="L620">                    },</span>
+                    onFailure = { error -&gt;
+<span class="nc" id="L622">                        println(&quot;Failed to refresh token: $error&quot;)</span>
+<span class="nc" id="L623">                        println(&quot;Please logout (option 12) and login again (option 1).&quot;)</span>
+<span class="nc" id="L624">                        currentToken = null</span>
+<span class="nc" id="L625">                    }</span>
+                )
+<span class="nc" id="L627">            },</span>
+            onFailure = { error -&gt;
+<span class="nc" id="L629">                println(&quot;Activation failed: $error&quot;)</span>
+<span class="nc" id="L630">            }</span>
+        )
+<span class="nc" id="L632">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

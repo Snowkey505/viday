@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VideoResponseMapper.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">application</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.service</a> &gt; <span class="el_source">VideoResponseMapper.kt</span></div><h1>VideoResponseMapper.kt</h1><pre class="source lang-java linenums">package com.vidayapi.service
+
+import com.vidayapi.dto.responses.VideoResponse
+import com.vidayapi.model.Video
+import com.vidayapi.port.FileStoragePort
+
+<span class="nc" id="L7">class VideoResponseMapper(</span>
+<span class="nc" id="L8">    private val fileStoragePort: FileStoragePort,</span>
+) {
+    fun toResponse(video: Video): VideoResponse =
+<span class="nc" id="L11">        VideoResponse(</span>
+<span class="nc bnc" id="L12" title="All 2 branches missed.">            id = video.content.id ?: 0,</span>
+<span class="nc" id="L13">            name = video.content.name,</span>
+<span class="nc" id="L14">            description = video.content.description,</span>
+<span class="nc" id="L15">            source = toExternalUrl(video.content.source),</span>
+<span class="nc" id="L16">            preview = toExternalUrl(video.preview),</span>
+<span class="nc" id="L17">            durationSeconds = video.durationSeconds,</span>
+<span class="nc" id="L18">            accessType = video.content.accessType.name,</span>
+<span class="nc" id="L19">            ownerId = video.content.ownerId,</span>
+<span class="nc" id="L20">        )</span>
+
+    private fun toExternalUrl(storagePath: String?): String {
+<span class="nc bnc" id="L23" title="All 2 branches missed.">        val path = storagePath.orEmpty()</span>
+<span class="nc bnc" id="L24" title="All 2 branches missed.">        if (path.isBlank()) return &quot;&quot;</span>
+<span class="nc bnc" id="L25" title="All 2 branches missed.">        if (path.contains(&quot;://&quot;)) return path</span>
+
+<span class="nc" id="L27">        val slashIndex = path.indexOf('/')</span>
+<span class="nc bnc" id="L28" title="All 4 branches missed.">        if (slashIndex &lt;= 0 || slashIndex == path.lastIndex) return path</span>
+
+<span class="nc" id="L30">        val bucketName = path.substring(0, slashIndex)</span>
+<span class="nc" id="L31">        val objectName = path.substring(slashIndex + 1)</span>
+<span class="nc bnc" id="L32" title="All 2 branches missed.">        return fileStoragePort.getFileUrl(bucketName, objectName).fold(</span>
+<span class="nc" id="L33">            onSuccess = { it },</span>
+<span class="nc" id="L34">            onFailure = { path }</span>
+        )
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

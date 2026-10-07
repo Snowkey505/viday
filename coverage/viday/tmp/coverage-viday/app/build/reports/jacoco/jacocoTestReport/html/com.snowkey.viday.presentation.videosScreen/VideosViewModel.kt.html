@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VideosViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.snowkey.viday.presentation.videosScreen</a> &gt; <span class="el_source">VideosViewModel.kt</span></div><h1>VideosViewModel.kt</h1><pre class="source lang-java linenums">package com.snowkey.viday.presentation.videosScreen
+
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.snowkey.viday.R
+import com.snowkey.viday.mapper.toErrorMessageId
+import com.snowkey.viday.mapper.toPlaylistView
+import com.snowkey.viday.mapper.toUi
+import com.snowkey.viday.model.PlaylistError
+import com.snowkey.viday.model.PlaylistView
+import com.snowkey.viday.model.VideoError
+import com.snowkey.viday.model.VideoView
+import com.snowkey.viday.usecase.playlist.AddContentToPlaylistUseCase
+import com.snowkey.viday.usecase.playlist.GetPlaylistByIdUseCase
+import com.snowkey.viday.usecase.playlist.GetPlaylistsUseCase
+import com.snowkey.viday.usecase.playlist.RemoveContentFromPlaylistUseCase
+import com.snowkey.viday.usecase.video.GetVideosUseCase
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+<span class="fc" id="L26">class VideosViewModel(</span>
+<span class="fc" id="L27">    private val getVideosUseCase: GetVideosUseCase,</span>
+<span class="fc" id="L28">    private val getPlaylistsUseCase: GetPlaylistsUseCase,</span>
+<span class="fc" id="L29">    private val addContentToPlaylistUseCase: AddContentToPlaylistUseCase,</span>
+<span class="fc" id="L30">    private val getPlaylistByIdUseCase: GetPlaylistByIdUseCase,</span>
+<span class="fc" id="L31">    private val removeContentFromPlaylistUseCase: RemoveContentFromPlaylistUseCase,</span>
+<span class="fc" id="L32">    private val savedStateHandle: SavedStateHandle,</span>
+<span class="fc" id="L33">) : ViewModel() {</span>
+<span class="fc" id="L34">    private val _uiState = MutableStateFlow&lt;VideosUiState&gt;(VideosUiState.Loading)</span>
+<span class="fc" id="L35">    val uiState = _uiState.asStateFlow()</span>
+
+<span class="fc" id="L37">    private val _videos = MutableStateFlow&lt;List&lt;VideoView&gt;&gt;(emptyList())</span>
+<span class="fc" id="L38">    val videos = _videos.asStateFlow()</span>
+
+<span class="fc" id="L40">    private val _playlists = MutableStateFlow&lt;List&lt;PlaylistView&gt;&gt;(emptyList())</span>
+<span class="fc" id="L41">    val playlists = _playlists.asStateFlow()</span>
+
+<span class="fc" id="L43">    private val _userId = MutableStateFlow&lt;Long?&gt;(null)</span>
+<span class="pc" id="L44">    val userId = _userId.asStateFlow()</span>
+
+<span class="fc" id="L46">    private val _playlistId = MutableStateFlow&lt;Long?&gt;(null)</span>
+<span class="pc" id="L47">    val playlistId = _playlistId.asStateFlow()</span>
+
+<span class="fc" id="L49">    private val _playlistInfo = MutableStateFlow&lt;PlaylistView?&gt;(null)</span>
+<span class="fc" id="L50">    val playlistInfo = _playlistInfo.asStateFlow()</span>
+
+<span class="fc" id="L52">    private val _events = MutableSharedFlow&lt;Int&gt;(</span>
+<span class="fc" id="L53">        extraBufferCapacity = 16,</span>
+<span class="fc" id="L54">        onBufferOverflow = BufferOverflow.DROP_OLDEST,</span>
+    )
+<span class="pc" id="L56">    val events = _events.asSharedFlow()</span>
+
+    fun load() {
+<span class="nc bnc" id="L59" title="All 6 branches missed.">        _userId.value = savedStateHandle.get&lt;Long&gt;(&quot;userId&quot;)?.takeIf { it != -1L }</span>
+<span class="nc bnc" id="L60" title="All 6 branches missed.">        _playlistId.value = savedStateHandle.get&lt;Long&gt;(&quot;playlistId&quot;)?.takeIf { it != -1L }</span>
+
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        if (_playlistId.value != null) {</span>
+<span class="nc" id="L63">            loadPlaylistInfo(_playlistId.value!!)</span>
+        }
+
+<span class="nc" id="L66">        loadVideos(_userId.value, _playlistId.value)</span>
+<span class="nc" id="L67">        loadPlaylists()</span>
+<span class="nc" id="L68">    }</span>
+
+    fun clear() {
+<span class="fc" id="L71">        _videos.value = emptyList()</span>
+<span class="fc" id="L72">        _playlistInfo.value = null</span>
+<span class="fc" id="L73">        _playlists.value = emptyList()</span>
+<span class="fc" id="L74">    }</span>
+
+    private fun loadPlaylistInfo(playlistId: Long) {
+<span class="nc" id="L77">        viewModelScope.launch {</span>
+<span class="nc" id="L78">            val result = getPlaylistByIdUseCase(playlistId)</span>
+<span class="nc bnc" id="L79" title="All 6 branches missed.">            if (result.playlists != null &amp;&amp; result.playlists!!.isNotEmpty()) {</span>
+<span class="nc" id="L80">                _playlistInfo.value = result.playlists!![0].toPlaylistView()</span>
+            } else {
+<span class="nc" id="L82">                _events.emit(result.error.toErrorMessageId())</span>
+            }
+<span class="nc" id="L84">        }</span>
+<span class="nc" id="L85">    }</span>
+
+    fun loadVideos(userId: Long?, playlistId: Long?) {
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        if (playlistId != null) {</span>
+<span class="nc" id="L89">            getVideos(userId = null, playlistId = playlistId)</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        } else if (userId != null) {</span>
+<span class="nc" id="L91">            getMainScreenVideos(userId)</span>
+        } else {
+<span class="nc" id="L93">            getVideos(userId = null, playlistId = null)</span>
+        }
+<span class="nc" id="L95">    }</span>
+
+    fun getVideos(userId: Long?, playlistId: Long?) {
+<span class="fc" id="L98">        viewModelScope.launch {</span>
+<span class="fc" id="L99">            val videosResult = getVideosUseCase(userId, playlistId)</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">            if (videosResult.videos != null) {</span>
+<span class="fc" id="L101">                _videos.value = videosResult.videos!!.map { video -&gt; video.toUi() }</span>
+<span class="fc" id="L102">                _uiState.value = VideosUiState.Done</span>
+            } else {
+<span class="fc" id="L104">                val errorMessageId =</span>
+<span class="pc bpc" id="L105" title="3 of 4 branches missed.">                    when (videosResult.error) {</span>
+<span class="nc" id="L106">                        VideoError.SERVER_ERROR -&gt; R.string.server_error</span>
+<span class="nc" id="L107">                        VideoError.ACCESS_ERROR -&gt; R.string.access_error</span>
+<span class="fc" id="L108">                        VideoError.NETWORK_ERROR -&gt; R.string.network_error</span>
+<span class="nc" id="L109">                        else -&gt; R.string.unknown_error</span>
+                    }
+<span class="fc" id="L111">                _uiState.value = VideosUiState.Error(errorMessageId)</span>
+            }
+<span class="fc" id="L113">        }</span>
+<span class="fc" id="L114">    }</span>
+
+    private fun getMainScreenVideos(userId: Long) {
+<span class="nc" id="L117">        viewModelScope.launch {</span>
+<span class="nc" id="L118">            val userVideosResult = getVideosUseCase(userId = userId, playlistId = null)</span>
+<span class="nc bnc" id="L119" title="All 2 branches missed.">            if (userVideosResult.videos == null) {</span>
+<span class="nc" id="L120">                _uiState.value = VideosUiState.Error(userVideosResult.error.toErrorMessageId())</span>
+<span class="nc" id="L121">                return@launch</span>
+            }
+
+<span class="nc" id="L124">            val publicVideosResult = getVideosUseCase(userId = null, playlistId = null)</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">            if (publicVideosResult.videos == null) {</span>
+<span class="nc" id="L126">                _uiState.value =</span>
+<span class="nc" id="L127">                    VideosUiState.Error(publicVideosResult.error.toErrorMessageId())</span>
+<span class="nc" id="L128">                return@launch</span>
+            }
+
+<span class="nc" id="L131">            val mergedVideos = (userVideosResult.videos!! + publicVideosResult.videos!!)</span>
+<span class="nc" id="L132">                .distinctBy { video -&gt; video.id }</span>
+<span class="nc" id="L133">                .map { video -&gt; video.toUi() }</span>
+
+<span class="nc" id="L135">            _videos.value = mergedVideos</span>
+<span class="nc" id="L136">            _uiState.value = VideosUiState.Done</span>
+<span class="nc" id="L137">        }</span>
+<span class="nc" id="L138">    }</span>
+
+    private fun loadPlaylists() {
+<span class="nc" id="L141">        viewModelScope.launch {</span>
+<span class="nc" id="L142">            val playlistsResult = getPlaylistsUseCase()</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">            if (playlistsResult.playlists != null) {</span>
+<span class="nc" id="L144">                _playlists.value = playlistsResult.playlists!!.map { it.toPlaylistView() }</span>
+            } else {
+<span class="nc" id="L146">                _events.emit(playlistsResult.error.toErrorMessageId())</span>
+            }
+<span class="nc" id="L148">        }</span>
+<span class="nc" id="L149">    }</span>
+
+    fun addVideoToPlaylist(videoId: Long, playlistId: Long) {
+<span class="nc" id="L152">        viewModelScope.launch {</span>
+<span class="nc" id="L153">            val result = addContentToPlaylistUseCase(</span>
+<span class="nc" id="L154">                playlistId = playlistId,</span>
+<span class="nc" id="L155">                contentId = videoId</span>
+            )
+<span class="nc" id="L157">            val messageId = result.error.toErrorMessageId()</span>
+<span class="nc" id="L158">            _events.emit(messageId)</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">            if (result.error == PlaylistError.OK) {</span>
+<span class="nc" id="L160">                loadPlaylists()</span>
+            }
+<span class="nc" id="L162">        }</span>
+<span class="nc" id="L163">    }</span>
+
+    fun removeVideoFromPlaylist(videoId: Long) {
+<span class="nc bnc" id="L166" title="All 2 branches missed.">        if (_playlistId.value != null) {</span>
+<span class="nc" id="L167">            viewModelScope.launch {</span>
+<span class="nc" id="L168">                val result = removeContentFromPlaylistUseCase(</span>
+<span class="nc" id="L169">                    playlistId = _playlistId.value!!,</span>
+<span class="nc" id="L170">                    contentId = videoId</span>
+                )
+<span class="nc" id="L172">                val messageId = result.error.toErrorMessageId()</span>
+<span class="nc" id="L173">                _events.emit(messageId)</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">                if (result.error == PlaylistError.OK) {</span>
+<span class="nc" id="L175">                    load()</span>
+                }
+<span class="nc" id="L177">            }</span>
+        }
+<span class="nc" id="L179">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

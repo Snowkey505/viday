@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ListLiveStreamsUseCase.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">application</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.usecase</a> &gt; <span class="el_source">ListLiveStreamsUseCase.kt</span></div><h1>ListLiveStreamsUseCase.kt</h1><pre class="source lang-java linenums">package com.vidayapi.usecase
+
+import com.vidayapi.model.flatMap
+import com.vidayapi.model.right
+import com.vidayapi.cache.CacheKeys
+import com.vidayapi.cache.CacheTtl
+import com.vidayapi.dto.responses.PageResponse
+import com.vidayapi.dto.responses.StreamResponse
+import com.vidayapi.model.PageRequest
+import com.vidayapi.model.Result
+import com.vidayapi.port.CachePort
+import com.vidayapi.port.StreamRepository
+import tools.jackson.databind.ObjectMapper
+
+<span class="nc" id="L15">class ListLiveStreamsUseCase(</span>
+<span class="nc" id="L16">    private val streamRepository: StreamRepository,</span>
+<span class="nc" id="L17">    private val cachePort: CachePort,</span>
+<span class="nc" id="L18">    private val objectMapper: ObjectMapper,</span>
+) {
+    fun execute(page: Int, size: Int): Result&lt;PageResponse&lt;StreamResponse&gt;&gt; {
+        val pageRequest = PageRequest(page, size).normalized()
+<span class="nc" id="L22">        val cacheKey = CacheKeys.liveStreams(pageRequest.page, pageRequest.size)</span>
+
+<span class="nc bnc" id="L24" title="All 2 branches missed.">        cachePort.get(cacheKey)?.let { cached -&gt;</span>
+<span class="nc" id="L25">            return readPage(cached).right()</span>
+        }
+
+<span class="nc" id="L28">        return streamRepository.findLiveStreamsPage(pageRequest).flatMap { streamPage -&gt;</span>
+<span class="nc" id="L29">            val response = PageResponse.from(streamPage.map { StreamResponse.from(it) })</span>
+<span class="nc" id="L30">            cachePort.set(</span>
+<span class="nc" id="L31">                cacheKey,</span>
+<span class="nc" id="L32">                objectMapper.writeValueAsString(response),</span>
+<span class="nc" id="L33">                CacheTtl.LIVE_STREAMS_SEC,</span>
+            )
+<span class="nc" id="L35">            response.right()</span>
+        }
+    }
+
+    private fun readPage(json: String): PageResponse&lt;StreamResponse&gt; {
+<span class="nc" id="L40">        val type = objectMapper.typeFactory.constructParametricType(</span>
+<span class="nc" id="L41">            PageResponse::class.java,</span>
+<span class="nc" id="L42">            StreamResponse::class.java,</span>
+        )
+<span class="nc" id="L44">        return objectMapper.readValue(json, type)</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>
