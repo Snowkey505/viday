@@ -80,12 +80,10 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Cache Gradle + Allure history
+      - name: Cache Gradle (restore)
         uses: actions/cache/restore@v4
         with:
-          path: |
-            vidayapi/.gradle-ci
-            vidayapi/allure-history
+          path: vidayapi/.gradle-ci
           key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
       # 1) контейнер запуска тестов (Требование 1): собирается один раз, дальше только pull
       - name: Build and push test-runner image
@@ -112,22 +110,6 @@ jobs:
           path: vidayapi/presentation/build/libs/*.jar
           if-no-files-found: error
           retention-days: 7
-      - name: Fix cache permissions (root-owned files from docker)
-        if: always()
-        run: |
-          # Контейнер (-u root) пишет кэш от root: без sudo раннер не может
-          # ни читать файлы для tar, ни chmod'ить чужие файлы.
-          sudo chown -R "$(id -u):$(id -g)" .gradle-ci allure-history 2>/dev/null || true
-          chmod -R a+rX .gradle-ci allure-history 2>/dev/null || true
-      - name: Save Gradle + Allure history cache
-        if: always()
-        continue-on-error: true   # параллельные джобы могут сохранять один ключ
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            vidayapi/.gradle-ci
-            vidayapi/allure-history
-          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
 
   build-viday:
     runs-on: ubuntu-latest
@@ -236,12 +218,10 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Restore Gradle + Allure history cache
+      - name: Restore Gradle cache
         uses: actions/cache/restore@v4
         with:
-          path: |
-            vidayapi/.gradle-ci
-            vidayapi/allure-history
+          path: vidayapi/.gradle-ci
           key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
       - name: Run unit tests (LR1) in test-runner container
         run: |
@@ -284,22 +264,6 @@ jobs:
             vidayapi/**/build/reports/jacoco/test/html/**
           if-no-files-found: ignore
           retention-days: 7
-      - name: Fix cache permissions (root-owned files from docker)
-        if: always()
-        run: |
-          # Контейнер (-u root) пишет кэш от root: без sudo раннер не может
-          # ни читать файлы для tar, ни chmod'ить чужие файлы.
-          sudo chown -R "$(id -u):$(id -g)" .gradle-ci allure-history 2>/dev/null || true
-          chmod -R a+rX .gradle-ci allure-history 2>/dev/null || true
-      - name: Save Gradle + Allure history cache
-        if: always()
-        continue-on-error: true   # параллельные джобы могут сохранять один ключ
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            vidayapi/.gradle-ci
-            vidayapi/allure-history
-          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
 
   # ---------------------------------------------------------------------------
   # STAGE: integration (Требования 2-4, 6, 10, 14)
@@ -324,12 +288,10 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Restore Gradle + Allure history cache
+      - name: Restore Gradle cache
         uses: actions/cache/restore@v4
         with:
-          path: |
-            vidayapi/.gradle-ci
-            vidayapi/allure-history
+          path: vidayapi/.gradle-ci
           key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
       - name: Run integration tests on the LR2 stand
         run: |
@@ -364,22 +326,6 @@ jobs:
             vidayapi/allure-history/
           if-no-files-found: ignore
           retention-days: 7
-      - name: Fix cache permissions (root-owned files from docker)
-        if: always()
-        run: |
-          # Контейнер (-u root) пишет кэш от root: без sudo раннер не может
-          # ни читать файлы для tar, ни chmod'ить чужие файлы.
-          sudo chown -R "$(id -u):$(id -g)" .gradle-ci allure-history 2>/dev/null || true
-          chmod -R a+rX .gradle-ci allure-history 2>/dev/null || true
-      - name: Save Gradle + Allure history cache
-        if: always()
-        continue-on-error: true   # параллельные джобы могут сохранять один ключ
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            vidayapi/.gradle-ci
-            vidayapi/allure-history
-          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
 
   # ---------------------------------------------------------------------------
   # STAGE: e2e (Задание 3, Требование 13)
@@ -404,12 +350,10 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Restore Gradle + Allure history cache
+      - name: Restore Gradle cache
         uses: actions/cache/restore@v4
         with:
-          path: |
-            vidayapi/.gradle-ci
-            vidayapi/allure-history
+          path: vidayapi/.gradle-ci
           key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
       - name: Run E2E MVP scenario
         run: |
@@ -444,22 +388,6 @@ jobs:
             vidayapi/allure-history/
           if-no-files-found: ignore
           retention-days: 7
-      - name: Fix cache permissions (root-owned files from docker)
-        if: always()
-        run: |
-          # Контейнер (-u root) пишет кэш от root: без sudo раннер не может
-          # ни читать файлы для tar, ни chmod'ить чужие файлы.
-          sudo chown -R "$(id -u):$(id -g)" .gradle-ci allure-history 2>/dev/null || true
-          chmod -R a+rX .gradle-ci allure-history 2>/dev/null || true
-      - name: Save Gradle + Allure history cache
-        if: always()
-        continue-on-error: true   # параллельные джобы могут сохранять один ключ
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            vidayapi/.gradle-ci
-            vidayapi/allure-history
-          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
 
   # ---------------------------------------------------------------------------
   # STAGE: device — тесты Android НА УСТРОЙСТВЕ (Требование 7).
@@ -613,13 +541,19 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Restore Gradle + Allure history cache
+      - name: Restore Gradle cache
+        id: restore-gradle
         uses: actions/cache/restore@v4
         with:
-          path: |
-            vidayapi/.gradle-ci
-            vidayapi/allure-history
+          path: vidayapi/.gradle-ci
           key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
+      - name: Restore Allure history (последний прогон)
+        uses: actions/cache/restore@v4
+        with:
+          path: vidayapi/allure-history
+          key: vidayapi-allure-history-${{ github.sha }}
+          restore-keys: |
+            vidayapi-allure-history-
       - name: Download unit allure-results
         uses: actions/download-artifact@v4
         continue-on-error: true
@@ -667,15 +601,29 @@ jobs:
           # ни читать файлы для tar, ни chmod'ить чужие файлы.
           sudo chown -R "$(id -u):$(id -g)" .gradle-ci allure-history 2>/dev/null || true
           chmod -R a+rX .gradle-ci allure-history 2>/dev/null || true
-      - name: Save Gradle + Allure history cache
-        if: always()
-        continue-on-error: true   # параллельные джобы могут сохранять один ключ
+      # Кэш сохраняет ТОЛЬКО эта джоба: GitHub разрешает создать запись с одним
+      # ключом лишь одному процессу — параллельные save падают с
+      # "Unable to reserve cache ... another job may be creating this cache".
+      # Сохраняем только когда кэш НЕ был восстановлен (cache-hit=false):
+      # стабильный ключ уже существует на повторных прогонах — повторный save
+      # дал бы 409 "another job may be creating this cache".
+      - name: Save Gradle cache (если не был восстановлен)
+        if: always() && steps.restore-gradle.outputs.cache-hit != 'true'
+        continue-on-error: true
         uses: actions/cache/save@v4
         with:
-          path: |
-            vidayapi/.gradle-ci
-            vidayapi/allure-history
+          path: vidayapi/.gradle-ci
           key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
+      # История Allure пишется под УНИКАЛЬНЫМ ключом (sha+run_id): запись никогда
+      # не конфликтует, а следующий прогон достаёт последнюю через restore-keys
+      # (тренды, Требование 9).
+      - name: Save Allure history (уникальный ключ)
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: vidayapi/allure-history
+          key: vidayapi-allure-history-${{ github.sha }}-${{ github.run_id }}
 
   # ---------------------------------------------------------------------------
   # STAGE: sonar — SonarQube анализ backend'а (coverage tree-view + quality).
@@ -706,12 +654,10 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Restore Gradle + Allure history cache
+      - name: Restore Gradle cache
         uses: actions/cache/restore@v4
         with:
-          path: |
-            vidayapi/.gradle-ci
-            vidayapi/allure-history
+          path: vidayapi/.gradle-ci
           key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
       - name: Start SonarQube server
         run: |
@@ -752,22 +698,6 @@ jobs:
       - name: Tear down SonarQube
         if: always()
         run: docker compose -f docker/docker-compose.sonar.yml down -v || true
-      - name: Fix cache permissions (root-owned files from docker)
-        if: always()
-        run: |
-          # Контейнер (-u root) пишет кэш от root: без sudo раннер не может
-          # ни читать файлы для tar, ни chmod'ить чужие файлы.
-          sudo chown -R "$(id -u):$(id -g)" .gradle-ci allure-history 2>/dev/null || true
-          chmod -R a+rX .gradle-ci allure-history 2>/dev/null || true
-      - name: Save Gradle + Allure history cache
-        if: always()
-        continue-on-error: true   # параллельные джобы могут сохранять один ключ
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            vidayapi/.gradle-ci
-            vidayapi/allure-history
-          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
 
   # ---------------------------------------------------------------------------
   # STAGE: publish — итоговые отчёты в git-ветку gh-pages.
