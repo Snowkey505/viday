@@ -121,11 +121,14 @@ jobs:
       - name: Cache Gradle + Android SDK
         uses: actions/cache@v4
         with:
+          # Только caches/wrapper (без lock-файлов): полный .gradle в кэше
+          # приводил к "Could not find <artifact>" из-за частичного кэша.
           path: |
-            viday/.gradle
+            viday/.gradle/caches
+            viday/.gradle/wrapper
             viday/.android-sdk
             viday/**/build
-          key: viday-build-${{ hashFiles('viday/gradle/libs.versions.toml', 'viday/build.gradle.kts') }}
+          key: viday-build-v2-${{ hashFiles('viday/gradle/libs.versions.toml', 'viday/build.gradle.kts') }}
       - name: Install Android SDK
         run: bash scripts/ci-install-sdk.sh
         env:
@@ -150,11 +153,14 @@ jobs:
       - name: Cache Gradle + Android SDK
         uses: actions/cache@v4
         with:
+          # Только caches/wrapper (без lock-файлов): полный .gradle в кэше
+          # приводил к "Could not find <artifact>" из-за частичного кэша.
           path: |
-            viday/.gradle
+            viday/.gradle/caches
+            viday/.gradle/wrapper
             viday/.android-sdk
             viday/**/build
-          key: viday-build-${{ hashFiles('viday/gradle/libs.versions.toml', 'viday/build.gradle.kts') }}
+          key: viday-build-v2-${{ hashFiles('viday/gradle/libs.versions.toml', 'viday/build.gradle.kts') }}
       - name: Install Android SDK
         run: bash scripts/ci-install-sdk.sh
         env:
@@ -415,11 +421,14 @@ jobs:
       - name: Cache Android SDK + Gradle
         uses: actions/cache@v4
         with:
+          # Только caches/wrapper (без lock-файлов): полный .gradle в кэше
+          # приводил к "Could not find <artifact>" из-за частичного кэша.
           path: |
-            viday/.gradle
+            viday/.gradle/caches
+            viday/.gradle/wrapper
             viday/.android-sdk
             viday/**/build
-          key: viday-build-${{ hashFiles('viday/gradle/libs.versions.toml', 'viday/build.gradle.kts') }}
+          key: viday-build-v2-${{ hashFiles('viday/gradle/libs.versions.toml', 'viday/build.gradle.kts') }}
       - name: Setup Java 17 (для bootJar на хосте)
         uses: actions/setup-java@v5
         with:
@@ -489,7 +498,11 @@ jobs:
           working-directory: viday
           script: |
             adb reverse tcp:8080 tcp:8080 || echo "WARN: reverse failed (тест будет SKIPPED)"
-            ./gradlew --no-daemon :app:connectedDebugAndroidTest
+            # Retry с --refresh-dependencies: первый прогон может наткнуться на
+            # частичный кэш модулей -> повтор гарантированно перекачает метаданные.
+            ./gradlew --no-daemon :app:connectedDebugAndroidTest \
+              || { echo "WARN: повтор с --refresh-dependencies"; \
+                   ./gradlew --no-daemon :app:connectedDebugAndroidTest --refresh-dependencies; }
         env:
           ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
           ANDROID_SDK_ROOT: ${{ github.workspace }}/viday/.android-sdk
