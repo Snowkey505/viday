@@ -45,12 +45,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Образы, собранные один раз в build-vidayapi и опубликованные в ghcr.io.
-  # lower() обязателен: docker требует lowercase в имени образа, а владелец
-  # репозитория (напр. Snowkey505) может содержать заглавные буквы.
-  TEST_RUNNER_IMAGE: ghcr.io/${{ lower(github.repository) }}/test-runner:${{ github.sha }}
-  POSTGRES_TEST_IMAGE: ghcr.io/${{ lower(github.repository) }}/postgres-test:${{ github.sha }}
-  IMAGE_NAME: ghcr.io/${{ lower(github.repository) }}/test-runner:${{ github.sha }}
+  # Имена образов ghcr.io вычисляются в каждой джобе шагом "Set GHCR image
+  # names": docker требует lowercase в имени образа, а expression-язык GitHub
+  # Actions не умеет lower() — поэтому используем ${VAR,,} в bash + $GITHUB_ENV.
   COMPOSE_FILE: docker/docker-compose.ci.yml
   COMPOSE_PROJECT_NAME: viday-ci-${{ github.run_id }}
   ALLURE_HISTORY_DIR: /workspace/allure-history
@@ -71,6 +68,12 @@ jobs:
         working-directory: vidayapi
     steps:
       - uses: actions/checkout@v4
+      - name: Set GHCR image names (lowercase)
+        run: |
+          REPO="${GITHUB_REPOSITORY,,}"
+          echo "TEST_RUNNER_IMAGE=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "POSTGRES_TEST_IMAGE=ghcr.io/${REPO}/postgres-test:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "IMAGE_NAME=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
@@ -199,6 +202,12 @@ jobs:
         working-directory: vidayapi
     steps:
       - uses: actions/checkout@v4
+      - name: Set GHCR image names (lowercase)
+        run: |
+          REPO="${GITHUB_REPOSITORY,,}"
+          echo "TEST_RUNNER_IMAGE=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "POSTGRES_TEST_IMAGE=ghcr.io/${REPO}/postgres-test:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "IMAGE_NAME=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
@@ -263,6 +272,12 @@ jobs:
         working-directory: vidayapi
     steps:
       - uses: actions/checkout@v4
+      - name: Set GHCR image names (lowercase)
+        run: |
+          REPO="${GITHUB_REPOSITORY,,}"
+          echo "TEST_RUNNER_IMAGE=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "POSTGRES_TEST_IMAGE=ghcr.io/${REPO}/postgres-test:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "IMAGE_NAME=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
@@ -330,6 +345,12 @@ jobs:
         working-directory: vidayapi
     steps:
       - uses: actions/checkout@v4
+      - name: Set GHCR image names (lowercase)
+        run: |
+          REPO="${GITHUB_REPOSITORY,,}"
+          echo "TEST_RUNNER_IMAGE=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "POSTGRES_TEST_IMAGE=ghcr.io/${REPO}/postgres-test:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "IMAGE_NAME=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
@@ -397,6 +418,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Set GHCR image names (lowercase)
+        run: |
+          REPO="${GITHUB_REPOSITORY,,}"
+          echo "TEST_RUNNER_IMAGE=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "POSTGRES_TEST_IMAGE=ghcr.io/${REPO}/postgres-test:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "IMAGE_NAME=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
       - name: Download backend bootJar
         uses: actions/download-artifact@v4
         continue-on-error: true
@@ -498,6 +525,12 @@ jobs:
         working-directory: vidayapi
     steps:
       - uses: actions/checkout@v4
+      - name: Set GHCR image names (lowercase)
+        run: |
+          REPO="${GITHUB_REPOSITORY,,}"
+          echo "TEST_RUNNER_IMAGE=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "POSTGRES_TEST_IMAGE=ghcr.io/${REPO}/postgres-test:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "IMAGE_NAME=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
