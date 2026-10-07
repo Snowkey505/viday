@@ -61,7 +61,13 @@ subprojects {
         extensions.configure<org.sonarqube.gradle.SonarExtension> {
             properties {
                 property("sonar.sources", "src/main/kotlin")
-                property("sonar.tests", "src/test/kotlin")
+                // Модуль без src/test/kotlin (напр. domain) роняет скан с
+                // "The folder 'src/test/kotlin' does not exist" — задаём путь только
+                // если каталог реально есть (исходники статичны, проверка валидна).
+                val sonarTestDir = layout.projectDirectory.dir("src/test/kotlin")
+                if (sonarTestDir.asFile.exists()) {
+                    property("sonar.tests", sonarTestDir.asFile.absolutePath)
+                }
                 property("sonar.java.binaries", layout.buildDirectory.dir("classes/kotlin/main").get().asFile.absolutePath)
                 property("sonar.java.libraries", configurations.named("runtimeClasspath").get().asPath)
                 property("sonar.junit.reportPaths", layout.buildDirectory.dir("test-results/test").get().asFile.absolutePath)
@@ -448,12 +454,13 @@ tasks.register("attachCoverageToAllure") {
         subprojects.forEach { sub ->
             val index = sub.layout.buildDirectory.file("reports/jacoco/test/html/index.html").get().asFile
             if (index.exists()) {
-                val destDir = File(targetDir, "coverage/${sub.name}")
-                destDir.mkdirs()
-                // Копируем весь html-каталог (index.html + css/js/fonts).
-                index.parentFile.copyRecursively(destDir, overwrite = true)
+                // ВАЖНО: Allure 3 резолвит attachment ТОЛЬКО одним файлом из корня
+                // каталога результатов (файлы в поддиректориях помечаются "missed").
+                // Поэтому кладём index.html наверх с уникальным именем.
+                val dest = File(targetDir, "coverage-${sub.name}.html")
+                index.copyTo(dest, overwrite = true)
                 attachments +=
-                    """{"name": "${sub.name} (JaCoCo HTML)", "source": "coverage/${sub.name}/index.html", "type": "text/html"}"""
+                    """{"name": "${sub.name} (JaCoCo coverage)", "source": "coverage-${sub.name}.html", "type": "text/html"}"""
             }
         }
         if (attachments.isNotEmpty()) {
@@ -471,7 +478,7 @@ tasks.register("attachCoverageToAllure") {
                 appendLine("  \"attachments\": [${attachments.joinToString(",")}]")
                 appendLine("}")
             }
-            File(targetDir, "coverage-summary-result.json").writeText(json.toString())
+            File(targetDir, "coverage-summary-result.json").writeText(json)
             logger.lifecycle("attachCoverageToAllure: added ${attachments.size} coverage attachment(s)")
         } else {
             logger.lifecycle("attachCoverageToAllure: no JaCoCo HTML reports found, skipping")

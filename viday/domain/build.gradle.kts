@@ -8,7 +8,9 @@ plugins {
 }
 
 // JaCoCo-отчёт о покрытии unit-тестов (XML/HTML/CSV) для CI-артефактов.
+// В Gradle 9 jacocoTestReport НЕ зависит от test автоматически — добавляем явно.
 tasks.named<JacocoReport>("jacocoTestReport") {
+    dependsOn("test")
     reports {
         xml.required.set(true)
         html.required.set(true)

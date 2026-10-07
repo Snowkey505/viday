@@ -54,7 +54,7 @@ env:
   GRADLE_CACHE: .gradle-ci
 
 permissions:
-  contents: read
+  contents: write          # publish-reports пушит Allure/покрытие/Sonar на gh-pages
   packages: write          # build-vidayapi пушит образы в ghcr.io
 
 jobs:
@@ -716,3 +716,100 @@ jobs:
             vidayapi/.gradle-ci
             vidayapi/allure-history
           key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
+
+  # ---------------------------------------------------------------------------
+  # STAGE: publish — итоговые отчёты в git-ветку gh-pages.
+  # Проблема: Allure-отчёт, открытый локально через file://, показывает только
+  # загрузку (SPA читает данные через fetch — file:// блокирует). Деплой в ветку
+  # даёт просмотр по https://<owner>.github.io/<repo>/allure/ в браузере.
+  # Структура ветки gh-pages (keep_files сохраняет старое между прогонами):
+  #   allure/ | coverage/{viday,vidayapi}/<module>/ | sonar/ | index.html
+  # ---------------------------------------------------------------------------
+  publish-reports:
+    needs: [report-vidayapi, unit-viday, sonar-vidayapi]
+    if: ${{ !cancelled() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Download Allure report artifact
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: allure-report-ci
+          path: tmp/allure
+      - name: Download Android coverage (JaCoCo)
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: viday-jacoco
+          path: tmp/coverage-viday
+      - name: Download backend coverage (JaCoCo)
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: vidayapi-jacoco-unit
+          path: tmp/coverage-vidayapi
+      - name: Download SonarQube scanner report
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: vidayapi-sonar-report
+          path: tmp/sonar
+      - name: Stage reports for gh-pages
+        env:
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          rm -rf _reports
+          mkdir -p _reports/allure _reports/coverage/viday _reports/coverage/vidayapi _reports/sonar
+          # Allure: внутри артефакта отчёт лежит по vidayapi/build/reports/allure-report-ci/
+          if [ -d tmp/allure/vidayapi/build/reports/allure-report-ci ]; then
+            cp -r tmp/allure/vidayapi/build/reports/allure-report-ci/. _reports/allure/
+            echo "Allure staged ($(find _reports/allure -name index.html | wc -l) index.html)"
+          fi
+          # Покрытие viday: вид структуры tmp/coverage-viday/viday/app/build/reports/jacoco/.../html/
+          for d in $(find tmp/coverage-viday -path "*reports/jacoco*html" -type d 2>/dev/null | sort); do
+            mod=$(echo "$d" | sed -E 's#tmp/coverage-viday/viday/([^/]+)/.*#\1#')
+            mkdir -p "_reports/coverage/viday/$mod"
+            cp -r "$d/." "_reports/coverage/viday/$mod/"
+          done
+          # Покрытие vidayapi: tmp/coverage-vidayapi/vidayapi/<module>/build/reports/jacoco/test/html/
+          for d in $(find tmp/coverage-vidayapi -path "*reports/jacoco*html" -type d 2>/dev/null | sort); do
+            mod=$(echo "$d" | sed -E 's#tmp/coverage-vidayapi/vidayapi/([^/]+)/.*#\1#')
+            mkdir -p "_reports/coverage/vidayapi/$mod"
+            cp -r "$d/." "_reports/coverage/vidayapi/$mod/"
+          done
+          # SonarQube scanner report (report-task.txt)
+          if [ -d tmp/sonar ] && [ -n "$(ls -A tmp/sonar 2>/dev/null)" ]; then
+            cp -r tmp/sonar/. _reports/sonar/
+          fi
+          # Лендинг со ссылками
+          cat > _reports/index.html <<EOF
+          <!DOCTYPE html>
+          <html lang="ru"><head><meta charset="utf-8"><title>viday — отчёты CI</title></head>
+          <body style="font-family:sans-serif;margin:2rem">
+            <h1>Отчёты viday · CI run #${RUN_NUMBER}</h1>
+            <ul>
+              <li><a href="allure/">Allure report (unit + integration + e2e + coverage)</a></li>
+              <li><a href="coverage/viday/app/">Покрытие viday :app</a></li>
+              <li><a href="coverage/viday/data/">Покрытие viday :data</a></li>
+              <li><a href="coverage/vidayapi/">Покрытие vidayapi</a></li>
+              <li><a href="sonar/">SonarQube scanner report</a></li>
+            </ul>
+            <p>Обновлено: $(date -u)</p>
+          </body></html>
+          EOF
+          echo "=== staged tree (maxdepth 3) ==="
+          find _reports -maxdepth 3 | sort | head -50
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: _reports
+          keep_files: true
+          user_name: "github-actions[bot]"
+          user_email: "github-actions[bot]@users.noreply.github.com"
+          commit_message: "Reports (Allure + coverage + Sonar): run #${{ github.run_number }}"
