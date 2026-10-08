@@ -116,17 +116,49 @@ step_report() {
   # это ошибка CI, а не повод публиковать пустой Allure.
   RESULTS_DIR="$ROOT/build/allure-results-ci"
   INPUT_DIR="$ROOT/build/allure-results-ci-input"
-  if [ ! -d "$INPUT_DIR" ]; then
-    echo "ERROR: $INPUT_DIR does not exist"
-    section_end report
-    return 1
+
+  count_input() {
+    find "$INPUT_DIR" -maxdepth 1 -type f \
+      \( -name '*-result.json' -o -name '*-container.json' \) 2>/dev/null | wc -l
+  }
+
+  # CI (джоба report) сама заполняет INPUT_DIR из артефактов. Локальный
+  # полный прогон (full) артефактов не имеет — тогда собираем результаты
+  # прямо из модульных каталогов allure-results*, как это делает CI-шаг
+  # "Collect Allure results from artifacts". Тесты при этом НЕ запускаются.
+  if [ ! -d "$INPUT_DIR" ] || [ "$(count_input)" -eq 0 ]; then
+    echo "CI input absent/empty -> collecting local allure-results* (no tests re-run)"
+    rm -rf "$INPUT_DIR"
+    mkdir -p "$INPUT_DIR"
+    found=0
+    while IFS= read -r -d '' dir; do
+      while IFS= read -r -d '' file; do
+        base="$(basename "$file")"
+        target="$INPUT_DIR/$base"
+        # UUID-имена result/container/attachment файлов уникальны, но
+        # вспомогательные файлы могут совпадать между модулями/стадиями —
+        # никогда не перезаписываем чужой файл.
+        if [ -e "$target" ]; then
+          stem="${base%.*}"
+          ext="${base##*.}"
+          n=1
+          while [ -e "$INPUT_DIR/${stem}-${n}.${ext}" ]; do
+            n=$((n + 1))
+          done
+          target="$INPUT_DIR/${stem}-${n}.${ext}"
+        fi
+        cp -p "$file" "$target"
+        found=$((found + 1))
+      done < <(find "$dir" -type f -print0)
+    done < <(find "$ROOT" -mindepth 3 -maxdepth 3 -type d \
+      \( -name 'allure-results' -o -name 'allure-results-it' -o -name 'allure-results-e2e' \) -print0)
+    echo "Collected local Allure files: $found"
   fi
 
-  result_count="$(find "$INPUT_DIR" -type f \
-    \( -name '*-result.json' -o -name '*-container.json' \) | wc -l)"
+  result_count="$(count_input)"
   echo "Allure result/container files: $result_count"
   if [ "$result_count" -eq 0 ]; then
-    echo "ERROR: no Allure result files were downloaded from test jobs"
+    echo "ERROR: no Allure result files available (neither CI input nor local module results)"
     echo "Expected files under: $RESULTS_DIR"
     section_end report
     return 1
