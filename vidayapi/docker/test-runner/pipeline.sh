@@ -96,9 +96,10 @@ step_sonar() {
 }
 
 step_sonar_tests() {
-  # Полный прогон тестов с JaCoCo-покрытием для стадии Sonar в CI:
-  # exec-файлы unit + integration + e2e попадают в один jacocoTestReport,
-  # поэтому в SonarQube уходит покрытие всего конвейера, а не пустое/юнит-только.
+  # Полный прогон тестов с JaCoCo-покрытием (локальный сценарий):
+  # exec-файлы unit + integration + e2e попадают в один jacocoTestReport.
+  # В CI больше НЕ используется: джоба sonar собирает покрытие из exec-файлов,
+  # пришедших артефактами из реальных прогонов (без повторного запуска тестов).
   ok=0
   step_unit || ok=1
   if [ "$ok" -eq 0 ]; then step_integration || ok=1; fi

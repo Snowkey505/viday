@@ -246,7 +246,7 @@ jobs:
           name: Backend unit tests (JUnit)
           path: vidayapi/application/build/test-results/test/**/*.xml, vidayapi/domain/build/test-results/test/**/*.xml, vidayapi/infrastructure/build/test-results/test/**/*.xml
           reporter: java-junit
-      - name: Upload allure-results + JUnit XML
+      - name: Upload allure-results + JUnit XML + JaCoCo exec
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -256,6 +256,9 @@ jobs:
             vidayapi/application/build/test-results/test/**/*.xml
             vidayapi/domain/build/test-results/test/**/*.xml
             vidayapi/infrastructure/build/test-results/test/**/*.xml
+            # exec-файлы JaCoCo: джоба sonar собирает из них полное покрытие
+            # БЕЗ повторного прогона unit-тестов.
+            vidayapi/**/build/jacoco/test.exec
             vidayapi/allure-history/
           if-no-files-found: ignore
           retention-days: 7
@@ -321,7 +324,7 @@ jobs:
           name: Integration tests (JUnit)
           path: vidayapi/infrastructure/build/test-results/testIntegration/**/*.xml
           reporter: java-junit
-      - name: Upload allure-results-it + JUnit XML
+      - name: Upload allure-results-it + JUnit XML + JaCoCo exec
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -329,6 +332,7 @@ jobs:
           path: |
             vidayapi/infrastructure/build/allure-results-it/**/*
             vidayapi/infrastructure/build/test-results/testIntegration/**/*.xml
+            vidayapi/infrastructure/build/jacoco/testIntegration.exec
             vidayapi/allure-history/
           if-no-files-found: ignore
           retention-days: 7
@@ -383,7 +387,7 @@ jobs:
           name: E2E tests (JUnit)
           path: vidayapi/presentation/build/test-results/testE2E/**/*.xml
           reporter: java-junit
-      - name: Upload allure-results-e2e + JUnit XML
+      - name: Upload allure-results-e2e + JUnit XML + JaCoCo exec
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -391,6 +395,7 @@ jobs:
           path: |
             vidayapi/presentation/build/allure-results-e2e/**/*
             vidayapi/presentation/build/test-results/testE2E/**/*.xml
+            vidayapi/presentation/build/jacoco/testE2E.exec
             vidayapi/allure-history/
           if-no-files-found: ignore
           retention-days: 7
@@ -496,13 +501,14 @@ jobs:
           force-avd-creation: true
           disable-animations: true
           working-directory: viday
+          # ВАЖНО: android-emulator-runner выполняет КАЖДУЮ строку script отдельным
+          # `sh -c` — переносы строки с '\' в конце ломают команду (Gradle получает
+          # '\' как имя таска: "Task '\' not found"). Только однострочные команды.
           script: |
             adb reverse tcp:8080 tcp:8080 || echo "WARN: reverse failed (тест будет SKIPPED)"
             # Retry с --refresh-dependencies: первый прогон может наткнуться на
             # частичный кэш модулей -> повтор гарантированно перекачает метаданные.
-            ./gradlew --no-daemon :app:connectedDebugAndroidTest \
-              || { echo "WARN: повтор с --refresh-dependencies"; \
-                   ./gradlew --no-daemon :app:connectedDebugAndroidTest --refresh-dependencies; }
+            ./gradlew --no-daemon :app:connectedDebugAndroidTest || { echo "WARN: повтор с --refresh-dependencies"; ./gradlew --no-daemon :app:connectedDebugAndroidTest --refresh-dependencies; }
         env:
           ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
           ANDROID_SDK_ROOT: ${{ github.workspace }}/viday/.android-sdk
@@ -649,10 +655,11 @@ jobs:
   # ---------------------------------------------------------------------------
   # STAGE: sonar — SonarQube анализ backend'а (coverage tree-view + quality).
   # Сервер поднимается прямо в джобе через docker-compose.sonar.yml; токен
-  # генерируется через REST API (свежий сервер, admin/admin). Джоба сама
-  # прогоняет ВЕСЬ конвейер тестов (unit + integration + e2e) с JaCoCo, поэтому
-  # в SonarQube уходит ПОЛНОЕ покрытие, а не пустое. Результат: (1) проект на
-  # сервере с деревом модулей и coverage, (2) автономный HTML-снимок отчёта
+  # генерируется через REST API (свежий сервер, admin/admin). Тесты НЕ
+  # перезапускаются: JaCoCo exec-файлы и JUnit XML приходят артефактами из
+  # реальных прогонов (unit / integration / e2e), jacocoTestReport только
+  # сливает их в итоговое покрытие. Результат: (1) проект на сервере с деревом
+  # модулей и coverage, (2) автономный HTML-снимок отчёта
   # (scripts/sonar-snapshot.py) + полный JaCoCo HTML — оба уходят на gh-pages.
   # Джоба не блокирует конвейер (continue-on-error).
   # ---------------------------------------------------------------------------
@@ -702,22 +709,28 @@ jobs:
               | python3 -c 'import sys, json; print(json.load(sys.stdin)["token"])')
             echo "SONAR_TOKEN=$TOKEN" >> "$GITHUB_ENV"
           fi
-      # Полный прогон тестов на стенде в ОДНОМ workspace: JaCoCo-агент пишет
-      # exec-файлы для unit + integration + e2e, jacocoTestReport собирает их
-      # в один отчёт модуля — именно его импортирует SonarQube.
-      - name: Run full test suite with JaCoCo (unit + integration + e2e)
-        run: |
-          docker pull "$TEST_RUNNER_IMAGE"
-          docker pull "$POSTGRES_TEST_IMAGE"
-          docker compose -f $COMPOSE_FILE up -d postgres-test redis-test minio-test
-          docker compose -f $COMPOSE_FILE run --rm -u root \
-            -v "$PWD:/workspace" \
-            -v "$PWD/$GRADLE_CACHE:/cache/.gradle" \
-            -e GRADLE_USER_HOME=/cache/.gradle \
-            test-runner sonar-tests
-      - name: Tear down test stand
-        if: always()
-        run: docker compose -f $COMPOSE_FILE down -v || true
+      # Тесты НЕ перезапускаются: JaCoCo exec-файлы и JUnit XML приходят
+      # артефактами из реальных прогонов (unit / integration / e2e).
+      # jacocoTestReport здесь только СЛИВАЕТ exec-файлы в отчёт модуля
+      # (попутно компилируя классы), затем сканер импортирует его в SonarQube.
+      - name: Download unit test artifacts (JaCoCo exec + JUnit XML)
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: vidayapi-unit-results
+          path: vidayapi
+      - name: Download integration test artifacts (JaCoCo exec + JUnit XML)
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: vidayapi-it-results
+          path: vidayapi
+      - name: Download e2e test artifacts (JaCoCo exec + JUnit XML)
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: vidayapi-e2e-results
+          path: vidayapi
       - name: "Run SonarQube analysis (aggregated coverage: unit + IT + e2e)"
         run: |
           docker run --rm --network host -u root \
