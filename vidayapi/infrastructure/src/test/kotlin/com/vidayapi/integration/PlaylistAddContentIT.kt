@@ -10,11 +10,7 @@ import io.qameta.allure.Story
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
-/**
- * IT-сценарий (Требование 17a): добавление контента в плейлист —
- * count растёт, PK (content_id, playlist_id) не пускает дубликат, удаление работает.
- */
-@Epic("Integration (ЛР2)")
+@Epic("Integration")
 @Feature("Доступ к данным: JdbcPlaylistRepository на реальном PostgreSQL")
 class PlaylistAddContentIT : StandPostgresIT() {
 

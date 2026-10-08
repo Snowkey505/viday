@@ -567,26 +567,34 @@ jobs:
           key: vidayapi-allure-history-${{ github.sha }}
           restore-keys: |
             vidayapi-allure-history-
+      # ВАЖНО: артефакты упакованы относительно vidayapi (наименьший общий
+      # предок путей загрузки), поэтому распаковывать нужно в vidayapi/,
+      # а не в корень репозитория. Без path: allure-results* оказываются
+      # вне /workspace контейнера и отчёт генерируется ПУСТЫМ.
       - name: Download unit allure-results
         uses: actions/download-artifact@v4
         continue-on-error: true
         with:
           name: vidayapi-unit-results
+          path: vidayapi
       - name: Download integration allure-results
         uses: actions/download-artifact@v4
         continue-on-error: true
         with:
           name: vidayapi-it-results
+          path: vidayapi
       - name: Download e2e allure-results
         uses: actions/download-artifact@v4
         continue-on-error: true
         with:
           name: vidayapi-e2e-results
+          path: vidayapi
       - name: Download unit coverage (JaCoCo XML/HTML) для Allure
         uses: actions/download-artifact@v4
         continue-on-error: true
         with:
           name: vidayapi-jacoco-unit
+          path: vidayapi
       - name: Generate Allure report from existing results (no re-run)
         run: |
           docker pull "$TEST_RUNNER_IMAGE"
@@ -641,8 +649,12 @@ jobs:
   # ---------------------------------------------------------------------------
   # STAGE: sonar — SonarQube анализ backend'а (coverage tree-view + quality).
   # Сервер поднимается прямо в джобе через docker-compose.sonar.yml; токен
-  # генерируется через REST API (свежий сервер, admin/admin). Джоба НЕ блокирует
-  # конвейер (continue-on-error), результат скана публикуется артефактом.
+  # генерируется через REST API (свежий сервер, admin/admin). Джоба сама
+  # прогоняет ВЕСЬ конвейер тестов (unit + integration + e2e) с JaCoCo, поэтому
+  # в SonarQube уходит ПОЛНОЕ покрытие, а не пустое. Результат: (1) проект на
+  # сервере с деревом модулей и coverage, (2) автономный HTML-снимок отчёта
+  # (scripts/sonar-snapshot.py) + полный JaCoCo HTML — оба уходят на gh-pages.
+  # Джоба не блокирует конвейер (continue-on-error).
   # ---------------------------------------------------------------------------
   sonar-vidayapi:
     # Скан запускается ПОСЛЕ всех тестовых стадий backend'а: покрытие и
@@ -690,9 +702,24 @@ jobs:
               | python3 -c 'import sys, json; print(json.load(sys.stdin)["token"])')
             echo "SONAR_TOKEN=$TOKEN" >> "$GITHUB_ENV"
           fi
-      - name: Run SonarQube analysis (unit tests + JaCoCo + scan)
+      # Полный прогон тестов на стенде в ОДНОМ workspace: JaCoCo-агент пишет
+      # exec-файлы для unit + integration + e2e, jacocoTestReport собирает их
+      # в один отчёт модуля — именно его импортирует SonarQube.
+      - name: Run full test suite with JaCoCo (unit + integration + e2e)
         run: |
           docker pull "$TEST_RUNNER_IMAGE"
+          docker pull "$POSTGRES_TEST_IMAGE"
+          docker compose -f $COMPOSE_FILE up -d postgres-test redis-test minio-test
+          docker compose -f $COMPOSE_FILE run --rm -u root \
+            -v "$PWD:/workspace" \
+            -v "$PWD/$GRADLE_CACHE:/cache/.gradle" \
+            -e GRADLE_USER_HOME=/cache/.gradle \
+            test-runner sonar-tests
+      - name: Tear down test stand
+        if: always()
+        run: docker compose -f $COMPOSE_FILE down -v || true
+      - name: "Run SonarQube analysis (aggregated coverage: unit + IT + e2e)"
+        run: |
           docker run --rm --network host -u root \
             -v "$PWD:/workspace" \
             -v "$PWD/$GRADLE_CACHE:/cache/.gradle" \
@@ -700,14 +727,46 @@ jobs:
             -e SONAR_TOKEN="$SONAR_TOKEN" \
             -e SONAR_HOST_URL="http://localhost:9002" \
             "$TEST_RUNNER_IMAGE" sonar
-      - name: Upload SonarQube scanner report
+      - name: Build SonarQube HTML snapshot (браузерный отчёт)
+        if: always()
+        run: |
+          # Дождаться фоновой обработки (compute engine), иначе метрики ещё
+          # не рассчитаны. Затем scripts/sonar-snapshot.py снимает метрики и
+          # замечания через Web API в автономный sonar-report.html — он
+          # публикуется на gh-pages, т.к. живой сервер умирает вместе с джобой.
+          if [ -f build/sonar/report-task.txt ]; then
+            TASK_ID=$(sed -n 's/^ceTaskId=//p' build/sonar/report-task.txt)
+            for _ in $(seq 1 60); do
+              STATUS=$(curl -fsS -u "$SONAR_TOKEN:" \
+                "http://localhost:9002/api/ce/task?id=$TASK_ID" \
+                | python3 -c 'import sys,json; print(json.load(sys.stdin)["task"]["status"])' 2>/dev/null \
+                || echo "UNKNOWN")
+              echo "compute-engine task: $STATUS"
+              [ "$STATUS" = "SUCCESS" ] && break
+              [ "$STATUS" = "FAILED" ] && break
+              sleep 10
+            done
+          fi
+          python3 scripts/sonar-snapshot.py
+      - name: Upload SonarQube report (HTML snapshot + scanner report)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: vidayapi-sonar-report
           path: vidayapi/build/sonar/
-          if-no-files-found: ignore
+          if-no-files-found: warn
           retention-days: 14
+      - name: Upload full coverage (JaCoCo XML/HTML/CSV, unit + IT + e2e)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vidayapi-jacoco-full
+          path: |
+            vidayapi/**/build/reports/jacoco/test/jacocoTestReport.xml
+            vidayapi/**/build/reports/jacoco/test/jacocoTestReport.csv
+            vidayapi/**/build/reports/jacoco/test/html/**
+          if-no-files-found: warn
+          retention-days: 7
       - name: Tear down SonarQube
         if: always()
         run: docker compose -f docker/docker-compose.sonar.yml down -v || true
@@ -743,11 +802,11 @@ jobs:
         with:
           name: viday-jacoco
           path: tmp/coverage-viday
-      - name: Download backend coverage (JaCoCo)
+      - name: Download backend coverage (JaCoCo, unit + IT + e2e)
         uses: actions/download-artifact@v4
         continue-on-error: true
         with:
-          name: vidayapi-jacoco-unit
+          name: vidayapi-jacoco-full
           path: tmp/coverage-vidayapi
       - name: Download SonarQube scanner report
         uses: actions/download-artifact@v4
@@ -762,45 +821,56 @@ jobs:
           set -euo pipefail
           rm -rf _reports
           mkdir -p _reports/allure _reports/coverage/viday _reports/coverage/vidayapi _reports/sonar
-          # Allure: внутри артефакта отчёт лежит по vidayapi/build/reports/allure-report-ci/
-          if [ -d tmp/allure/vidayapi/build/reports/allure-report-ci ]; then
-            cp -r tmp/allure/vidayapi/build/reports/allure-report-ci/. _reports/allure/
+          # ВАЖНО: артефакты упакованы относительно viday/ и vidayapi/ (наименьший
+          # общий предок путей загрузки), поэтому после распаковки префикса
+          # viday|vidayapi в путях НЕТ. Раньше staging искал tmp/.../vidayapi/...
+          # и находил пустоту — на gh-pages не попадало ничего.
+          # Allure: корень артефакта = vidayapi -> tmp/allure/build/reports/allure-report-ci/
+          if [ -d tmp/allure/build/reports/allure-report-ci ]; then
+            cp -r tmp/allure/build/reports/allure-report-ci/. _reports/allure/
             echo "Allure staged ($(find _reports/allure -name index.html | wc -l) index.html)"
           fi
-          # Покрытие viday: вид структуры tmp/coverage-viday/viday/app/build/reports/jacoco/.../html/
+          # Покрытие viday: tmp/coverage-viday/<module>/build/reports/jacoco/.../html/
           for d in $(find tmp/coverage-viday -path "*reports/jacoco*html" -type d 2>/dev/null | sort); do
-            mod=$(echo "$d" | sed -E 's#tmp/coverage-viday/viday/([^/]+)/.*#\1#')
+            mod=$(echo "$d" | sed -E 's#tmp/coverage-viday/([^/]+)/.*#\1#')
             mkdir -p "_reports/coverage/viday/$mod"
             cp -r "$d/." "_reports/coverage/viday/$mod/"
           done
-          # Покрытие vidayapi: tmp/coverage-vidayapi/vidayapi/<module>/build/reports/jacoco/test/html/
+          # Покрытие vidayapi: tmp/coverage-vidayapi/<module>/build/reports/jacoco/test/html/
           for d in $(find tmp/coverage-vidayapi -path "*reports/jacoco*html" -type d 2>/dev/null | sort); do
-            mod=$(echo "$d" | sed -E 's#tmp/coverage-vidayapi/vidayapi/([^/]+)/.*#\1#')
+            mod=$(echo "$d" | sed -E 's#tmp/coverage-vidayapi/([^/]+)/.*#\1#')
             mkdir -p "_reports/coverage/vidayapi/$mod"
             cp -r "$d/." "_reports/coverage/vidayapi/$mod/"
           done
-          # SonarQube scanner report (report-task.txt)
+          # SonarQube: автономный HTML-снимок (sonar-report.html) + report-task.txt
           if [ -d tmp/sonar ] && [ -n "$(ls -A tmp/sonar 2>/dev/null)" ]; then
             cp -r tmp/sonar/. _reports/sonar/
           fi
           # Лендинг со ссылками
           cat > _reports/index.html <<EOF
           <!DOCTYPE html>
-          <html lang="ru"><head><meta charset="utf-8"><title>viday — отчёты CI</title></head>
-          <body style="font-family:sans-serif;margin:2rem">
+          <html lang="ru"><head><meta charset="utf-8"><title>viday — отчёты CI</title>
+          <style>body{font-family:system-ui,sans-serif;margin:2rem}li{margin:.35rem 0}</style></head>
+          <body>
             <h1>Отчёты viday · CI run #${RUN_NUMBER}</h1>
             <ul>
               <li><a href="allure/">Allure report (unit + integration + e2e + coverage)</a></li>
-              <li><a href="coverage/viday/app/">Покрытие viday :app</a></li>
-              <li><a href="coverage/viday/data/">Покрытие viday :data</a></li>
-              <li><a href="coverage/vidayapi/">Покрытие vidayapi</a></li>
-              <li><a href="sonar/">SonarQube scanner report</a></li>
+              <li><a href="sonar/sonar-report.html">SonarQube report (полный снимок: метрики + замечания)</a></li>
+              <li>Покрытие viday (JaCoCo HTML):
+                <a href="coverage/viday/app/">app</a> ·
+                <a href="coverage/viday/data/">data</a> ·
+                <a href="coverage/viday/domain/">domain</a></li>
+              <li>Покрытие vidayapi (JaCoCo HTML, unit + integration + e2e):
+                <a href="coverage/vidayapi/application/">application</a> ·
+                <a href="coverage/vidayapi/domain/">domain</a> ·
+                <a href="coverage/vidayapi/infrastructure/">infrastructure</a> ·
+                <a href="coverage/vidayapi/presentation/">presentation</a></li>
             </ul>
             <p>Обновлено: $(date -u)</p>
           </body></html>
           EOF
           echo "=== staged tree (maxdepth 3) ==="
-          find _reports -maxdepth 3 | sort | head -50
+          find _reports -maxdepth 3 | sort | head -60
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:

@@ -15,6 +15,7 @@
 #   pipeline.sh report        # Allure из уже лежащих allure-results* (без тестов)
 #   pipeline.sh assemble      # compile / bootJar без тестов
 #   pipeline.sh sonar         # SonarQube анализ (нужны SONAR_TOKEN / SONAR_HOST_URL)
+#   pipeline.sh sonar-tests   # весь конвейер тестов с JaCoCo (для стадии Sonar в CI)
 #   pipeline.sh repeat        # только локально / make ci-runner
 # =============================================================================
 set -uo pipefail
@@ -83,12 +84,26 @@ step_e2e() {
 step_sonar() {
   section_start sonar "SonarQube анализ"
   echo "### [sonar] SonarQube ($SONAR_HOST_URL) ($(date +%T))"
+  # report-task.txt и прочие артефакты сканера кладём в build/sonar —
+  # CI-джоба публикует их вместе с HTML-снимком отчёта.
   $GRADLE sonar \
     -Dsonar.host.url="${SONAR_HOST_URL:-http://localhost:9002}" \
     -Dsonar.token="$SONAR_TOKEN" \
+    -Dsonar.working.directory=build/sonar \
     -Dsonar.qualitygate.wait=false || { section_end sonar; return 1; }
   section_end sonar
   echo "sonar: OK"
+}
+
+step_sonar_tests() {
+  # Полный прогон тестов с JaCoCo-покрытием для стадии Sonar в CI:
+  # exec-файлы unit + integration + e2e попадают в один jacocoTestReport,
+  # поэтому в SonarQube уходит покрытие всего конвейера, а не пустое/юнит-только.
+  ok=0
+  step_unit || ok=1
+  if [ "$ok" -eq 0 ]; then step_integration || ok=1; fi
+  if [ "$ok" -eq 0 ]; then step_e2e || ok=1; fi
+  return "$ok"
 }
 
 step_report() {
@@ -123,6 +138,7 @@ case "${1:-full}" in
   e2e)         step_e2e ;;
   report)      step_report ;;
   sonar)       step_sonar ;;
+  sonar-tests) step_sonar_tests ;;
   repeat)      step_repeat ;;
   full)
     ok=0
@@ -139,7 +155,7 @@ case "${1:-full}" in
     exit "$ok"
     ;;
   *)
-    echo "usage: pipeline.sh [full|unit|integration|e2e|report|assemble|sonar|repeat]"
+    echo "usage: pipeline.sh [full|unit|integration|e2e|report|assemble|sonar|sonar-tests|repeat]"
     exit 2
     ;;
 esac

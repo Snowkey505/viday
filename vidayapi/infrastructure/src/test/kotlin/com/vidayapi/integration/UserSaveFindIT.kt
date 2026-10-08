@@ -8,11 +8,7 @@ import io.qameta.allure.Story
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
-/**
- * IT-сценарий (Требование 17a — один файл = один тест из нескольких шагов):
- * сохранение пользователя и поиск по username на реальном PostgreSQL стенда.
- */
-@Epic("Integration (ЛР2)")
+@Epic("Integration")
 @Feature("Доступ к данным: JdbcUserRepository на реальном PostgreSQL")
 class UserSaveFindIT : StandPostgresIT() {
 

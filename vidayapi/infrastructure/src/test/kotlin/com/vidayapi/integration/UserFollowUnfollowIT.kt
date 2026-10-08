@@ -8,11 +8,7 @@ import io.qameta.allure.Story
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
-/**
- * IT-сценарий (Требование 17a): round-trip подписки/отписки в таблице
- * viday.user_follows с проверкой инвариантов (повторная подписка, отписка без подписки).
- */
-@Epic("Integration (ЛР2)")
+@Epic("Integration")
 @Feature("Доступ к данным: JdbcUserRepository на реальном PostgreSQL")
 class UserFollowUnfollowIT : StandPostgresIT() {
 

@@ -9,14 +9,8 @@ import com.vidayapi.repository.JdbcPlaylistRepository
 import com.vidayapi.repository.JdbcUserRepository
 import com.vidayapi.usecase.RegisterUserUseCase
 import org.slf4j.helpers.NOPLogger
+import org.springframework.jdbc.core.JdbcTemplate
 
-/**
- * Общие фикстуры интеграционных тестов ЛР2 (Требование 17b: arrange один раз,
- * хелперы общие для всех IT-сценариев).
- *
- * [PlainPasswordEncoder] — детерминированный фейк [PasswordEncoder]: не выполняет
- * реальный BCrypt (это криптография, а не тестируемая логика), только помечает хеш.
- */
 object PlainPasswordEncoder : PasswordEncoder {
     override fun encode(rawPassword: String): String = "plain:$rawPassword"
     override fun matches(rawPassword: String, encodedPassword: String): Boolean =
@@ -24,20 +18,18 @@ object PlainPasswordEncoder : PasswordEncoder {
 }
 
 /**
- * Комплект репозиториев поверх реального пула стенда (см. [StandPostgresIT]).
+ * Комплект репозиториев поверх реального пула стенда.
  * Каждый IT-сценарий создаёт свой экземпляр от jdbc-хендла базового класса.
  */
-class IntegrationRepositories(jdbc: org.springframework.jdbc.core.JdbcTemplate) {
+class IntegrationRepositories(jdbc: JdbcTemplate) {
     val users = JdbcUserRepository(jdbc)
     val playlists = JdbcPlaylistRepository(jdbc, NOPLogger.NOP_LOGGER)
     val content = JdbcContentRepository(jdbc)
     val register = RegisterUserUseCase(users, PlainPasswordEncoder)
 
-    /** Регистрирует пользователя и возвращает его id (arrange одного шага). */
     fun owner(username: String): Int =
         register.execute(username, "pass123").getOrThrow().id!!
 
-    /** Сохраняет публичное видео от имени [ownerId] и возвращает сохранённый [Content]. */
     fun saveVideo(ownerId: Int, name: String = "Clip ${System.nanoTime()}"): Content =
         content.save(
             Content(

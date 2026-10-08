@@ -9,30 +9,14 @@ import org.junit.jupiter.api.TestInstance
 import org.springframework.jdbc.core.JdbcTemplate
 
 /**
- * База для интеграционных тестов ЛР2.
- *
- * Тесты подключаются к РЕАЛЬНОМУ инстансу PostgreSQL тестового стенда
- * (`docker-compose.test.yml`, порт по умолчанию 55432), развёрнутому в рамках
- * этой лабораторной работы (Требование 6) как ОТДЕЛЬНЫЙ инстанс хранилища
- * (Требование 3), инициализированный последовательным запуском init-скриптов
- * 01..05 (Требование 4).
- *
+ * База для интеграционных тестов. Тесты подключаются к РЕАЛЬНОМУ инстансу PostgreSQL тестового стенда,
+ * развёрнутому как ОТДЕЛЬНЫЙ инстанс хранилища, инициализированный последовательным запуском init-скриптов
  * Перед КАЖДЫМ тестом выполняется откат бизнес-данных к пустому состоянию
- * (TRUNCATE ... RESTART IDENTITY), поэтому прогоны повторяемы (Требование 14)
- * и не зависят друг от друга.
- *
- * Параметры подключения берутся из системных свойств / окружения:
- *   VIDAY_TEST_JDBC_URL, VIDAY_TEST_DB_USER, VIDAY_TEST_DB_PASSWORD.
+ * (TRUNCATE ... RESTART IDENTITY), поэтому прогоны повторяемы и не зависят друг от друга.
  */
 @Tag("integration")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class StandPostgresIT {
-
-    // Подключаемся как viday_admin_user (суперпользователь стенда): он владеет
-    // последовательностями, поэтому TRUNCATE ... RESTART IDENTITY и весь откат
-    // состояния (Требования 4/10/14) выполняются без правовых конфликтов.
-    // RLS в E2E-контуре продолжает работать: приложение внутри теста делает
-    // SET ROLE viday_user/viday_creator/... на каждое соединение.
     protected val dataSource: HikariDataSource = HikariDataSource(
         HikariConfig().apply {
             jdbcUrl = prop("VIDAY_TEST_JDBC_URL", "jdbc:postgresql://localhost:55432/viday")
@@ -55,7 +39,7 @@ abstract class StandPostgresIT {
     }
 
     companion object {
-        /** Откат состояния хранилища к состоянию до прогона тестов (Требования 4, 10, 14). */
+        /** Откат состояния хранилища к состоянию до прогона тестов */
         val RESET_SQL = """
             TRUNCATE TABLE
                 viday.user_follows,
@@ -76,8 +60,6 @@ abstract class StandPostgresIT {
     }
 }
 
-/** Достать успешное значение или бросить исключение (kotlin.Result). */
 fun <T> Result<T>.valueOrThrow(): T = getOrThrow()
 
-/** Достать успешное значение или null при ошибке (kotlin.Result). */
 fun <T> Result<T>.valueOrNull(): T? = getOrNull()

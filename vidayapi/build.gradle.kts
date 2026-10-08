@@ -70,7 +70,11 @@ subprojects {
                 }
                 property("sonar.java.binaries", layout.buildDirectory.dir("classes/kotlin/main").get().asFile.absolutePath)
                 property("sonar.java.libraries", configurations.named("runtimeClasspath").get().asPath)
-                property("sonar.junit.reportPaths", layout.buildDirectory.dir("test-results/test").get().asFile.absolutePath)
+                property(
+                    "sonar.junit.reportPaths",
+                    listOf("test-results/test", "test-results/testIntegration", "test-results/testE2E")
+                        .joinToString(",") { layout.buildDirectory.dir(it).get().asFile.absolutePath },
+                )
                 property(
                     "sonar.coverage.jacoco.xmlReportPaths",
                     layout.buildDirectory.file("reports/jacoco/test/jacocoTestReport.xml").get().asFile.absolutePath,
@@ -250,11 +254,25 @@ subprojects {
             }
         }
 
+        // JaCoCo-отчёт модуля с ЯВНЫМИ путями: именно их ожидают CI-артефакты,
+        // sonar.coverage.jacoco.xmlReportPaths, coverageSummary и attachCoverageToAllure
+        // (дефолтные пути отчёта зависят от версии Gradle и не совпадают с ними).
         tasks.named<JacocoReport>("jacocoTestReport") {
+            // В данные включаем exec-файлы ВСЕХ тестовых задач модуля:
+            // test (unit) + testIntegration + testE2E — итоговое покрытие
+            // отражает весь конвейер, а не только unit-прогон. JaCoCo-агент
+            // подключён ко всем Test-задачам плагином jacoco, но дефолтный
+            // jacocoTestReport собирает только test.exec.
+            executionData(
+                fileTree(layout.buildDirectory.dir("jacoco")) { include("*.exec") },
+            )
             reports {
                 xml.required.set(true)
+                xml.outputLocation.set(layout.buildDirectory.file("reports/jacoco/test/jacocoTestReport.xml"))
                 html.required.set(true)
+                html.outputLocation.set(layout.buildDirectory.dir("reports/jacoco/test/html"))
                 csv.required.set(true)
+                csv.outputLocation.set(layout.buildDirectory.file("reports/jacoco/test/jacocoTestReport.csv"))
             }
         }
     }
