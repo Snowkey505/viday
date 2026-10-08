@@ -110,15 +110,58 @@ step_sonar_tests() {
 step_report() {
   section_start report "Allure из существующих results"
   echo "### [report] агрегированный Allure-отчёт ($(date +%T))"
+
+  # В report-job тесты НЕ запускаются. Все результаты должны быть уже
+  # скачаны из artifacts в build/allure-results-ci. Если каталог пуст —
+  # это ошибка CI, а не повод публиковать пустой Allure.
+  RESULTS_DIR="$ROOT/build/allure-results-ci"
+  INPUT_DIR="$ROOT/build/allure-results-ci-input"
+  if [ ! -d "$INPUT_DIR" ]; then
+    echo "ERROR: $INPUT_DIR does not exist"
+    section_end report
+    return 1
+  fi
+
+  result_count="$(find "$INPUT_DIR" -type f \
+    \( -name '*-result.json' -o -name '*-container.json' \) | wc -l)"
+  echo "Allure result/container files: $result_count"
+  if [ "$result_count" -eq 0 ]; then
+    echo "ERROR: no Allure result files were downloaded from test jobs"
+    echo "Expected files under: $RESULTS_DIR"
+    section_end report
+    return 1
+  fi
+
+  # History is metadata for trends only; it is not a substitute for test results.
+  rm -rf "$RESULTS_DIR"
+  mkdir -p "$RESULTS_DIR"
+
   if [ -d "$HISTORY_DIR" ] && [ -n "$(ls -A "$HISTORY_DIR" 2>/dev/null)" ]; then
-    mkdir -p build/allure-results-ci/history
-    cp -r "$HISTORY_DIR"/. build/allure-results-ci/history/
+    mkdir -p "$RESULTS_DIR/history"
+    cp -r "$HISTORY_DIR"/. "$RESULTS_DIR/history"/
   fi
-  $GRADLE allureCiReport || echo "WARN: allure report failed"
-  if [ -d build/reports/allure-report-ci/history ]; then
+
+  # This task only builds a report from already collected result files.
+  # It MUST NOT depend on test/testIntegration/testE2E.
+  $GRADLE allureCiReport || {
+    echo "ERROR: allureCiReport failed"
+    section_end report
+    return 1
+  }
+
+  report_dir="$ROOT/build/reports/allure-report-ci"
+  if [ ! -f "$report_dir/index.html" ]; then
+    echo "ERROR: Allure report index.html was not generated"
+    section_end report
+    return 1
+  fi
+
+  if [ -d "$report_dir/history" ]; then
+    rm -rf "$HISTORY_DIR"
     mkdir -p "$HISTORY_DIR"
-    cp -r build/reports/allure-report-ci/history/. "$HISTORY_DIR"/
+    cp -r "$report_dir/history"/. "$HISTORY_DIR"/
   fi
+
   section_end report
   echo "report: OK"
 }

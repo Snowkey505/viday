@@ -317,13 +317,16 @@ tasks.register("allureReports") {
 }
 
 // ---- SonarQube analysis (aggregated multi-module coverage in a tree view) ----
-// Usage:
-//   make sonar-up                                  # start the server
-//   ./gradlew sonar -PsonarToken=<token>           # analyze (runs tests + jacoco first)
+// CI contract:
+//   1. unit/integration/e2e test jobs run the tests once;
+//   2. they upload JaCoCo *.exec + JUnit XML;
+//   3. sonar job downloads those artifacts;
+//   4. jacocoTestReport ONLY converts the already existing *.exec files to XML/HTML;
+//   5. sonar imports those reports.
+// IMPORTANT: this task intentionally has NO dependency on any Test task.
 tasks.named<org.sonarqube.gradle.SonarTask>("sonar") {
     group = "verification"
-    description = "Run SonarQube analysis with aggregated JaCoCo coverage from all modules"
-    // Tests must run first so that JaCoCo XML and JUnit XML reports exist for import.
+    description = "Run SonarQube analysis from previously generated test/JaCoCo artifacts (no test re-run)"
     dependsOn(subprojects.map { "${it.path}:jacocoTestReport" })
 }
 
@@ -426,25 +429,33 @@ tasks.register<Exec>("allureServe") {
 // ---- ЛР2: агрегированный Allure-отчёт по ВСЕМ этапам (unit + integration + e2e) ----
 // Генерируется в CI/CD всегда (даже если integration/e2e упали — Требование 8)
 // и учитывает историю прошлых прогонов для трендов (Требование 9).
+val allureCiInputResults = layout.buildDirectory.dir("allure-results-ci-input")
 val allureCiResults = layout.buildDirectory.dir("allure-results-ci")
 val allureCiReportDir = layout.buildDirectory.dir("reports/allure-report-ci")
 
 tasks.register<Copy>("collectAllureResultsCi") {
     group = "verification"
-    description = "Merge already produced allure-results* into build/allure-results-ci (does not re-run tests)"
-    // Copy, не Sync: не затираем history, которую pipeline.sh кладёт в allure-results-ci/history.
+    description = "Collect already produced Allure results for CI report (does not re-run tests)"
+
+    // CI explicitly normalizes artifact contents into build/allure-results-ci-input.
+    // Using that directory makes the report independent of GitHub artifact layout.
+    from(allureCiInputResults)
+
+    // Local/direct invocation is also supported: if the CI input directory is absent
+    // or empty, collect the results produced by the actual test tasks.
     subprojects.forEach { sub ->
         from(sub.layout.buildDirectory.dir("allure-results"))
     }
     from(project(":infrastructure").layout.buildDirectory.dir("allure-results-it"))
     from(project(":presentation").layout.buildDirectory.dir("allure-results-e2e"))
+
     into(allureCiResults)
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     includeEmptyDirs = false
-    mustRunAfter(subprojects.map { "${it.path}:test" })
-    mustRunAfter(":infrastructure:testIntegration", ":presentation:testE2E")
+
+    // Never make this task depend on tests. It is a pure collector.
     doFirst {
-        // Gradle Copy падает, если исходного каталога ещё нет (упавшая/пропущенная стадия).
+        allureCiInputResults.get().asFile.mkdirs()
         listOf(
             project(":infrastructure").layout.buildDirectory.dir("allure-results-it").get().asFile,
             project(":presentation").layout.buildDirectory.dir("allure-results-e2e").get().asFile,

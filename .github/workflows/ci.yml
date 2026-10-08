@@ -579,28 +579,66 @@ jobs:
       # вне /workspace контейнера и отчёт генерируется ПУСТЫМ.
       - name: Download unit allure-results
         uses: actions/download-artifact@v4
-        continue-on-error: true
         with:
           name: vidayapi-unit-results
           path: vidayapi
       - name: Download integration allure-results
         uses: actions/download-artifact@v4
-        continue-on-error: true
         with:
           name: vidayapi-it-results
           path: vidayapi
       - name: Download e2e allure-results
         uses: actions/download-artifact@v4
-        continue-on-error: true
         with:
           name: vidayapi-e2e-results
           path: vidayapi
       - name: Download unit coverage (JaCoCo XML/HTML) для Allure
         uses: actions/download-artifact@v4
-        continue-on-error: true
         with:
           name: vidayapi-jacoco-unit
           path: vidayapi
+      - name: Normalize Allure results (unit + integration + e2e)
+        run: |
+          set -euo pipefail
+          rm -rf vidayapi/build/allure-results-ci-input
+          mkdir -p vidayapi/build/allure-results-ci-input
+
+          found=0
+          while IFS= read -r -d '' dir; do
+            while IFS= read -r -d '' file; do
+              base="$(basename "$file")"
+              target="vidayapi/build/allure-results-ci-input/$base"
+
+              # UUID-named result/container/attachment files are normally unique,
+              # but auxiliary files may collide between artifacts. Never overwrite
+              # a file from another test stage.
+              if [ -e "$target" ]; then
+                stem="${base%.*}"
+                ext="${base##*.}"
+                n=1
+                while [ -e "vidayapi/build/allure-results-ci-input/${stem}-${n}.${ext}" ]; do
+                  n=$((n + 1))
+                done
+                target="vidayapi/build/allure-results-ci-input/${stem}-${n}.${ext}"
+              fi
+
+              cp -p "$file" "$target"
+              found=$((found + 1))
+            done < <(find "$dir" -type f -print0)
+          done < <(
+            find vidayapi -type d \(
+              -name 'allure-results' -o
+              -name 'allure-results-it' -o
+              -name 'allure-results-e2e'
+            \) -print0
+          )
+
+          echo "Collected Allure files: $found"
+          result_count=$(find vidayapi/build/allure-results-ci-input -type f \
+            \( -name '*-result.json' -o -name '*-container.json' \) | wc -l)
+          echo "Collected Allure result/container files: $result_count"
+          test "$result_count" -gt 0
+
       - name: Generate Allure report from existing results (no re-run)
         run: |
           docker pull "$TEST_RUNNER_IMAGE"
@@ -715,22 +753,31 @@ jobs:
       # (попутно компилируя классы), затем сканер импортирует его в SonarQube.
       - name: Download unit test artifacts (JaCoCo exec + JUnit XML)
         uses: actions/download-artifact@v4
-        continue-on-error: true
         with:
           name: vidayapi-unit-results
           path: vidayapi
       - name: Download integration test artifacts (JaCoCo exec + JUnit XML)
         uses: actions/download-artifact@v4
-        continue-on-error: true
         with:
           name: vidayapi-it-results
           path: vidayapi
       - name: Download e2e test artifacts (JaCoCo exec + JUnit XML)
         uses: actions/download-artifact@v4
-        continue-on-error: true
         with:
           name: vidayapi-e2e-results
           path: vidayapi
+      - name: Validate downloaded test artifacts
+        run: |
+          set -euo pipefail
+          exec_count=$(find vidayapi -type f -path '*/build/jacoco/*.exec' | wc -l)
+          junit_count=$(find vidayapi -type f -path '*/build/test-results/**/*.xml' | wc -l)
+          allure_count=$(find vidayapi -type f \( -name '*-result.json' -o -name '*-container.json' \) | wc -l)
+          echo "JaCoCo exec files: $exec_count"
+          echo "JUnit XML files: $junit_count"
+          echo "Allure result/container files: $allure_count"
+          test "$exec_count" -gt 0
+          test "$junit_count" -gt 0
+
       - name: "Run SonarQube analysis (aggregated coverage: unit + IT + e2e)"
         run: |
           docker run --rm --network host -u root \
@@ -894,3 +941,4 @@ jobs:
           user_name: "github-actions[bot]"
           user_email: "github-actions[bot]@users.noreply.github.com"
           commit_message: "Reports (Allure + coverage + Sonar): run #${{ github.run_number }}"
+          
