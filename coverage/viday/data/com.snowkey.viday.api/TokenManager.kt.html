@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TokenManager.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">data</a> &gt; <a href="index.source.html" class="el_package">com.snowkey.viday.api</a> &gt; <span class="el_source">TokenManager.kt</span></div><h1>TokenManager.kt</h1><pre class="source lang-java linenums">package com.snowkey.viday.api
+
+import android.content.Context
+import android.content.SharedPreferences
+import android.util.Base64
+import org.json.JSONObject
+
+<span class="nc" id="L8">class TokenManager(private val context: Context) {</span>
+
+    companion object {
+        private const val PREFS_NAME = &quot;auth_prefs&quot;
+        private const val KEY_TOKEN = &quot;jwt_token&quot;
+    }
+
+<span class="nc" id="L15">    private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)</span>
+
+    fun saveToken(token: String) {
+<span class="nc" id="L18">        prefs.edit().putString(KEY_TOKEN, token).apply()</span>
+<span class="nc" id="L19">    }</span>
+
+    fun getToken(): String? {
+<span class="nc" id="L22">        return prefs.getString(KEY_TOKEN, null)</span>
+    }
+
+    fun clearToken() {
+<span class="nc" id="L26">        prefs.edit().remove(KEY_TOKEN).apply()</span>
+<span class="nc" id="L27">    }</span>
+
+    fun getUserId(): Long? {
+<span class="nc bnc" id="L30" title="All 4 branches missed.">        return getPayloadJson()?.optString(&quot;sub&quot;)?.toLongOrNull()</span>
+    }
+
+    fun getUsername(): String? {
+<span class="nc bnc" id="L34" title="All 2 branches missed.">        return getPayloadJson()?.optString(&quot;username&quot;)</span>
+    }
+
+    fun getRole(): String? {
+<span class="nc bnc" id="L38" title="All 2 branches missed.">        return getPayloadJson()?.optString(&quot;role&quot;)</span>
+    }
+
+    private fun getPayloadJson(): JSONObject? {
+<span class="nc bnc" id="L42" title="All 2 branches missed.">        val token = getToken() ?: return null</span>
+<span class="nc" id="L43">        return try {</span>
+<span class="nc" id="L44">            val parts = token.split(&quot;.&quot;)</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">            if (parts.size &lt; 2) return null</span>
+<span class="nc" id="L46">            val payload = String(</span>
+<span class="nc" id="L47">                Base64.decode(</span>
+<span class="nc" id="L48">                    parts[1],</span>
+<span class="nc" id="L49">                    Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING</span>
+                )
+            )
+<span class="nc" id="L52">            JSONObject(payload)</span>
+<span class="nc" id="L53">        } catch (e: Exception) {</span>
+<span class="nc" id="L54">            null</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

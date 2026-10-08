@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MinioFileStorageAdapter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">infrastructure</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.storage</a> &gt; <span class="el_source">MinioFileStorageAdapter.kt</span></div><h1>MinioFileStorageAdapter.kt</h1><pre class="source lang-java linenums">package com.vidayapi.storage
+
+import com.vidayapi.port.FileStoragePort
+import io.minio.BucketExistsArgs
+import io.minio.MakeBucketArgs
+import io.minio.MinioClient
+import com.vidayapi.model.Error
+import com.vidayapi.model.Result
+import com.vidayapi.model.left
+import com.vidayapi.model.right
+import io.minio.GetPresignedObjectUrlArgs
+import io.minio.PutObjectArgs
+import io.minio.RemoveObjectArgs
+import io.minio.http.Method
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.annotation.Configuration
+import java.io.ByteArrayInputStream
+import java.io.InputStream
+import java.util.concurrent.TimeUnit
+
+<span class="nc" id="L22">@Configuration</span>
+<span class="nc" id="L23">class MinioFileStorageAdapter(</span>
+<span class="nc" id="L24">    private val minioClient: MinioClient,</span>
+<span class="nc" id="L25">    @Value(&quot;\${minio.public-endpoint:\${minio.endpoint:http://localhost:9000}}&quot;)</span>
+    private val publicEndpoint: String,
+<span class="nc" id="L27">    @Value(&quot;\${minio.access-key:minioadmin}&quot;)</span>
+    private val accessKey: String,
+<span class="nc" id="L29">    @Value(&quot;\${minio.secret-key:minioadmin}&quot;)</span>
+    private val secretKey: String,
+<span class="nc" id="L31">    @Value(&quot;\${minio.region:us-east-1}&quot;)</span>
+    private val region: String
+) : FileStoragePort {
+
+<span class="nc" id="L35">    private val logger = LoggerFactory.getLogger(MinioFileStorageAdapter::class.java)</span>
+<span class="nc" id="L36">    private val publicMinioClient: MinioClient by lazy {</span>
+<span class="nc" id="L37">        MinioClient.builder()</span>
+<span class="nc" id="L38">            .endpoint(publicEndpoint)</span>
+<span class="nc" id="L39">            .credentials(accessKey, secretKey)</span>
+<span class="nc" id="L40">            .region(region)</span>
+<span class="nc" id="L41">            .build()</span>
+    }
+
+    override fun uploadFile(
+        bucketName: String,
+        objectName: String,
+        inputStream: InputStream,
+        contentType: String,
+        size: Long
+    ): Result&lt;String&gt; {
+<span class="nc" id="L51">        return try {</span>
+<span class="nc" id="L52">            logger.info(&quot;Checking bucket: {}&quot;, bucketName)</span>
+
+<span class="nc" id="L54">            val found = minioClient.bucketExists(</span>
+<span class="nc" id="L55">                BucketExistsArgs.builder().bucket(bucketName).build()</span>
+            )
+
+<span class="nc bnc" id="L58" title="All 2 branches missed.">            if (!found) {</span>
+<span class="nc" id="L59">                logger.info(&quot;Creating bucket: {}&quot;, bucketName)</span>
+<span class="nc" id="L60">                minioClient.makeBucket(</span>
+<span class="nc" id="L61">                    MakeBucketArgs.builder().bucket(bucketName).build()</span>
+                )
+<span class="nc" id="L63">                logger.info(&quot;Bucket created successfully&quot;)</span>
+            }
+
+<span class="nc" id="L66">            val bytes = inputStream.readBytes()</span>
+<span class="nc" id="L67">            logger.info(&quot;Uploading file: {} ({} bytes)&quot;, objectName, bytes.size)</span>
+
+<span class="nc" id="L69">            minioClient.putObject(</span>
+<span class="nc" id="L70">                PutObjectArgs.builder()</span>
+<span class="nc" id="L71">                    .bucket(bucketName)</span>
+<span class="nc" id="L72">                    .`object`(objectName)</span>
+<span class="nc" id="L73">                    .stream(ByteArrayInputStream(bytes), bytes.size.toLong(), -1)</span>
+<span class="nc" id="L74">                    .contentType(contentType)</span>
+<span class="nc" id="L75">                    .build()</span>
+            )
+
+<span class="nc" id="L78">            logger.info(&quot;File uploaded successfully: {}&quot;, objectName)</span>
+<span class="nc" id="L79">            &quot;$bucketName/$objectName&quot;.right()</span>
+
+<span class="nc" id="L81">        } catch (e: Exception) {</span>
+<span class="nc" id="L82">            logger.error(&quot;MinIO upload failed: {}&quot;, e.message, e)</span>
+<span class="nc" id="L83">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun getFileUrl(bucketName: String, objectName: String): Result&lt;String&gt; {
+<span class="nc" id="L88">        return try {</span>
+<span class="nc" id="L89">            val url = publicMinioClient.getPresignedObjectUrl(</span>
+<span class="nc" id="L90">                GetPresignedObjectUrlArgs.builder()</span>
+<span class="nc" id="L91">                    .bucket(bucketName)</span>
+<span class="nc" id="L92">                    .`object`(objectName)</span>
+<span class="nc" id="L93">                    .method(Method.GET)</span>
+<span class="nc" id="L94">                    .expiry(1, TimeUnit.HOURS)</span>
+<span class="nc" id="L95">                    .build()</span>
+            )
+<span class="nc" id="L97">            url.right()</span>
+<span class="nc" id="L98">        } catch (e: Exception) {</span>
+<span class="nc" id="L99">            logger.error(&quot;Failed to get file URL: {}&quot;, e.message, e)</span>
+<span class="nc" id="L100">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun deleteFile(bucketName: String, objectName: String): Result&lt;Unit&gt; {
+<span class="nc" id="L105">        return try {</span>
+<span class="nc" id="L106">            minioClient.removeObject(</span>
+<span class="nc" id="L107">                RemoveObjectArgs.builder()</span>
+<span class="nc" id="L108">                    .bucket(bucketName)</span>
+<span class="nc" id="L109">                    .`object`(objectName)</span>
+<span class="nc" id="L110">                    .build()</span>
+            )
+<span class="nc" id="L112">            Unit.right()</span>
+<span class="nc" id="L113">        } catch (e: Exception) {</span>
+<span class="nc" id="L114">            logger.error(&quot;Failed to delete file: {}&quot;, e.message, e)</span>
+<span class="nc" id="L115">            Error.StorageFailure.left()</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

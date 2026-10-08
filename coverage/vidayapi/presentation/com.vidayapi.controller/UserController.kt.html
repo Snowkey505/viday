@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserController.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">presentation</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.controller</a> &gt; <span class="el_source">UserController.kt</span></div><h1>UserController.kt</h1><pre class="source lang-java linenums">package com.vidayapi.controller
+
+import com.vidayapi.model.Error
+import com.vidayapi.port.UserRepository
+import com.vidayapi.usecase.FollowUserUseCase
+import com.vidayapi.usecase.UnfollowUserUseCase
+import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.core.userdetails.UserDetails
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
+
+<span class="fc" id="L17">@RestController</span>
+@RequestMapping(&quot;/api/users&quot;)
+<span class="fc" id="L19">class UserController(</span>
+<span class="fc" id="L20">    private val userRepository: UserRepository,</span>
+<span class="fc" id="L21">    private val followUserUseCase: FollowUserUseCase,</span>
+<span class="fc" id="L22">    private val unfollowUserUseCase: UnfollowUserUseCase,</span>
+) {
+    @GetMapping(&quot;/{userId}&quot;)
+    fun getUserById(
+        @PathVariable userId: Int,
+        @AuthenticationPrincipal userDetails: UserDetails?,
+    ): ResponseEntity&lt;Any&gt; {
+<span class="nc bnc" id="L29" title="All 2 branches missed.">        if (userDetails == null) {</span>
+<span class="nc" id="L30">            return ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Unauthorized&quot;))</span>
+        }
+
+<span class="nc bnc" id="L33" title="All 2 branches missed.">        return userRepository.findById(userId).fold(</span>
+            onSuccess = { user -&gt;
+<span class="nc bnc" id="L35" title="All 2 branches missed.">                if (user == null) {</span>
+<span class="nc" id="L36">                    ResponseEntity.status(404).body(mapOf(&quot;error&quot; to &quot;User not found&quot;))</span>
+                } else {
+<span class="nc" id="L38">                    ResponseEntity.ok(</span>
+<span class="nc" id="L39">                        mapOf(</span>
+<span class="nc bnc" id="L40" title="All 2 branches missed.">                            &quot;id&quot; to (user.id ?: 0),</span>
+<span class="nc bnc" id="L41" title="All 2 branches missed.">                            &quot;username&quot; to (user.username ?: &quot;&quot;),</span>
+<span class="nc" id="L42">                            &quot;role&quot; to user.role.name,</span>
+<span class="nc bnc" id="L43" title="All 4 branches missed.">                            &quot;createdAt&quot; to (user.createdAt?.toString() ?: &quot;&quot;),</span>
+                        ),
+                    )
+<span class="nc" id="L46">                }</span>
+            },
+            onFailure = { error -&gt;
+<span class="nc" id="L49">                when (error) {</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">                    is Error.NotFound -&gt; ResponseEntity.status(404).body(mapOf(&quot;error&quot; to &quot;User not found&quot;))</span>
+<span class="nc" id="L51">                    else -&gt; ResponseEntity.status(500).body(mapOf(&quot;error&quot; to &quot;Failed to fetch user&quot;))</span>
+<span class="nc" id="L52">                }</span>
+            }
+        )
+    }
+
+    @PostMapping(&quot;/{userId}/follow&quot;)
+    fun followCreator(
+        @PathVariable userId: Int,
+        @AuthenticationPrincipal userDetails: UserDetails?,
+    ): ResponseEntity&lt;Any&gt; {
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">        val followerId = resolveUserId(userDetails) ?: return unauthorized()</span>
+
+<span class="pc bpc" id="L64" title="1 of 2 branches missed.">        return followUserUseCase.execute(followerId, userId).fold(</span>
+<span class="fc" id="L65">            onSuccess = { ResponseEntity.ok(mapOf(&quot;message&quot; to &quot;Subscribed&quot;)) },</span>
+            onFailure = { error -&gt;
+<span class="nc" id="L67">                when (error) {</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">                    is Error.CannotFollowSelf -&gt;</span>
+<span class="nc" id="L69">                        ResponseEntity.badRequest().body(mapOf(&quot;error&quot; to &quot;Cannot follow yourself&quot;))</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">                    is Error.UserAlreadyFollowed -&gt;</span>
+<span class="nc" id="L71">                        ResponseEntity.status(409).body(mapOf(&quot;error&quot; to &quot;Already following&quot;))</span>
+<span class="nc bnc" id="L72" title="All 2 branches missed.">                    is Error.NotFound -&gt;</span>
+<span class="nc" id="L73">                        ResponseEntity.status(404).body(mapOf(&quot;error&quot; to &quot;User not found&quot;))</span>
+<span class="nc" id="L74">                    else -&gt; ResponseEntity.status(500).body(mapOf(&quot;error&quot; to &quot;Failed to follow&quot;))</span>
+<span class="nc" id="L75">                }</span>
+            }
+        )
+    }
+
+    @DeleteMapping(&quot;/{userId}/follow&quot;)
+    fun unfollowCreator(
+        @PathVariable userId: Int,
+        @AuthenticationPrincipal userDetails: UserDetails?,
+    ): ResponseEntity&lt;Any&gt; {
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        val followerId = resolveUserId(userDetails) ?: return unauthorized()</span>
+
+<span class="nc bnc" id="L87" title="All 2 branches missed.">        return unfollowUserUseCase.execute(followerId, userId).fold(</span>
+<span class="nc" id="L88">            onSuccess = { ResponseEntity.noContent().build() },</span>
+            onFailure = { error -&gt;
+<span class="nc" id="L90">                when (error) {</span>
+<span class="nc bnc" id="L91" title="All 2 branches missed.">                    is Error.CannotFollowSelf -&gt;</span>
+<span class="nc" id="L92">                        ResponseEntity.badRequest().body(mapOf(&quot;error&quot; to &quot;Cannot unfollow yourself&quot;))</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">                    is Error.NotFound -&gt;</span>
+<span class="nc" id="L94">                        ResponseEntity.status(404).body(mapOf(&quot;error&quot; to &quot;Not following this user&quot;))</span>
+<span class="nc" id="L95">                    else -&gt; ResponseEntity.status(500).body(mapOf(&quot;error&quot; to &quot;Failed to unfollow&quot;))</span>
+<span class="nc" id="L96">                }</span>
+            }
+        )
+    }
+
+    private fun resolveUserId(userDetails: UserDetails?): Int? =
+<span class="pc bpc" id="L102" title="2 of 4 branches missed.">        userDetails?.username?.toIntOrNull()</span>
+
+    private fun unauthorized(): ResponseEntity&lt;Any&gt; =
+<span class="nc" id="L105">        ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Unauthorized&quot;))</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

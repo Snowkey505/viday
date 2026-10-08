@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Type.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.snowkey.viday.ui.theme</a> &gt; <span class="el_source">Type.kt</span></div><h1>Type.kt</h1><pre class="source lang-java linenums">package com.snowkey.viday.ui.theme
+
+import androidx.compose.material3.Typography
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+
+<span class="nc" id="L9">val VidayTypography = Typography(</span>
+
+    // bold 24
+<span class="nc" id="L12">    displayLarge = TextStyle(</span>
+<span class="nc" id="L13">        fontFamily = FontFamily.Default,</span>
+<span class="nc" id="L14">        fontWeight = FontWeight.Bold,</span>
+<span class="nc" id="L15">        fontSize = 24.sp,</span>
+<span class="nc" id="L16">        lineHeight = 30.sp,</span>
+<span class="nc" id="L17">        letterSpacing = 0.25.sp</span>
+    ),
+
+    // medium 24
+<span class="nc" id="L21">    displayMedium = TextStyle(</span>
+<span class="nc" id="L22">        fontFamily = FontFamily.Default,</span>
+<span class="nc" id="L23">        fontWeight = FontWeight.Medium,</span>
+<span class="nc" id="L24">        fontSize = 24.sp,</span>
+<span class="nc" id="L25">        lineHeight = 30.sp,</span>
+<span class="nc" id="L26">        letterSpacing = 0.25.sp</span>
+    ),
+
+    // regular 24
+<span class="nc" id="L30">    displaySmall = TextStyle(</span>
+<span class="nc" id="L31">        fontFamily = FontFamily.Default,</span>
+<span class="nc" id="L32">        fontWeight = FontWeight.Normal,</span>
+<span class="nc" id="L33">        fontSize = 24.sp,</span>
+<span class="nc" id="L34">        lineHeight = 30.sp,</span>
+<span class="nc" id="L35">        letterSpacing = 0.25.sp</span>
+    ),
+
+    // semibold 20
+<span class="nc" id="L39">    headlineLarge = TextStyle(</span>
+<span class="nc" id="L40">        fontFamily = FontFamily.Default,</span>
+<span class="nc" id="L41">        fontWeight = FontWeight.SemiBold,</span>
+<span class="nc" id="L42">        fontSize = 20.sp,</span>
+<span class="nc" id="L43">        lineHeight = 24.sp,</span>
+<span class="nc" id="L44">        letterSpacing = 0.25.sp</span>
+    ),
+
+    // medium 20
+<span class="nc" id="L48">    headlineMedium = TextStyle(</span>
+<span class="nc" id="L49">        fontFamily = FontFamily.Default,</span>
+<span class="nc" id="L50">        fontWeight = FontWeight.Medium,</span>
+<span class="nc" id="L51">        fontSize = 20.sp,</span>
+<span class="nc" id="L52">        lineHeight = 24.sp,</span>
+<span class="nc" id="L53">        letterSpacing = 0.25.sp</span>
+    ),
+
+    // regular 20
+<span class="nc" id="L57">    headlineSmall = TextStyle(</span>
+<span class="nc" id="L58">        fontFamily = FontFamily.Default,</span>
+<span class="nc" id="L59">        fontWeight = FontWeight.Normal,</span>
+<span class="nc" id="L60">        fontSize = 20.sp,</span>
+<span class="nc" id="L61">        lineHeight = 24.sp,</span>
+<span class="nc" id="L62">        letterSpacing = 0.25.sp</span>
+    ),
+
+    // bold 18
+<span class="nc" id="L66">    titleLarge = TextStyle(</span>
+<span class="nc" id="L67">        fontFamily = FontFamily.Default,</span>
+<span class="nc" id="L68">        fontWeight = FontWeight.Bold,</span>
+<span class="nc" id="L69">        fontSize = 18.sp,</span>
+<span class="nc" id="L70">        lineHeight = 22.sp,</span>
+<span class="nc" id="L71">        letterSpacing = 0.25.sp</span>
+    ),
+
+    // medium 18
+<span class="nc" id="L75">    titleMedium = TextStyle(</span>
+<span class="nc" id="L76">        fontFamily = FontFamily.Default,</span>
+<span class="nc" id="L77">        fontWeight = FontWeight.Medium,</span>
+<span class="nc" id="L78">        fontSize = 18.sp,</span>
+<span class="nc" id="L79">        lineHeight = 22.sp,</span>
+<span class="nc" id="L80">        letterSpacing = 0.25.sp</span>
+    ),
+
+    // regular 18
+<span class="nc" id="L84">    titleSmall = TextStyle(</span>
+<span class="nc" id="L85">        fontFamily = FontFamily.Default,</span>
+<span class="nc" id="L86">        fontWeight = FontWeight.Normal,</span>
+<span class="nc" id="L87">        fontSize = 18.sp,</span>
+<span class="nc" id="L88">        lineHeight = 22.sp,</span>
+<span class="nc" id="L89">        letterSpacing = 0.25.sp</span>
+    ),
+
+    // semibold 16
+<span class="nc" id="L93">    bodyLarge = TextStyle(</span>
+<span class="nc" id="L94">        fontFamily = FontFamily.Default,</span>
+<span class="nc" id="L95">        fontWeight = FontWeight.SemiBold,</span>
+<span class="nc" id="L96">        fontSize = 16.sp,</span>
+<span class="nc" id="L97">        lineHeight = 20.sp,</span>
+<span class="nc" id="L98">        letterSpacing = 0.25.sp</span>
+    ),
+
+    // medium 16
+<span class="nc" id="L102">    bodyMedium = TextStyle(</span>
+<span class="nc" id="L103">        fontFamily = FontFamily.Default,</span>
+<span class="nc" id="L104">        fontWeight = FontWeight.Medium,</span>
+<span class="nc" id="L105">        fontSize = 16.sp,</span>
+<span class="nc" id="L106">        lineHeight = 20.sp,</span>
+<span class="nc" id="L107">        letterSpacing = 0.25.sp</span>
+    ),
+
+    // regular 16
+<span class="nc" id="L111">    bodySmall = TextStyle(</span>
+<span class="nc" id="L112">        fontFamily = FontFamily.Default,</span>
+<span class="nc" id="L113">        fontWeight = FontWeight.Normal,</span>
+<span class="nc" id="L114">        fontSize = 16.sp,</span>
+<span class="nc" id="L115">        lineHeight = 20.sp,</span>
+<span class="nc" id="L116">        letterSpacing = 0.25.sp</span>
+    ),
+
+    // regular 14
+<span class="nc" id="L120">    labelLarge = TextStyle(</span>
+<span class="nc" id="L121">        fontFamily = FontFamily.Default,</span>
+<span class="nc" id="L122">        fontWeight = FontWeight.Normal,</span>
+<span class="nc" id="L123">        fontSize = 14.sp,</span>
+<span class="nc" id="L124">        lineHeight = 17.sp,</span>
+<span class="nc" id="L125">        letterSpacing = 0.25.sp</span>
+    ),
+
+    // medium 14
+<span class="nc" id="L129">    labelMedium = TextStyle(</span>
+<span class="nc" id="L130">        fontFamily = FontFamily.Default,</span>
+<span class="nc" id="L131">        fontWeight = FontWeight.Medium,</span>
+<span class="nc" id="L132">        fontSize = 14.sp,</span>
+<span class="nc" id="L133">        lineHeight = 17.sp,</span>
+<span class="nc" id="L134">        letterSpacing = 0.25.sp</span>
+    ),
+
+    // regular 12
+<span class="nc" id="L138">    labelSmall = TextStyle(</span>
+<span class="nc" id="L139">        fontFamily = FontFamily.Default,</span>
+<span class="nc" id="L140">        fontWeight = FontWeight.Normal,</span>
+<span class="nc" id="L141">        fontSize = 12.sp,</span>
+<span class="nc" id="L142">        lineHeight = 15.sp,</span>
+<span class="nc" id="L143">        letterSpacing = 0.25.sp</span>
+    )
+)
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

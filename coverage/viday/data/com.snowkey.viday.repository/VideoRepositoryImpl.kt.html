@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VideoRepositoryImpl.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">data</a> &gt; <a href="index.source.html" class="el_package">com.snowkey.viday.repository</a> &gt; <span class="el_source">VideoRepositoryImpl.kt</span></div><h1>VideoRepositoryImpl.kt</h1><pre class="source lang-java linenums">package com.snowkey.viday.repository
+
+import android.util.Log
+import com.snowkey.viday.api.ApiService
+import com.snowkey.viday.api.TokenManager
+import com.snowkey.viday.api.responses.VideoResponse
+import com.snowkey.viday.model.Video
+import com.snowkey.viday.model.VideoError
+import com.snowkey.viday.model.VideosResult
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.File
+import retrofit2.HttpException
+import java.io.IOException
+
+<span class="nc" id="L18">class VideoRepositoryImpl(</span>
+<span class="nc" id="L19">    private val apiService: ApiService,</span>
+<span class="nc" id="L20">    private val tokenManager: TokenManager</span>
+) : VideoRepository {
+<span class="nc" id="L22">    override suspend fun getVideos(userId: Long?, playlistId: Long?): VideosResult {</span>
+<span class="nc" id="L23">        val token = tokenManager.getToken()</span>
+
+<span class="nc" id="L25">        return try {</span>
+<span class="nc" id="L26">            val response = apiService.getVideos(</span>
+<span class="nc bnc" id="L27" title="All 2 branches missed.">                authorization = token?.let { &quot;Bearer $it&quot; },</span>
+<span class="nc" id="L28">                userId = userId,</span>
+<span class="nc" id="L29">                playlistId = playlistId</span>
+            )
+
+<span class="nc" id="L32">            val videos = response.items.map { videoResponse -&gt;</span>
+<span class="nc" id="L33">                Log.i(&quot;VIDEOS&quot;, videoResponse.source)</span>
+<span class="nc" id="L34">                Video(</span>
+<span class="nc" id="L35">                    id = videoResponse.id.toLong(),</span>
+<span class="nc" id="L36">                    name = videoResponse.name,</span>
+<span class="nc" id="L37">                    description = videoResponse.description,</span>
+<span class="nc" id="L38">                    source = videoResponse.source,</span>
+<span class="nc" id="L39">                    preview = videoResponse.preview,</span>
+<span class="nc" id="L40">                    ownerId = videoResponse.ownerId.toLong()</span>
+<span class="nc" id="L41">                )</span>
+            }
+
+<span class="nc" id="L44">            VideosResult(error = VideoError.OK, videos = videos)</span>
+<span class="nc" id="L45">        } catch (e: HttpException) {</span>
+<span class="nc bnc" id="L46" title="All 4 branches missed.">            if (e.code() == 403 || e.code() == 401) {</span>
+<span class="nc" id="L47">                VideosResult(error = VideoError.ACCESS_ERROR)</span>
+            } else {
+<span class="nc" id="L49">                VideosResult(error = VideoError.SERVER_ERROR)</span>
+            }
+<span class="nc" id="L51">        } catch (e: IOException) {</span>
+<span class="nc" id="L52">            VideosResult(error = VideoError.NETWORK_ERROR)</span>
+<span class="nc" id="L53">        } catch (e: Exception) {</span>
+<span class="nc" id="L54">            VideosResult(error = VideoError.UNKNOWN_ERROR)</span>
+        }
+    }
+
+<span class="nc" id="L58">    override suspend fun uploadVideo(</span>
+        file: File,
+        preview: File,
+        name: String,
+        description: String?,
+        accessType: String
+    ): VideosResult {
+<span class="nc" id="L65">        val token = tokenManager.getToken()</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (token == null) {</span>
+<span class="nc" id="L67">            return VideosResult(error = VideoError.ACCESS_ERROR)</span>
+        }
+
+<span class="nc" id="L70">        return try {</span>
+<span class="nc" id="L71">            val requestFile = file.asRequestBody(&quot;video/mp4&quot;.toMediaTypeOrNull())</span>
+<span class="nc" id="L72">            val body = MultipartBody.Part.createFormData(&quot;file&quot;, file.name, requestFile)</span>
+<span class="nc" id="L73">            val requestPreview = preview.asRequestBody(&quot;image/*&quot;.toMediaTypeOrNull())</span>
+<span class="nc" id="L74">            val previewBody = MultipartBody.Part.createFormData(&quot;preview&quot;, preview.name, requestPreview)</span>
+
+<span class="nc" id="L76">            val namePart = name.toRequestBody(&quot;text/plain&quot;.toMediaTypeOrNull())</span>
+<span class="nc" id="L77">            val accessTypePart = accessType.toRequestBody(&quot;text/plain&quot;.toMediaTypeOrNull())</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">            val descriptionPart = description?.toRequestBody(&quot;text/plain&quot;.toMediaTypeOrNull())</span>
+
+<span class="nc" id="L80">            val response = apiService.uploadVideo(</span>
+<span class="nc" id="L81">                token = &quot;Bearer $token&quot;,</span>
+<span class="nc" id="L82">                file = body,</span>
+<span class="nc" id="L83">                preview = previewBody,</span>
+<span class="nc" id="L84">                name = namePart,</span>
+<span class="nc" id="L85">                description = descriptionPart,</span>
+<span class="nc" id="L86">                accessType = accessTypePart</span>
+            )
+
+<span class="nc" id="L89">            val video = Video(</span>
+<span class="nc" id="L90">                id = response.id.toLong(),</span>
+<span class="nc" id="L91">                name = response.name,</span>
+<span class="nc" id="L92">                description = response.description,</span>
+<span class="nc" id="L93">                source = response.source,</span>
+<span class="nc" id="L94">                preview = response.preview,</span>
+<span class="nc" id="L95">                ownerId = response.ownerId.toLong()</span>
+            )
+
+<span class="nc" id="L98">            VideosResult(error = VideoError.OK, videos = listOf(video))</span>
+<span class="nc" id="L99">        } catch (e: HttpException) {</span>
+<span class="nc bnc" id="L100" title="All 4 branches missed.">            if (e.code() == 403 || e.code() == 401) {</span>
+<span class="nc" id="L101">                VideosResult(error = VideoError.ACCESS_ERROR)</span>
+            } else {
+<span class="nc" id="L103">                VideosResult(error = VideoError.SERVER_ERROR)</span>
+            }
+<span class="nc" id="L105">        } catch (e: IOException) {</span>
+<span class="nc" id="L106">            VideosResult(error = VideoError.NETWORK_ERROR)</span>
+<span class="nc" id="L107">        } catch (e: Exception) {</span>
+<span class="nc" id="L108">            VideosResult(error = VideoError.UNKNOWN_ERROR)</span>
+        }
+    }
+
+<span class="nc" id="L112">    override suspend fun getVideoById(videoId: Long, userId: Long?): VideosResult {</span>
+<span class="nc" id="L113">        val token = tokenManager.getToken()</span>
+<span class="nc" id="L114">        return try {</span>
+<span class="nc" id="L115">            val response = apiService.getVideoById(</span>
+<span class="nc" id="L116">                videoId = videoId,</span>
+<span class="nc bnc" id="L117" title="All 2 branches missed.">                authorization = token?.let { &quot;Bearer $it&quot; }</span>
+            )
+
+<span class="nc" id="L120">            VideosResult(</span>
+<span class="nc" id="L121">                error = VideoError.OK,</span>
+<span class="nc" id="L122">                videos = listOf(response.toVideo())</span>
+            )
+<span class="nc" id="L124">        } catch (e: HttpException) {</span>
+<span class="nc bnc" id="L125" title="All 4 branches missed.">            when (e.code()) {</span>
+<span class="nc" id="L126">                401 -&gt; VideosResult(error = VideoError.ACCESS_ERROR)</span>
+<span class="nc" id="L127">                403 -&gt; VideosResult(error = VideoError.ACCESS_ERROR)</span>
+<span class="nc" id="L128">                404 -&gt; VideosResult(error = VideoError.SERVER_ERROR)</span>
+<span class="nc" id="L129">                else -&gt; VideosResult(error = VideoError.SERVER_ERROR)</span>
+            }
+<span class="nc" id="L131">        } catch (e: IOException) {</span>
+<span class="nc" id="L132">            VideosResult(error = VideoError.NETWORK_ERROR)</span>
+<span class="nc" id="L133">        } catch (e: Exception) {</span>
+<span class="nc" id="L134">            VideosResult(error = VideoError.UNKNOWN_ERROR)</span>
+        }
+    }
+
+    private fun VideoResponse.toVideo(): Video {
+<span class="nc" id="L139">        return Video(</span>
+<span class="nc" id="L140">            id = id,</span>
+<span class="nc" id="L141">            name = name,</span>
+<span class="nc" id="L142">            description = description,</span>
+<span class="nc" id="L143">            source = source,</span>
+<span class="nc" id="L144">            preview = preview,</span>
+<span class="nc" id="L145">            ownerId = ownerId</span>
+        )
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

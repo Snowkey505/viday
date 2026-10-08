@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PlaylistItem.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.snowkey.viday.presentation.playlistScreen.component</a> &gt; <span class="el_source">PlaylistItem.kt</span></div><h1>PlaylistItem.kt</h1><pre class="source lang-java linenums">package com.snowkey.viday.presentation.playlistScreen.component
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import coil.compose.SubcomposeAsyncImage
+import com.snowkey.viday.R
+import com.snowkey.viday.model.PlaylistView
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PlaylistItem(
+    playlist: PlaylistView,
+    onDelete: (Long) -&gt; Unit,
+    onClick: (PlaylistView) -&gt; Unit,
+<span class="nc bnc" id="L51" title="All 16 branches missed.">) {</span>
+<span class="nc" id="L52">    var menuExpanded by remember { mutableStateOf(false) }</span>
+
+<span class="nc" id="L54">    Column(</span>
+<span class="nc" id="L55">        modifier = Modifier</span>
+<span class="nc" id="L56">            .fillMaxWidth()</span>
+<span class="nc bnc" id="L57" title="All 4 branches missed.">            .clickable { onClick(playlist) }</span>
+    ) {
+<span class="nc" id="L59">        Row(</span>
+<span class="nc" id="L60">            modifier = Modifier</span>
+<span class="nc" id="L61">                .fillMaxWidth()</span>
+<span class="nc" id="L62">                .padding(8.dp),</span>
+<span class="nc" id="L63">            horizontalArrangement = Arrangement.spacedBy(10.dp),</span>
+<span class="nc" id="L64">            verticalAlignment = Alignment.CenterVertically,</span>
+        ) {
+<span class="nc" id="L66">            SubcomposeAsyncImage(</span>
+<span class="nc" id="L67">                model = playlist.previewUrl,</span>
+<span class="nc" id="L68">                contentDescription = playlist.name,</span>
+<span class="nc" id="L69">                modifier = Modifier</span>
+<span class="nc" id="L70">                    .width(120.dp)</span>
+<span class="nc" id="L71">                    .height(70.dp)</span>
+<span class="nc" id="L72">                    .clip(RoundedCornerShape(6.dp)),</span>
+<span class="nc" id="L73">                contentScale = ContentScale.Crop,</span>
+<span class="nc" id="L74">                loading = {</span>
+<span class="nc" id="L75">                    Box(</span>
+<span class="nc" id="L76">                        modifier = Modifier.fillMaxSize(),</span>
+<span class="nc" id="L77">                        contentAlignment = Alignment.Center</span>
+                    ) {
+<span class="nc" id="L79">                        CircularProgressIndicator(modifier = Modifier.size(24.dp))</span>
+<span class="nc" id="L80">                    }</span>
+<span class="nc" id="L81">                },</span>
+<span class="nc" id="L82">                error = {</span>
+<span class="nc" id="L83">                    Icon(</span>
+<span class="nc" id="L84">                        painter = painterResource(id = R.drawable.logo),</span>
+<span class="nc" id="L85">                        contentDescription = null,</span>
+<span class="nc" id="L86">                        modifier = Modifier.size(40.dp),</span>
+                    )
+<span class="nc" id="L88">                },</span>
+            )
+
+<span class="nc" id="L91">            Box(</span>
+<span class="nc" id="L92">                modifier = Modifier</span>
+<span class="nc" id="L93">                    .weight(1f)</span>
+<span class="nc" id="L94">                    .fillMaxHeight(),</span>
+<span class="nc" id="L95">                contentAlignment = Alignment.CenterStart</span>
+            ) {
+<span class="nc" id="L97">                Column(</span>
+<span class="nc" id="L98">                    modifier = Modifier.fillMaxWidth(),</span>
+<span class="nc" id="L99">                    verticalArrangement = Arrangement.spacedBy(10.dp)</span>
+                ) {
+<span class="nc" id="L101">                    Text(</span>
+<span class="nc" id="L102">                        text = playlist.name,</span>
+<span class="nc" id="L103">                        style = MaterialTheme.typography.titleLarge,</span>
+<span class="nc" id="L104">                        color = MaterialTheme.colorScheme.onBackground,</span>
+<span class="nc" id="L105">                        modifier = Modifier.fillMaxWidth()</span>
+                    )
+<span class="nc" id="L107">                    Row(</span>
+<span class="nc" id="L108">                        modifier = Modifier.fillMaxWidth(),</span>
+<span class="nc" id="L109">                        verticalAlignment = Alignment.CenterVertically,</span>
+<span class="nc" id="L110">                        horizontalArrangement = Arrangement.spacedBy(10.dp)</span>
+                    ) {
+<span class="nc" id="L112">                        Text(</span>
+<span class="nc bnc" id="L113" title="All 2 branches missed.">                            text = playlist.ownerName ?: &quot;${playlist.ownerId}&quot;,</span>
+<span class="nc" id="L114">                            style = MaterialTheme.typography.bodyLarge,</span>
+<span class="nc" id="L115">                            color = MaterialTheme.colorScheme.onBackground,</span>
+                        )
+<span class="nc" id="L117">                        Text(</span>
+<span class="nc" id="L118">                            text = &quot;${playlist.accessType}&quot;,</span>
+<span class="nc" id="L119">                            style = MaterialTheme.typography.bodySmall,</span>
+<span class="nc" id="L120">                            color = MaterialTheme.colorScheme.onSurfaceVariant,</span>
+                        )
+<span class="nc" id="L122">                    }</span>
+<span class="nc" id="L123">                }</span>
+
+<span class="nc" id="L125">                Box(</span>
+<span class="nc" id="L126">                    modifier = Modifier</span>
+<span class="nc" id="L127">                        .fillMaxSize()</span>
+<span class="nc" id="L128">                        .wrapContentSize(Alignment.TopEnd)</span>
+                ) {
+<span class="nc" id="L130">                    IconButton(onClick = { menuExpanded = true }) {</span>
+<span class="nc" id="L131">                        Icon(</span>
+<span class="nc" id="L132">                            imageVector = Icons.Default.MoreVert,</span>
+<span class="nc" id="L133">                            modifier = Modifier.size(24.dp),</span>
+<span class="nc" id="L134">                            tint = MaterialTheme.colorScheme.onBackground,</span>
+<span class="nc" id="L135">                            contentDescription = stringResource(R.string.playlist_actions)</span>
+                        )
+<span class="nc" id="L137">                    }</span>
+
+<span class="nc" id="L139">                    DropdownMenu(</span>
+<span class="nc" id="L140">                        containerColor = MaterialTheme.colorScheme.background,</span>
+<span class="nc" id="L141">                        shape = RoundedCornerShape(10.dp),</span>
+<span class="nc" id="L142">                        expanded = menuExpanded,</span>
+<span class="nc" id="L143">                        onDismissRequest = { menuExpanded = false },</span>
+<span class="nc" id="L144">                        modifier = Modifier.align(Alignment.TopEnd)</span>
+<span class="nc" id="L145">                    ) {</span>
+<span class="nc" id="L146">                        DropdownMenuItem(</span>
+<span class="nc" id="L147">                            colors = MenuDefaults.itemColors(</span>
+<span class="nc" id="L148">                                textColor = MaterialTheme.colorScheme.onBackground</span>
+                            ),
+<span class="nc" id="L150">                            text = {</span>
+<span class="nc" id="L151">                                Text(</span>
+<span class="nc" id="L152">                                    text = stringResource(R.string.delete_playlist),</span>
+<span class="nc" id="L153">                                    color = MaterialTheme.colorScheme.error,</span>
+<span class="nc" id="L154">                                    style = MaterialTheme.typography.bodySmall</span>
+                                )
+<span class="nc" id="L156">                            },</span>
+<span class="nc" id="L157">                            onClick = {</span>
+<span class="nc" id="L158">                                menuExpanded = false</span>
+<span class="nc" id="L159">                                onDelete(playlist.id)</span>
+<span class="nc" id="L160">                            },</span>
+<span class="nc" id="L161">                            leadingIcon = {</span>
+<span class="nc" id="L162">                                Icon(</span>
+<span class="nc" id="L163">                                    imageVector = Icons.Default.Delete,</span>
+<span class="nc" id="L164">                                    contentDescription = null,</span>
+<span class="nc" id="L165">                                    modifier = Modifier.size(20.dp),</span>
+<span class="nc" id="L166">                                    tint = MaterialTheme.colorScheme.error</span>
+                                )
+<span class="nc" id="L168">                            }</span>
+                        )
+<span class="nc" id="L170">                    }</span>
+<span class="nc" id="L171">                }</span>
+<span class="nc" id="L172">            }</span>
+<span class="nc" id="L173">        }</span>
+<span class="nc" id="L174">    }</span>
+<span class="nc" id="L175">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

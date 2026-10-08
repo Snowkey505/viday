@@ -1,0 +1,421 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JdbcContentRepository.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">infrastructure</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.repository</a> &gt; <span class="el_source">JdbcContentRepository.kt</span></div><h1>JdbcContentRepository.kt</h1><pre class="source lang-java linenums">package com.vidayapi.repository
+
+import com.vidayapi.model.AccessType
+import com.vidayapi.model.Codec
+import com.vidayapi.model.Content
+import com.vidayapi.model.ContentType
+import com.vidayapi.model.MediaVariant
+import com.vidayapi.model.Error
+import com.vidayapi.model.Page
+import com.vidayapi.model.PageRequest
+import com.vidayapi.model.Result
+import com.vidayapi.model.Video
+import com.vidayapi.model.left
+import com.vidayapi.model.right
+import com.vidayapi.port.ContentRepository
+import org.springframework.dao.DataAccessException
+import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.jdbc.core.RowMapper
+import org.springframework.stereotype.Repository
+import java.time.OffsetDateTime
+
+<span class="fc" id="L23">@Repository</span>
+<span class="fc" id="L24">class JdbcContentRepository(private val jdbcTemplate: JdbcTemplate) : ContentRepository {</span>
+
+<span class="fc" id="L26">    private val contentRowMapper = RowMapper { rs, _ -&gt;</span>
+<span class="nc" id="L27">        Content(</span>
+<span class="nc" id="L28">            id = rs.getInt(&quot;id&quot;),</span>
+<span class="nc" id="L29">            type = ContentType.valueOf(rs.getString(&quot;type_name&quot;)),</span>
+<span class="nc" id="L30">            name = rs.getString(&quot;name&quot;),</span>
+<span class="nc" id="L31">            description = rs.getString(&quot;description&quot;),</span>
+<span class="nc" id="L32">            source = rs.getString(&quot;source&quot;),</span>
+<span class="nc" id="L33">            ownerId = rs.getInt(&quot;owner_id&quot;),</span>
+<span class="nc" id="L34">            accessType = AccessType.valueOf(rs.getString(&quot;access_type_name&quot;)),</span>
+<span class="nc" id="L35">            createdAt = rs.getObject(&quot;created_at&quot;, OffsetDateTime::class.java)</span>
+<span class="nc" id="L36">        )</span>
+    }
+    
+<span class="fc" id="L39">    private val videoRowMapper = RowMapper { rs, _ -&gt;</span>
+<span class="nc" id="L40">        Video(</span>
+<span class="nc" id="L41">            content = Content(</span>
+<span class="nc" id="L42">                id = rs.getInt(&quot;id&quot;),</span>
+<span class="nc" id="L43">                type = ContentType.valueOf(rs.getString(&quot;type_name&quot;)),</span>
+<span class="nc" id="L44">                name = rs.getString(&quot;name&quot;),</span>
+<span class="nc" id="L45">                description = rs.getString(&quot;description&quot;),</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">                source = rs.getString(&quot;source_path&quot;) ?: rs.getString(&quot;source&quot;),</span>
+<span class="nc" id="L47">                ownerId = rs.getInt(&quot;owner_id&quot;),</span>
+<span class="nc" id="L48">                accessType = AccessType.valueOf(rs.getString(&quot;access_type_name&quot;)),</span>
+<span class="nc" id="L49">                createdAt = rs.getObject(&quot;created_at&quot;, OffsetDateTime::class.java),</span>
+            ),
+<span class="nc" id="L51">            durationSeconds = rs.getInt(&quot;duration_seconds&quot;),</span>
+<span class="nc" id="L52">            preview = rs.getString(&quot;preview&quot;),</span>
+<span class="nc" id="L53">        )</span>
+    }
+
+<span class="fc" id="L56">    private val mediaVariantRowMapper = RowMapper { rs, _ -&gt;</span>
+<span class="nc" id="L57">        MediaVariant(</span>
+<span class="nc" id="L58">            id = rs.getInt(&quot;id&quot;),</span>
+<span class="nc" id="L59">            contentId = rs.getInt(&quot;content_id&quot;),</span>
+<span class="nc" id="L60">            width = rs.getInt(&quot;width&quot;),</span>
+<span class="nc" id="L61">            height = rs.getInt(&quot;height&quot;),</span>
+<span class="nc" id="L62">            bitrate = rs.getInt(&quot;bitrate&quot;),</span>
+<span class="nc" id="L63">            codec = Codec.valueOf(rs.getString(&quot;codec_name&quot;).replace(&quot;.&quot;, &quot;&quot;)),</span>
+<span class="nc" id="L64">            isSource = rs.getBoolean(&quot;is_source&quot;),</span>
+<span class="nc" id="L65">            filePath = rs.getString(&quot;file_path&quot;),</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">            fileSizeBytes = rs.getObject(&quot;file_size_bytes&quot;) as? Long,</span>
+<span class="nc" id="L67">            createdAt = rs.getObject(&quot;created_at&quot;, OffsetDateTime::class.java)</span>
+<span class="nc" id="L68">        )</span>
+    }
+
+    override fun findById(id: Int): Result&lt;Content&gt; {
+<span class="nc" id="L72">        val sql = &quot;&quot;&quot;</span>
+            SELECT c.*, ct.name AS type_name, at.name AS access_type_name
+            FROM viday.content c
+            JOIN viday.content_type ct ON c.content_type_id = ct.id
+            JOIN viday.access_type at ON c.access_type_id = at.id
+            WHERE c.id = ?
+<span class="nc" id="L78">        &quot;&quot;&quot;.trimIndent()</span>
+        
+<span class="nc" id="L80">        return try {</span>
+<span class="nc" id="L81">            val content = jdbcTemplate.queryForObject(sql, contentRowMapper, id)</span>
+<span class="nc" id="L82">            content?.right() ?: Error.NotFound.left()</span>
+<span class="nc" id="L83">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L84">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun save(content: Content): Result&lt;Content&gt; {
+<span class="fc" id="L89">        val sql = &quot;&quot;&quot;</span>
+            INSERT INTO viday.content (content_type_id, name, description, source, owner_id, access_type_id, created_at)
+            SELECT ct.id, ?, ?, ?, ?, at.id, ?
+            FROM viday.content_type ct, viday.access_type at
+            WHERE ct.name = ? AND at.name = ?
+            RETURNING id
+<span class="fc" id="L95">        &quot;&quot;&quot;.trimIndent()</span>
+
+<span class="fc" id="L97">        return try {</span>
+<span class="fc" id="L98">            val generatedId = jdbcTemplate.query(sql, { rs, _ -&gt; rs.getInt(&quot;id&quot;) },</span>
+<span class="fc" id="L99">                content.name,</span>
+<span class="fc" id="L100">                content.description,</span>
+<span class="fc" id="L101">                content.source,</span>
+<span class="fc" id="L102">                content.ownerId,</span>
+<span class="fc" id="L103">                content.createdAt,</span>
+<span class="fc" id="L104">                content.type.name,</span>
+<span class="fc" id="L105">                content.accessType.name</span>
+<span class="fc" id="L106">            ).firstOrNull()</span>
+
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">            if (generatedId == null) {</span>
+<span class="nc" id="L109">                return Error.ValidationFailed(&quot;Invalid content type or access type&quot;).left()</span>
+            }
+
+<span class="fc" id="L112">            content.copy(id = generatedId).right()</span>
+<span class="nc" id="L113">        } catch (e: DataIntegrityViolationException) {</span>
+<span class="nc" id="L114">            Error.StorageFailure.left()</span>
+<span class="nc" id="L115">        } catch (e: DataAccessException) {</span>
+<span class="pc" id="L116">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun saveVideo(video: Video): Result&lt;Video&gt; {
+<span class="fc" id="L121">        val sql = &quot;&quot;&quot;</span>
+            INSERT INTO viday.video (content_id, duration_seconds, preview)
+            VALUES (?, ?, ?)
+            ON CONFLICT (content_id) DO UPDATE 
+            SET duration_seconds = EXCLUDED.duration_seconds,
+                preview = EXCLUDED.preview
+<span class="fc" id="L127">        &quot;&quot;&quot;.trimIndent()</span>
+
+<span class="fc" id="L129">        return try {</span>
+<span class="fc" id="L130">            jdbcTemplate.update(sql, video.content.id, video.durationSeconds, video.preview)</span>
+<span class="fc" id="L131">            video.right()</span>
+<span class="nc" id="L132">        } catch (e: DataAccessException) {</span>
+<span class="pc" id="L133">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun findVideoByContentId(contentId: Int): Result&lt;Video&gt; {
+<span class="nc" id="L138">        val sql = &quot;&quot;&quot;</span>
+            SELECT c.*, ct.name AS type_name, at.name AS access_type_name, v.duration_seconds, v.preview, mv.file_path AS source_path
+            FROM viday.content c
+            JOIN viday.content_type ct ON c.content_type_id = ct.id
+            JOIN viday.access_type at ON c.access_type_id = at.id
+            JOIN viday.video v ON v.content_id = c.id
+            LEFT JOIN viday.media_variant mv ON mv.content_id = c.id AND mv.is_source = TRUE
+            WHERE c.id = ?
+<span class="nc" id="L146">        &quot;&quot;&quot;.trimIndent()</span>
+
+<span class="nc" id="L148">        return try {</span>
+<span class="nc" id="L149">            val video = jdbcTemplate.queryForObject(sql, { rs, _ -&gt;</span>
+<span class="nc" id="L150">                Video(</span>
+<span class="nc" id="L151">                    content = Content(</span>
+<span class="nc" id="L152">                        id = rs.getInt(&quot;id&quot;),</span>
+<span class="nc" id="L153">                        type = ContentType.valueOf(rs.getString(&quot;type_name&quot;)),</span>
+<span class="nc" id="L154">                        name = rs.getString(&quot;name&quot;),</span>
+<span class="nc" id="L155">                        description = rs.getString(&quot;description&quot;),</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">                        source = rs.getString(&quot;source_path&quot;) ?: rs.getString(&quot;source&quot;),</span>
+<span class="nc" id="L157">                        ownerId = rs.getInt(&quot;owner_id&quot;),</span>
+<span class="nc" id="L158">                        accessType = AccessType.valueOf(rs.getString(&quot;access_type_name&quot;)),</span>
+<span class="nc" id="L159">                        createdAt = rs.getObject(&quot;created_at&quot;, OffsetDateTime::class.java)</span>
+                    ),
+<span class="nc" id="L161">                    durationSeconds = rs.getInt(&quot;duration_seconds&quot;),</span>
+<span class="nc" id="L162">                    preview = rs.getString(&quot;preview&quot;)</span>
+<span class="nc" id="L163">                )</span>
+<span class="nc" id="L164">            }, contentId)</span>
+
+<span class="nc" id="L166">            video?.right() ?: Error.NotFound.left()</span>
+<span class="nc" id="L167">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L168">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun saveMediaVariant(variant: MediaVariant): Result&lt;MediaVariant&gt; {
+<span class="fc" id="L173">        val sql = &quot;&quot;&quot;</span>
+            INSERT INTO viday.media_variant (content_id, width, height, bitrate, codec_id, is_source, file_path, file_size_bytes, created_at)
+            SELECT ?, ?, ?, ?, c.id, ?, ?, ?, ?
+            FROM viday.codec c
+            WHERE c.name = ?
+            RETURNING id
+<span class="fc" id="L179">        &quot;&quot;&quot;.trimIndent()</span>
+
+<span class="fc" id="L181">        return try {</span>
+<span class="fc" id="L182">            val generatedId = jdbcTemplate.query(sql, { rs, _ -&gt; rs.getInt(&quot;id&quot;) },</span>
+<span class="fc" id="L183">                variant.contentId,</span>
+<span class="fc" id="L184">                variant.width,</span>
+<span class="fc" id="L185">                variant.height,</span>
+<span class="fc" id="L186">                variant.bitrate,</span>
+<span class="fc" id="L187">                variant.isSource,</span>
+<span class="fc" id="L188">                variant.filePath,</span>
+<span class="fc" id="L189">                variant.fileSizeBytes,</span>
+<span class="fc" id="L190">                variant.createdAt,</span>
+<span class="fc" id="L191">                variant.codec.name</span>
+<span class="fc" id="L192">            ).firstOrNull()</span>
+
+<span class="pc bpc" id="L194" title="1 of 2 branches missed.">            if (generatedId == null) {</span>
+<span class="nc" id="L195">                return Error.ValidationFailed(&quot;Invalid codec&quot;).left()</span>
+            }
+
+<span class="fc" id="L198">            variant.copy(id = generatedId).right()</span>
+<span class="nc" id="L199">        } catch (e: DataIntegrityViolationException) {</span>
+<span class="nc" id="L200">            Error.StorageFailure.left()</span>
+<span class="nc" id="L201">        } catch (e: DataAccessException) {</span>
+<span class="pc" id="L202">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun findPublicVideosPage(pageRequest: PageRequest): Result&lt;Page&lt;Video&gt;&gt; {
+<span class="nc" id="L207">        val countSql = &quot;&quot;&quot;</span>
+            SELECT COUNT(*)
+            FROM viday.content c
+            JOIN viday.content_type ct ON c.content_type_id = ct.id AND ct.name = 'VIDEO'
+            JOIN viday.access_type at ON c.access_type_id = at.id AND at.name = 'PUBLIC'
+<span class="nc" id="L212">        &quot;&quot;&quot;.trimIndent()</span>
+<span class="nc" id="L213">        val dataSql = &quot;&quot;&quot;</span>
+            SELECT c.*, ct.name AS type_name, at.name AS access_type_name,
+                   v.duration_seconds, v.preview, mv.file_path AS source_path
+            FROM viday.content c
+            JOIN viday.content_type ct ON c.content_type_id = ct.id AND ct.name = 'VIDEO'
+            JOIN viday.access_type at ON c.access_type_id = at.id AND at.name = 'PUBLIC'
+            JOIN viday.video v ON v.content_id = c.id
+            LEFT JOIN viday.media_variant mv ON mv.content_id = c.id AND mv.is_source = TRUE
+            ORDER BY c.created_at DESC
+            LIMIT ? OFFSET ?
+<span class="nc" id="L223">        &quot;&quot;&quot;.trimIndent()</span>
+<span class="nc" id="L224">        return queryVideoPage(countSql, emptyArray(), dataSql, pageRequest)</span>
+    }
+
+    override fun findVideosByOwnerIdPage(ownerId: Int, pageRequest: PageRequest): Result&lt;Page&lt;Video&gt;&gt; {
+<span class="nc" id="L228">        val countSql = &quot;&quot;&quot;</span>
+            SELECT COUNT(*)
+            FROM viday.content c
+            JOIN viday.content_type ct ON c.content_type_id = ct.id AND ct.name = 'VIDEO'
+            WHERE c.owner_id = ?
+<span class="nc" id="L233">        &quot;&quot;&quot;.trimIndent()</span>
+<span class="nc" id="L234">        val dataSql = &quot;&quot;&quot;</span>
+            SELECT c.*, ct.name AS type_name, at.name AS access_type_name,
+                   v.duration_seconds, v.preview, mv.file_path AS source_path
+            FROM viday.content c
+            JOIN viday.content_type ct ON c.content_type_id = ct.id AND ct.name = 'VIDEO'
+            JOIN viday.access_type at ON c.access_type_id = at.id
+            JOIN viday.video v ON v.content_id = c.id
+            LEFT JOIN viday.media_variant mv ON mv.content_id = c.id AND mv.is_source = TRUE
+            WHERE c.owner_id = ?
+            ORDER BY c.created_at DESC
+            LIMIT ? OFFSET ?
+<span class="nc" id="L245">        &quot;&quot;&quot;.trimIndent()</span>
+<span class="nc" id="L246">        return queryVideoPage(countSql, arrayOf(ownerId), dataSql, pageRequest, ownerId)</span>
+    }
+
+    override fun findVideosByPlaylistIdPage(playlistId: Int, pageRequest: PageRequest): Result&lt;Page&lt;Video&gt;&gt; {
+<span class="nc" id="L250">        val countSql = &quot;&quot;&quot;</span>
+            SELECT COUNT(*)
+            FROM viday.content c
+            JOIN viday.content_to_playlist cp ON cp.content_id = c.id
+            JOIN viday.video v ON v.content_id = c.id
+            WHERE cp.playlist_id = ?
+<span class="nc" id="L256">        &quot;&quot;&quot;.trimIndent()</span>
+<span class="nc" id="L257">        val dataSql = &quot;&quot;&quot;</span>
+            SELECT c.*, ct.name AS type_name, at.name AS access_type_name,
+                   v.duration_seconds, v.preview, mv.file_path AS source_path
+            FROM viday.content c
+            JOIN viday.content_type ct ON c.content_type_id = ct.id
+            JOIN viday.access_type at ON c.access_type_id = at.id
+            JOIN viday.video v ON v.content_id = c.id
+            JOIN viday.content_to_playlist cp ON cp.content_id = c.id
+            LEFT JOIN viday.media_variant mv ON mv.content_id = c.id AND mv.is_source = TRUE
+            WHERE cp.playlist_id = ?
+            ORDER BY cp.position ASC
+            LIMIT ? OFFSET ?
+<span class="nc" id="L269">        &quot;&quot;&quot;.trimIndent()</span>
+<span class="nc" id="L270">        return queryVideoPage(countSql, arrayOf(playlistId), dataSql, pageRequest, playlistId)</span>
+    }
+
+    private fun queryVideoPage(
+        countSql: String,
+        countArgs: Array&lt;Any?&gt;,
+        dataSql: String,
+        pageRequest: PageRequest,
+        vararg dataFilterArgs: Any?,
+    ): Result&lt;Page&lt;Video&gt;&gt; {
+<span class="nc" id="L280">        return try {</span>
+<span class="nc bnc" id="L281" title="All 2 branches missed.">            val total = jdbcTemplate.queryForObject(countSql, Long::class.java, *countArgs) ?: 0L</span>
+<span class="nc" id="L282">            val queryArgs = dataFilterArgs.toMutableList()</span>
+<span class="nc" id="L283">            queryArgs.add(pageRequest.size)</span>
+<span class="nc" id="L284">            queryArgs.add(pageRequest.offset)</span>
+<span class="nc" id="L285">            val items = jdbcTemplate.query(dataSql, videoRowMapper, *queryArgs.toTypedArray())</span>
+<span class="nc" id="L286">            Page(</span>
+<span class="nc" id="L287">                items = items,</span>
+<span class="nc" id="L288">                page = pageRequest.page,</span>
+<span class="nc" id="L289">                size = pageRequest.size,</span>
+<span class="nc" id="L290">                totalElements = total,</span>
+<span class="nc" id="L291">            ).right()</span>
+<span class="nc" id="L292">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L293">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun findPublicContent(): Result&lt;List&lt;Content&gt;&gt; {
+<span class="nc" id="L298">        val sql = &quot;&quot;&quot;</span>
+            SELECT c.*, ct.name AS type_name, at.name AS access_type_name
+            FROM viday.content c
+            JOIN viday.content_type ct ON c.content_type_id = ct.id
+            JOIN viday.access_type at ON c.access_type_id = at.id
+            WHERE at.name = 'PUBLIC'
+<span class="nc" id="L304">        &quot;&quot;&quot;.trimIndent()</span>
+        
+<span class="nc" id="L306">        return try {</span>
+<span class="nc" id="L307">            jdbcTemplate.query(sql, contentRowMapper).right()</span>
+<span class="nc" id="L308">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L309">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun findByOwnerId(ownerId: Int): Result&lt;List&lt;Content&gt;&gt; {
+<span class="nc" id="L314">        val sql = &quot;&quot;&quot;</span>
+            SELECT c.*, ct.name AS type_name, at.name AS access_type_name
+            FROM viday.content c
+            JOIN viday.content_type ct ON c.content_type_id = ct.id
+            JOIN viday.access_type at ON c.access_type_id = at.id
+            WHERE c.owner_id = ?
+<span class="nc" id="L320">        &quot;&quot;&quot;.trimIndent()</span>
+        
+<span class="nc" id="L322">        return try {</span>
+<span class="nc" id="L323">            jdbcTemplate.query(sql, contentRowMapper, ownerId).right()</span>
+<span class="nc" id="L324">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L325">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun findByPlaylistId(playlistId: Int): Result&lt;List&lt;Content&gt;&gt; {
+<span class="nc" id="L330">        val sql = &quot;&quot;&quot;</span>
+            SELECT c.*, ct.name AS type_name, at.name AS access_type_name
+            FROM viday.content c
+            JOIN viday.content_type ct ON c.content_type_id = ct.id
+            JOIN viday.access_type at ON c.access_type_id = at.id
+            JOIN viday.content_to_playlist cp ON cp.content_id = c.id
+            WHERE cp.playlist_id = ?
+            ORDER BY cp.position ASC
+<span class="nc" id="L338">        &quot;&quot;&quot;.trimIndent()</span>
+
+<span class="nc" id="L340">        return try {</span>
+<span class="nc" id="L341">            jdbcTemplate.query(sql, contentRowMapper, playlistId).right()</span>
+<span class="nc" id="L342">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L343">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun findMediaVariantsByContentId(contentId: Int): Result&lt;List&lt;MediaVariant&gt;&gt; {
+<span class="nc" id="L348">        val sql = &quot;&quot;&quot;</span>
+            SELECT mv.*, c.name AS codec_name
+            FROM viday.media_variant mv
+            JOIN viday.codec c ON mv.codec_id = c.id
+            WHERE mv.content_id = ?
+<span class="nc" id="L353">        &quot;&quot;&quot;.trimIndent()</span>
+        
+<span class="nc" id="L355">        return try {</span>
+<span class="nc" id="L356">            jdbcTemplate.query(sql, mediaVariantRowMapper, contentId).right()</span>
+<span class="nc" id="L357">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L358">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun deleteById(contentId: Int, ownerId: Int): Result&lt;Unit&gt; {
+<span class="nc" id="L363">        val sql = &quot;DELETE FROM viday.content WHERE id = ? AND owner_id = ?&quot;</span>
+<span class="nc" id="L364">        return try {</span>
+<span class="nc" id="L365">            val rows = jdbcTemplate.update(sql, contentId, ownerId)</span>
+<span class="nc bnc" id="L366" title="All 2 branches missed.">            if (rows &gt; 0) Unit.right() else Error.NotVideoOwner.left()</span>
+<span class="nc" id="L367">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L368">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun deleteByIdAsAdmin(contentId: Int): Result&lt;Unit&gt; {
+<span class="nc" id="L373">        val sql = &quot;DELETE FROM viday.content WHERE id = ?&quot;</span>
+<span class="nc" id="L374">        return try {</span>
+<span class="nc" id="L375">            val rows = jdbcTemplate.update(sql, contentId)</span>
+<span class="nc bnc" id="L376" title="All 2 branches missed.">            if (rows &gt; 0) Unit.right() else Error.NotFound.left()</span>
+<span class="nc" id="L377">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L378">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun findSourceMediaVariant(contentId: Int): Result&lt;MediaVariant&gt; {
+<span class="nc" id="L383">        val sql = &quot;&quot;&quot;</span>
+            SELECT mv.*, c.name AS codec_name
+            FROM viday.media_variant mv
+            JOIN viday.codec c ON mv.codec_id = c.id
+            WHERE mv.content_id = ? AND mv.is_source = TRUE
+<span class="nc" id="L388">        &quot;&quot;&quot;.trimIndent()</span>
+        
+<span class="nc" id="L390">        return try {</span>
+<span class="nc" id="L391">            val variant = jdbcTemplate.queryForObject(sql, mediaVariantRowMapper, contentId)</span>
+<span class="nc" id="L392">            variant?.right() ?: Error.NotFound.left()</span>
+<span class="nc" id="L393">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L394">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun updateVideo(video: Video): Result&lt;Unit&gt; {
+<span class="nc" id="L399">        val sql = &quot;&quot;&quot;</span>
+        UPDATE viday.content
+        SET name = ?,
+            description = ?,
+            access_type_id = (SELECT id FROM viday.access_type WHERE name = ?)
+        WHERE id = ? AND content_type_id = (SELECT id FROM viday.content_type WHERE name = 'VIDEO')
+<span class="nc" id="L405">    &quot;&quot;&quot;.trimIndent()</span>
+
+<span class="nc" id="L407">        return try {</span>
+<span class="nc" id="L408">            val rowsAffected = jdbcTemplate.update(</span>
+<span class="nc" id="L409">                sql,</span>
+<span class="nc" id="L410">                video.content.name,</span>
+<span class="nc" id="L411">                video.content.description,</span>
+<span class="nc" id="L412">                video.content.accessType.name,</span>
+<span class="nc" id="L413">                video.content.id</span>
+            )
+<span class="nc bnc" id="L415" title="All 2 branches missed.">            if (rowsAffected == 0) Error.NotFound.left() else Unit.right()</span>
+<span class="nc" id="L416">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L417">            Error.StorageFailure.left()</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

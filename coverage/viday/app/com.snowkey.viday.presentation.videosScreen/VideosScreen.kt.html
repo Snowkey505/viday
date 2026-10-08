@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VideosScreen.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.snowkey.viday.presentation.videosScreen</a> &gt; <span class="el_source">VideosScreen.kt</span></div><h1>VideosScreen.kt</h1><pre class="source lang-java linenums">package com.snowkey.viday.presentation.videosScreen
+
+import android.util.Log
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.navigation.NavController
+import com.snowkey.viday.R
+import com.snowkey.viday.model.Navigation
+import com.snowkey.viday.model.VideoView
+import com.snowkey.viday.presentation.videosScreen.components.AddToPlaylistDialog
+import com.snowkey.viday.presentation.videosScreen.components.VideoItem
+import org.koin.androidx.compose.koinViewModel
+
+<span class="nc bnc" id="L46" title="All 2 branches missed.">@OptIn(ExperimentalMaterial3Api::class)</span>
+@Composable
+fun VideosScreen(
+<span class="nc" id="L49">    vm: VideosViewModel = koinViewModel(),</span>
+    navController: NavController
+<span class="nc bnc" id="L51" title="All 20 branches missed.">) {</span>
+<span class="nc" id="L52">    val state by vm.uiState.collectAsState()</span>
+<span class="nc" id="L53">    val videos by vm.videos.collectAsState()</span>
+<span class="nc" id="L54">    val playlists by vm.playlists.collectAsState()</span>
+<span class="nc" id="L55">    val playlistInfo by vm.playlistInfo.collectAsState()</span>
+
+<span class="nc" id="L57">    val userId by vm.userId.collectAsState()</span>
+<span class="nc" id="L58">    val playlistId by vm.playlistId.collectAsState()</span>
+
+<span class="nc" id="L60">    val snackbarHostState = remember { SnackbarHostState() }</span>
+<span class="nc" id="L61">    val actionLabelText = stringResource(R.string.repeat)</span>
+<span class="nc" id="L62">    var addToPlaylistVideoId by remember { mutableStateOf&lt;Long?&gt;(null) }</span>
+
+<span class="nc bnc" id="L64" title="All 2 branches missed.">    val errorState = state as? VideosUiState.Error</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">    val errorMessage = errorState?.let { stringResource(it.messageResId) }</span>
+
+<span class="nc" id="L67">    LaunchedEffect(Unit) {</span>
+<span class="nc" id="L68">        vm.load()</span>
+<span class="nc" id="L69">    }</span>
+
+<span class="nc" id="L71">    LaunchedEffect(errorState, errorMessage) {</span>
+<span class="nc bnc" id="L72" title="All 4 branches missed.">        if (errorState != null &amp;&amp; errorMessage != null) {</span>
+<span class="nc" id="L73">            val result = snackbarHostState.showSnackbar(</span>
+<span class="nc" id="L74">                message = errorMessage,</span>
+<span class="nc" id="L75">                actionLabel = actionLabelText,</span>
+<span class="nc" id="L76">                duration = SnackbarDuration.Short</span>
+            )
+
+<span class="nc bnc" id="L79" title="All 2 branches missed.">            when (result) {</span>
+                SnackbarResult.ActionPerformed -&gt; {
+<span class="nc" id="L81">                    errorState.onRepeat.invoke()</span>
+                }
+
+                SnackbarResult.Dismissed -&gt; {}
+            }
+        }
+<span class="nc" id="L87">    }</span>
+
+<span class="nc" id="L89">    LaunchedEffect(vm) {</span>
+<span class="nc" id="L90">        vm.events.collect { messageId -&gt;</span>
+<span class="nc" id="L91">            snackbarHostState.showSnackbar(</span>
+<span class="nc" id="L92">                message = navController.context.getString(messageId),</span>
+<span class="nc" id="L93">                duration = SnackbarDuration.Short,</span>
+            )
+<span class="nc" id="L95">        }</span>
+    }
+<span class="nc" id="L97">    Log.d(&quot;PLAYLIST&quot;, &quot;owner = ${playlistInfo}, userId = $userId&quot;)</span>
+
+<span class="nc" id="L99">    DisposableEffect(Unit) {</span>
+<span class="nc" id="L100">        onDispose {</span>
+<span class="nc" id="L101">            vm.clear()</span>
+<span class="nc" id="L102">        }</span>
+    }
+
+<span class="nc bnc" id="L105" title="All 2 branches missed.">    addToPlaylistVideoId?.let { videoId -&gt;</span>
+<span class="nc" id="L106">        AddToPlaylistDialog(</span>
+<span class="nc" id="L107">            playlists = playlists,</span>
+<span class="nc" id="L108">            onDismiss = { addToPlaylistVideoId = null },</span>
+<span class="nc" id="L109">            onAdd = { playlistId -&gt;</span>
+<span class="nc" id="L110">                vm.addVideoToPlaylist(videoId = videoId, playlistId = playlistId)</span>
+<span class="nc" id="L111">                addToPlaylistVideoId = null</span>
+<span class="nc" id="L112">            },</span>
+        )
+<span class="nc" id="L114">    }</span>
+
+<span class="nc" id="L116">    Scaffold(</span>
+<span class="nc" id="L117">        containerColor = MaterialTheme.colorScheme.surface,</span>
+<span class="nc" id="L118">        contentColor = MaterialTheme.colorScheme.onBackground,</span>
+<span class="nc" id="L119">        topBar = {</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">            if (playlistInfo != null) {</span>
+<span class="nc" id="L121">                TopAppBar(</span>
+<span class="nc" id="L122">                    title = {</span>
+<span class="nc" id="L123">                        Column {</span>
+<span class="nc" id="L124">                            Text(</span>
+<span class="nc" id="L125">                                text = playlistInfo!!.name,</span>
+<span class="nc" id="L126">                                color = MaterialTheme.colorScheme.onBackground,</span>
+<span class="nc" id="L127">                                style = MaterialTheme.typography.titleLarge</span>
+                            )
+<span class="nc" id="L129">                        }</span>
+<span class="nc" id="L130">                    },</span>
+<span class="nc" id="L131">                    navigationIcon = {</span>
+<span class="nc" id="L132">                        IconButton(onClick = { navController.popBackStack() }) {</span>
+<span class="nc" id="L133">                            Icon(</span>
+<span class="nc" id="L134">                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,</span>
+<span class="nc" id="L135">                                contentDescription = stringResource(R.string.back)</span>
+                            )
+<span class="nc" id="L137">                        }</span>
+<span class="nc" id="L138">                    },</span>
+<span class="nc" id="L139">                    colors = TopAppBarDefaults.topAppBarColors(</span>
+<span class="nc" id="L140">                        containerColor = MaterialTheme.colorScheme.surface,</span>
+<span class="nc" id="L141">                        titleContentColor = MaterialTheme.colorScheme.onBackground,</span>
+<span class="nc" id="L142">                        navigationIconContentColor = MaterialTheme.colorScheme.onBackground,</span>
+<span class="nc" id="L143">                        actionIconContentColor = MaterialTheme.colorScheme.onBackground</span>
+                    )
+                )
+            }
+<span class="nc" id="L147">        },</span>
+<span class="nc" id="L148">        snackbarHost = {</span>
+<span class="nc" id="L149">            SnackbarHost(</span>
+<span class="nc" id="L150">                hostState = snackbarHostState</span>
+<span class="nc" id="L151">            ) { snackbarData -&gt;</span>
+<span class="nc" id="L152">                Snackbar(</span>
+<span class="nc" id="L153">                    snackbarData = snackbarData,</span>
+<span class="nc" id="L154">                    containerColor = MaterialTheme.colorScheme.surface,</span>
+<span class="nc" id="L155">                    contentColor = MaterialTheme.colorScheme.onBackground,</span>
+<span class="nc" id="L156">                    actionColor = MaterialTheme.colorScheme.primary</span>
+                )
+<span class="nc" id="L158">            }</span>
+<span class="nc" id="L159">        }</span>
+<span class="nc" id="L160">    ) { contentPadding -&gt;</span>
+<span class="nc" id="L161">        Box(modifier = Modifier.padding(contentPadding)) {</span>
+<span class="nc" id="L162">            VideosScreenContent(</span>
+<span class="nc" id="L163">                state = state,</span>
+<span class="nc" id="L164">                videos = videos,</span>
+<span class="nc bnc" id="L165" title="All 6 branches missed.">                playlistId = if (playlistInfo != null &amp;&amp; playlistInfo!!.ownerId == userId) playlistInfo!!.id else null,</span>
+<span class="nc" id="L166">                onAddToPlaylist = { videoId -&gt; addToPlaylistVideoId = videoId },</span>
+<span class="nc" id="L167">                onRemoveFromPlaylist = { videoId -&gt; vm.removeVideoFromPlaylist(videoId) },</span>
+<span class="nc" id="L168">                onVideoClick = { videoId -&gt;</span>
+<span class="nc" id="L169">                    navController.navigate(</span>
+<span class="nc" id="L170">                        Navigation.createVideoRoute(</span>
+<span class="nc" id="L171">                            userId = userId,</span>
+<span class="nc" id="L172">                            playlistId = playlistId,</span>
+<span class="nc" id="L173">                            videoId = videoId</span>
+                        )
+                    )
+<span class="nc" id="L176">                },</span>
+<span class="nc" id="L177">                goBack = { navController.popBackStack() }</span>
+            )
+<span class="nc" id="L179">        }</span>
+<span class="nc" id="L180">    }</span>
+<span class="nc" id="L181">}</span>
+
+@Composable
+fun VideosScreenContent(
+    state: VideosUiState,
+    videos: List&lt;VideoView&gt;,
+<span class="nc bnc" id="L187" title="All 2 branches missed.">    playlistId: Long? = null,</span>
+<span class="nc bnc" id="L188" title="All 2 branches missed.">    onAddToPlaylist: (Long) -&gt; Unit = {},</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">    onSearch: () -&gt; Unit = {},</span>
+<span class="nc bnc" id="L190" title="All 2 branches missed.">    onSearchClick: () -&gt; Unit = {},</span>
+<span class="nc bnc" id="L191" title="All 2 branches missed.">    onVideoClick: (Long) -&gt; Unit = {},</span>
+<span class="nc bnc" id="L192" title="All 2 branches missed.">    onRemoveFromPlaylist: (Long) -&gt; Unit = { },</span>
+<span class="nc" id="L193">    goBack: () -&gt; Unit = {}</span>
+<span class="nc bnc" id="L194" title="All 38 branches missed.">) {</span>
+<span class="nc" id="L195">    when (state) {</span>
+<span class="nc bnc" id="L196" title="All 2 branches missed.">        is VideosUiState.Loading -&gt; {</span>
+<span class="nc" id="L197">            VideosLoading()</span>
+        }
+
+<span class="nc" id="L200">        else -&gt; {</span>
+<span class="nc" id="L201">            Videos(</span>
+<span class="nc" id="L202">                videos = videos,</span>
+<span class="nc" id="L203">                onAddToPlaylist = onAddToPlaylist,</span>
+<span class="nc" id="L204">                playlistId = playlistId,</span>
+<span class="nc" id="L205">                onVideoClick = onVideoClick,</span>
+<span class="nc" id="L206">                onRemoveFromPlaylist = onRemoveFromPlaylist</span>
+            )
+        }
+    }
+<span class="nc" id="L210">}</span>
+
+@Composable
+fun Videos(
+    videos: List&lt;VideoView&gt;,
+<span class="nc bnc" id="L215" title="All 2 branches missed.">    playlistId: Long? = null,</span>
+<span class="nc bnc" id="L216" title="All 2 branches missed.">    onRemoveFromPlaylist: (Long) -&gt; Unit = { _ -&gt; Unit },</span>
+<span class="nc" id="L217">    onVideoClick: (Long) -&gt; Unit = {},</span>
+    onAddToPlaylist: (Long) -&gt; Unit,
+<span class="nc bnc" id="L219" title="All 32 branches missed.">) {</span>
+<span class="nc" id="L220">    LazyColumn(</span>
+<span class="nc" id="L221">        modifier = Modifier.fillMaxSize()</span>
+<span class="nc bnc" id="L222" title="All 8 branches missed.">    ) {</span>
+<span class="nc" id="L223">        items(</span>
+<span class="nc" id="L224">            items = videos,</span>
+<span class="nc" id="L225">            key = { video -&gt; video.id }</span>
+        ) { video -&gt;
+<span class="nc" id="L227">            VideoItem(</span>
+<span class="nc" id="L228">                video = video,</span>
+<span class="nc" id="L229">                onAddToPlaylist = onAddToPlaylist,</span>
+<span class="nc" id="L230">                playlistId = playlistId,</span>
+<span class="nc" id="L231">                onVideoClick = onVideoClick,</span>
+<span class="nc" id="L232">                onRemoveFromPlaylist = onRemoveFromPlaylist</span>
+            )
+<span class="nc" id="L234">        }</span>
+<span class="nc" id="L235">    }</span>
+<span class="nc" id="L236">}</span>
+
+@Composable
+<span class="nc bnc" id="L239" title="All 8 branches missed.">fun VideosError(message: String) {</span>
+<span class="nc" id="L240">    Box(</span>
+<span class="nc" id="L241">        modifier = Modifier.fillMaxWidth(),</span>
+<span class="nc" id="L242">        contentAlignment = Alignment.Center</span>
+    ) {
+<span class="nc" id="L244">        Text(text = message)</span>
+<span class="nc" id="L245">    }</span>
+<span class="nc" id="L246">}</span>
+
+@Composable
+<span class="nc bnc" id="L249" title="All 4 branches missed.">fun VideosLoading() {</span>
+<span class="nc" id="L250">    CircularProgressIndicator()</span>
+<span class="nc" id="L251">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

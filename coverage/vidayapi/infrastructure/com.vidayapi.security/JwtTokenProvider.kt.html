@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JwtTokenProvider.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">infrastructure</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.security</a> &gt; <span class="el_source">JwtTokenProvider.kt</span></div><h1>JwtTokenProvider.kt</h1><pre class="source lang-java linenums">package com.vidayapi.security
+
+import com.vidayapi.model.Role
+import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.security.Keys
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.stereotype.Component
+import java.util.Date
+
+<span class="nc" id="L10">@Component</span>
+<span class="nc" id="L11">class JwtTokenProvider(</span>
+<span class="nc" id="L12">    @Value(&quot;\${jwt.secret:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}&quot;) private val jwtSecret: String,</span>
+<span class="nc" id="L13">    @Value(&quot;\${jwt.expiration-ms:86400000}&quot;) private val jwtExpirationMs: Long</span>
+) {
+
+<span class="nc" id="L16">    private val key = Keys.hmacShaKeyFor(jwtSecret.toByteArray())</span>
+
+    fun generateToken(userId: Long, username: String, role: Role): String {
+<span class="nc" id="L19">        val now = Date()</span>
+<span class="nc" id="L20">        val expiryDate = Date(now.time + jwtExpirationMs)</span>
+
+<span class="nc" id="L22">        return Jwts.builder()</span>
+<span class="nc" id="L23">            .setSubject(userId.toString())</span>
+<span class="nc" id="L24">            .claim(&quot;username&quot;, username)</span>
+<span class="nc" id="L25">            .claim(&quot;role&quot;, role.name)</span>
+<span class="nc" id="L26">            .setIssuedAt(now)</span>
+<span class="nc" id="L27">            .setExpiration(expiryDate)</span>
+<span class="nc" id="L28">            .signWith(key)</span>
+<span class="nc" id="L29">            .compact()</span>
+    }
+
+    fun getUserIdFromToken(token: String): Long? {
+<span class="nc" id="L33">        return try {</span>
+<span class="nc" id="L34">            val claims = Jwts.parserBuilder()</span>
+<span class="nc" id="L35">                .setSigningKey(key)</span>
+<span class="nc" id="L36">                .build()</span>
+<span class="nc" id="L37">                .parseClaimsJws(token)</span>
+<span class="nc" id="L38">                .body</span>
+            
+<span class="nc" id="L40">            claims.subject.toLong()</span>
+<span class="nc" id="L41">        } catch (e: Exception) {</span>
+<span class="nc" id="L42">            null</span>
+        }
+    }
+
+    fun validateToken(token: String): Boolean {
+<span class="nc" id="L47">        return try {</span>
+<span class="nc" id="L48">            Jwts.parserBuilder()</span>
+<span class="nc" id="L49">                .setSigningKey(key)</span>
+<span class="nc" id="L50">                .build()</span>
+<span class="nc" id="L51">                .parseClaimsJws(token)</span>
+<span class="nc" id="L52">            true</span>
+<span class="nc" id="L53">        } catch (e: Exception) {</span>
+<span class="nc" id="L54">            false</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VideoPlayer.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.snowkey.viday.presentation.videoScreen.components</a> &gt; <span class="el_source">VideoPlayer.kt</span></div><h1>VideoPlayer.kt</h1><pre class="source lang-java linenums">package com.snowkey.viday.presentation.videoScreen.components
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.media3.common.MediaItem
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.media3.ui.PlayerView
+
+@androidx.annotation.OptIn(UnstableApi::class)
+@Composable
+fun VideoPlayer(
+    videoUrl: String,
+<span class="nc" id="L19">    modifier: Modifier = Modifier,</span>
+    isFullscreen: Boolean,
+    onFullscreenToggle: () -&gt; Unit
+<span class="nc bnc" id="L22" title="All 20 branches missed.">) {</span>
+<span class="nc" id="L23">    val context = LocalContext.current</span>
+<span class="nc" id="L24">    val exoPlayer = remember {</span>
+<span class="nc" id="L25">        ExoPlayer.Builder(context).build().apply {</span>
+<span class="nc" id="L26">            setMediaItem(MediaItem.fromUri(videoUrl))</span>
+<span class="nc" id="L27">            prepare()</span>
+<span class="nc" id="L28">            playWhenReady = true</span>
+<span class="nc" id="L29">            repeatMode = ExoPlayer.REPEAT_MODE_OFF</span>
+<span class="nc" id="L30">        }</span>
+    }
+    
+<span class="nc" id="L33">    DisposableEffect(Unit) {</span>
+<span class="nc" id="L34">        onDispose {</span>
+<span class="nc" id="L35">            exoPlayer.release()</span>
+<span class="nc" id="L36">        }</span>
+    }
+    
+<span class="nc" id="L39">    AndroidView(</span>
+<span class="nc bnc" id="L40" title="All 2 branches missed.">        factory = { ctx -&gt;</span>
+<span class="nc" id="L41">            PlayerView(ctx).apply {</span>
+<span class="nc" id="L42">                player = exoPlayer</span>
+<span class="nc" id="L43">                useController = true</span>
+<span class="nc" id="L44">                resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT</span>
+                
+<span class="nc" id="L46">                setShowFastForwardButton(true)</span>
+<span class="nc" id="L47">                setShowRewindButton(true)</span>
+<span class="nc" id="L48">                setShowNextButton(false)</span>
+<span class="nc" id="L49">                setShowPreviousButton(false)</span>
+<span class="nc" id="L50">                setShowShuffleButton(false)</span>
+<span class="nc" id="L51">                setFullscreenButtonClickListener { onFullscreenToggle() }</span>
+<span class="nc" id="L52">            }</span>
+        },
+<span class="nc" id="L54">        modifier = modifier,</span>
+<span class="nc" id="L55">        update = { playerView -&gt;</span>
+<span class="nc" id="L56">            playerView.player = exoPlayer</span>
+<span class="nc" id="L57">            playerView.useController = true</span>
+<span class="nc" id="L58">        }</span>
+    )
+<span class="nc" id="L60">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

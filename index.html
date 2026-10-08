@@ -1,13 +1,20 @@
 <!DOCTYPE html>
-<html lang="ru"><head><meta charset="utf-8"><title>viday — отчёты CI</title></head>
-<body style="font-family:sans-serif;margin:2rem">
-  <h1>Отчёты viday · CI run #9</h1>
+<html lang="ru"><head><meta charset="utf-8"><title>viday — отчёты CI</title>
+<style>body{font-family:system-ui,sans-serif;margin:2rem}li{margin:.35rem 0}</style></head>
+<body>
+  <h1>Отчёты viday · CI run #10</h1>
   <ul>
     <li><a href="allure/">Allure report (unit + integration + e2e + coverage)</a></li>
-    <li><a href="coverage/viday/app/">Покрытие viday :app</a></li>
-    <li><a href="coverage/viday/data/">Покрытие viday :data</a></li>
-    <li><a href="coverage/vidayapi/">Покрытие vidayapi</a></li>
-    <li><a href="sonar/">SonarQube scanner report</a></li>
+    <li><a href="sonar/sonar-report.html">SonarQube report (полный снимок: метрики + замечания)</a></li>
+    <li>Покрытие viday (JaCoCo HTML):
+      <a href="coverage/viday/app/">app</a> ·
+      <a href="coverage/viday/data/">data</a> ·
+      <a href="coverage/viday/domain/">domain</a></li>
+    <li>Покрытие vidayapi (JaCoCo HTML, unit + integration + e2e):
+      <a href="coverage/vidayapi/application/">application</a> ·
+      <a href="coverage/vidayapi/domain/">domain</a> ·
+      <a href="coverage/vidayapi/infrastructure/">infrastructure</a> ·
+      <a href="coverage/vidayapi/presentation/">presentation</a></li>
   </ul>
-  <p>Обновлено: Wed Oct  7 20:46:04 UTC 2026</p>
+  <p>Обновлено: Thu Oct  8 13:30:41 UTC 2026</p>
 </body></html>

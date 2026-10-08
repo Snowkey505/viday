@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JdbcStreamRepository.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">infrastructure</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.repository</a> &gt; <span class="el_source">JdbcStreamRepository.kt</span></div><h1>JdbcStreamRepository.kt</h1><pre class="source lang-java linenums">package com.vidayapi.repository
+
+import com.vidayapi.model.AccessType
+import com.vidayapi.model.left
+import com.vidayapi.model.right
+import com.vidayapi.model.Content
+import com.vidayapi.model.ContentType
+import com.vidayapi.model.Error
+import com.vidayapi.model.Page
+import com.vidayapi.model.PageRequest
+import com.vidayapi.model.Result
+import com.vidayapi.model.Stream
+import com.vidayapi.model.StreamStatus
+import com.vidayapi.model.StreamWithContent
+import com.vidayapi.port.StreamRepository
+import org.springframework.dao.DataAccessException
+import org.springframework.dao.EmptyResultDataAccessException
+import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.jdbc.core.RowMapper
+import org.springframework.stereotype.Repository
+import java.time.OffsetDateTime
+
+<span class="nc" id="L23">@Repository</span>
+<span class="nc" id="L24">class JdbcStreamRepository(private val jdbcTemplate: JdbcTemplate) : StreamRepository {</span>
+
+<span class="nc" id="L26">    private val streamWithContentMapper = RowMapper { rs, _ -&gt;</span>
+<span class="nc" id="L27">        StreamWithContent(</span>
+<span class="nc" id="L28">            stream = Stream(</span>
+<span class="nc" id="L29">                contentId = rs.getInt(&quot;content_id&quot;),</span>
+<span class="nc" id="L30">                status = StreamStatus.valueOf(rs.getString(&quot;stream_status_name&quot;)),</span>
+<span class="nc" id="L31">                scheduledAt = rs.getObject(&quot;scheduled_at&quot;, OffsetDateTime::class.java),</span>
+<span class="nc" id="L32">                startedAt = rs.getObject(&quot;started_at&quot;, OffsetDateTime::class.java),</span>
+<span class="nc" id="L33">                endedAt = rs.getObject(&quot;ended_at&quot;, OffsetDateTime::class.java),</span>
+<span class="nc" id="L34">                streamKey = rs.getString(&quot;stream_key&quot;),</span>
+            ),
+<span class="nc" id="L36">            content = Content(</span>
+<span class="nc" id="L37">                id = rs.getInt(&quot;content_id&quot;),</span>
+<span class="nc" id="L38">                type = ContentType.STREAM,</span>
+<span class="nc" id="L39">                name = rs.getString(&quot;name&quot;),</span>
+<span class="nc" id="L40">                description = rs.getString(&quot;description&quot;),</span>
+<span class="nc" id="L41">                source = rs.getString(&quot;source&quot;),</span>
+<span class="nc" id="L42">                ownerId = rs.getInt(&quot;owner_id&quot;),</span>
+<span class="nc" id="L43">                accessType = AccessType.valueOf(rs.getString(&quot;access_type_name&quot;)),</span>
+<span class="nc" id="L44">                createdAt = rs.getObject(&quot;created_at&quot;, OffsetDateTime::class.java),</span>
+            ),
+<span class="nc" id="L46">        )</span>
+    }
+
+    private val baseSelect = &quot;&quot;&quot;
+        SELECT c.id AS content_id, c.name, c.description, c.source, c.owner_id, c.created_at,
+               at.name AS access_type_name, ss.name AS stream_status_name,
+               s.scheduled_at, s.started_at, s.ended_at, s.stream_key
+        FROM viday.stream s
+        JOIN viday.content c ON c.id = s.content_id
+        JOIN viday.content_type ct ON c.content_type_id = ct.id AND ct.name = 'STREAM'
+        JOIN viday.access_type at ON c.access_type_id = at.id
+        JOIN viday.stream_status ss ON s.stream_status_id = ss.id
+<span class="nc" id="L58">    &quot;&quot;&quot;.trimIndent()</span>
+
+    override fun save(
+        stream: Stream,
+        contentName: String,
+        description: String?,
+        source: String?,
+        ownerId: Int,
+        accessTypeName: String,
+    ): Result&lt;StreamWithContent&gt; {
+<span class="nc" id="L68">        val insertContent = &quot;&quot;&quot;</span>
+            INSERT INTO viday.content (content_type_id, name, description, source, owner_id, access_type_id, created_at)
+            SELECT ct.id, ?, ?, ?, ?, at.id, ?
+            FROM viday.content_type ct, viday.access_type at
+            WHERE ct.name = 'STREAM' AND at.name = ?
+            RETURNING id
+<span class="nc" id="L74">        &quot;&quot;&quot;.trimIndent()</span>
+
+<span class="nc" id="L76">        return try {</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">            val contentId = jdbcTemplate.query(insertContent, { rs, _ -&gt; rs.getInt(&quot;id&quot;) },</span>
+<span class="nc" id="L78">                contentName, description, source, ownerId, OffsetDateTime.now(), accessTypeName,</span>
+<span class="nc" id="L79">            ).firstOrNull() ?: return Error.ValidationFailed(&quot;Invalid access type&quot;).left()</span>
+
+<span class="nc" id="L81">            val insertStream = &quot;&quot;&quot;</span>
+                INSERT INTO viday.stream (content_id, stream_status_id, scheduled_at, started_at, ended_at, stream_key)
+                SELECT ?, ss.id, ?, NULL, NULL, NULL
+                FROM viday.stream_status ss
+                WHERE ss.name = ?
+<span class="nc" id="L86">            &quot;&quot;&quot;.trimIndent()</span>
+<span class="nc" id="L87">            jdbcTemplate.update(</span>
+<span class="nc" id="L88">                insertStream,</span>
+<span class="nc" id="L89">                contentId,</span>
+<span class="nc" id="L90">                stream.scheduledAt,</span>
+<span class="nc" id="L91">                stream.status.name,</span>
+            )
+
+<span class="nc" id="L94">            findByContentId(contentId)</span>
+<span class="nc" id="L95">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L96">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun findByContentId(contentId: Int): Result&lt;StreamWithContent&gt; {
+<span class="nc" id="L101">        val sql = &quot;$baseSelect WHERE c.id = ?&quot;</span>
+<span class="nc" id="L102">        return try {</span>
+<span class="nc" id="L103">            val row = jdbcTemplate.queryForObject(sql, streamWithContentMapper, contentId)</span>
+<span class="nc" id="L104">            row?.right() ?: Error.StreamNotFound.left()</span>
+<span class="nc" id="L105">        } catch (e: EmptyResultDataAccessException) {</span>
+<span class="nc" id="L106">            Error.StreamNotFound.left()</span>
+<span class="nc" id="L107">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L108">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun findByOwnerId(ownerId: Int): Result&lt;List&lt;StreamWithContent&gt;&gt; {
+<span class="nc" id="L113">        val sql = &quot;$baseSelect WHERE c.owner_id = ? ORDER BY c.created_at DESC&quot;</span>
+<span class="nc" id="L114">        return try {</span>
+<span class="nc" id="L115">            jdbcTemplate.query(sql, streamWithContentMapper, ownerId).right()</span>
+<span class="nc" id="L116">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L117">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun findLiveStreams(): Result&lt;List&lt;StreamWithContent&gt;&gt; {
+<span class="nc" id="L122">        val sql = &quot;$baseSelect WHERE ss.name = 'LIVE' ORDER BY s.started_at DESC&quot;</span>
+<span class="nc" id="L123">        return try {</span>
+<span class="nc" id="L124">            jdbcTemplate.query(sql, streamWithContentMapper).right()</span>
+<span class="nc" id="L125">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L126">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun findLiveStreamsPage(pageRequest: PageRequest): Result&lt;Page&lt;StreamWithContent&gt;&gt; {
+<span class="nc" id="L131">        val countSql = &quot;&quot;&quot;</span>
+            SELECT COUNT(*)
+            FROM viday.stream s
+            JOIN viday.stream_status ss ON s.stream_status_id = ss.id AND ss.name = 'LIVE'
+<span class="nc" id="L135">        &quot;&quot;&quot;.trimIndent()</span>
+<span class="nc" id="L136">        val dataSql = &quot;&quot;&quot;</span>
+<span class="nc" id="L137">            $baseSelect</span>
+            WHERE ss.name = 'LIVE'
+            ORDER BY s.started_at DESC
+            LIMIT ? OFFSET ?
+<span class="nc" id="L141">        &quot;&quot;&quot;.trimIndent()</span>
+<span class="nc" id="L142">        return try {</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">            val total = jdbcTemplate.queryForObject(countSql, Long::class.java) ?: 0L</span>
+<span class="nc" id="L144">            val items = jdbcTemplate.query(</span>
+<span class="nc" id="L145">                dataSql,</span>
+<span class="nc" id="L146">                streamWithContentMapper,</span>
+<span class="nc" id="L147">                pageRequest.size,</span>
+<span class="nc" id="L148">                pageRequest.offset,</span>
+            )
+<span class="nc" id="L150">            Page(</span>
+<span class="nc" id="L151">                items = items,</span>
+<span class="nc" id="L152">                page = pageRequest.page,</span>
+<span class="nc" id="L153">                size = pageRequest.size,</span>
+<span class="nc" id="L154">                totalElements = total,</span>
+<span class="nc" id="L155">            ).right()</span>
+<span class="nc" id="L156">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L157">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun findByStreamKey(streamKey: String): Result&lt;StreamWithContent&gt; {
+<span class="nc" id="L162">        val sql = &quot;$baseSelect WHERE s.stream_key = ?&quot;</span>
+<span class="nc" id="L163">        return try {</span>
+<span class="nc" id="L164">            val row = jdbcTemplate.queryForObject(sql, streamWithContentMapper, streamKey)</span>
+<span class="nc" id="L165">            row?.right() ?: Error.StreamNotFound.left()</span>
+<span class="nc" id="L166">        } catch (e: EmptyResultDataAccessException) {</span>
+<span class="nc" id="L167">            Error.StreamNotFound.left()</span>
+<span class="nc" id="L168">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L169">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun update(stream: Stream): Result&lt;Stream&gt; {
+<span class="nc" id="L174">        val sql = &quot;&quot;&quot;</span>
+            UPDATE viday.stream s
+            SET stream_status_id = ss.id,
+                scheduled_at = ?,
+                started_at = ?,
+                ended_at = ?,
+                stream_key = ?
+            FROM viday.stream_status ss
+            WHERE s.content_id = ? AND ss.name = ?
+<span class="nc" id="L183">        &quot;&quot;&quot;.trimIndent()</span>
+<span class="nc" id="L184">        return try {</span>
+<span class="nc" id="L185">            val rows = jdbcTemplate.update(</span>
+<span class="nc" id="L186">                sql,</span>
+<span class="nc" id="L187">                stream.scheduledAt,</span>
+<span class="nc" id="L188">                stream.startedAt,</span>
+<span class="nc" id="L189">                stream.endedAt,</span>
+<span class="nc" id="L190">                stream.streamKey,</span>
+<span class="nc" id="L191">                stream.contentId,</span>
+<span class="nc" id="L192">                stream.status.name,</span>
+            )
+<span class="nc bnc" id="L194" title="All 2 branches missed.">            if (rows == 0) Error.StreamNotFound.left() else stream.right()</span>
+<span class="nc" id="L195">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L196">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun updateWithContent(streamWithContent: StreamWithContent): Result&lt;StreamWithContent&gt; {
+<span class="nc" id="L201">        val content = streamWithContent.content</span>
+<span class="nc" id="L202">        val stream = streamWithContent.stream</span>
+<span class="nc" id="L203">        val updateContentSql = &quot;&quot;&quot;</span>
+            UPDATE viday.content
+            SET name = ?,
+                description = ?,
+                source = ?,
+                access_type_id = (SELECT id FROM viday.access_type WHERE name = ?)
+            WHERE id = ?
+              AND content_type_id = (SELECT id FROM viday.content_type WHERE name = 'STREAM')
+<span class="nc" id="L211">        &quot;&quot;&quot;.trimIndent()</span>
+<span class="nc" id="L212">        val updateStreamSql = &quot;&quot;&quot;</span>
+            UPDATE viday.stream s
+            SET scheduled_at = ?
+            FROM viday.stream_status ss
+            WHERE s.content_id = ? AND ss.id = s.stream_status_id
+<span class="nc" id="L217">        &quot;&quot;&quot;.trimIndent()</span>
+
+<span class="nc" id="L219">        return try {</span>
+<span class="nc" id="L220">            val contentRows = jdbcTemplate.update(</span>
+<span class="nc" id="L221">                updateContentSql,</span>
+<span class="nc" id="L222">                content.name,</span>
+<span class="nc" id="L223">                content.description,</span>
+<span class="nc" id="L224">                content.source,</span>
+<span class="nc" id="L225">                content.accessType.name,</span>
+<span class="nc" id="L226">                content.id,</span>
+            )
+<span class="nc bnc" id="L228" title="All 2 branches missed.">            if (contentRows == 0) {</span>
+<span class="nc" id="L229">                return Error.StreamNotFound.left()</span>
+            }
+<span class="nc" id="L231">            jdbcTemplate.update(updateStreamSql, stream.scheduledAt, stream.contentId)</span>
+<span class="nc" id="L232">            findByContentId(stream.contentId)</span>
+<span class="nc" id="L233">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L234">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun delete(contentId: Int, ownerId: Int): Result&lt;Unit&gt; {
+<span class="nc" id="L239">        val sql = &quot;DELETE FROM viday.content WHERE id = ? AND owner_id = ?&quot;</span>
+<span class="nc" id="L240">        return try {</span>
+<span class="nc" id="L241">            val rows = jdbcTemplate.update(sql, contentId, ownerId)</span>
+<span class="nc bnc" id="L242" title="All 2 branches missed.">            if (rows &gt; 0) Unit.right() else Error.Forbidden.left()</span>
+<span class="nc" id="L243">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L244">            Error.StorageFailure.left()</span>
+        }
+    }
+
+    override fun hasActiveLiveStream(ownerId: Int): Result&lt;Boolean&gt; {
+<span class="nc" id="L249">        val sql = &quot;&quot;&quot;</span>
+            SELECT EXISTS(
+                SELECT 1 FROM viday.stream s
+                JOIN viday.content c ON c.id = s.content_id
+                JOIN viday.stream_status ss ON ss.id = s.stream_status_id
+                WHERE c.owner_id = ? AND ss.name = 'LIVE'
+            )
+<span class="nc" id="L256">        &quot;&quot;&quot;.trimIndent()</span>
+<span class="nc" id="L257">        return try {</span>
+<span class="nc bnc" id="L258" title="All 2 branches missed.">            jdbcTemplate.queryForObject(sql, Boolean::class.java, ownerId)?.right() ?: false.right()</span>
+<span class="nc" id="L259">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L260">            Error.StorageFailure.left()</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

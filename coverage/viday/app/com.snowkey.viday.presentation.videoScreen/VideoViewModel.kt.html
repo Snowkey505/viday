@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VideoViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">app</a> &gt; <a href="index.source.html" class="el_package">com.snowkey.viday.presentation.videoScreen</a> &gt; <span class="el_source">VideoViewModel.kt</span></div><h1>VideoViewModel.kt</h1><pre class="source lang-java linenums">package com.snowkey.viday.presentation.videoScreen
+
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.snowkey.viday.R
+import com.snowkey.viday.mapper.toErrorMessageId
+import com.snowkey.viday.mapper.toPlaylistView
+import com.snowkey.viday.mapper.toUi
+import com.snowkey.viday.model.PlaylistView
+import com.snowkey.viday.model.UserError
+import com.snowkey.viday.model.VideoView
+import com.snowkey.viday.usecase.playlist.AddContentToPlaylistUseCase
+import com.snowkey.viday.usecase.playlist.GetPlaylistsUseCase
+import com.snowkey.viday.usecase.playlist.RemoveContentFromPlaylistUseCase
+import com.snowkey.viday.usecase.user.GetUserByIdUseCase
+import com.snowkey.viday.usecase.video.GetVideoByIdUseCase
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+<span class="nc" id="L25">class VideoViewModel(</span>
+<span class="nc" id="L26">    private val getVideoByIdUseCase: GetVideoByIdUseCase,</span>
+<span class="nc" id="L27">    private val getPlaylistsUseCase: GetPlaylistsUseCase,</span>
+<span class="nc" id="L28">    private val addContentToPlaylistUseCase: AddContentToPlaylistUseCase,</span>
+<span class="nc" id="L29">    private val removeContentFromPlaylistUseCase: RemoveContentFromPlaylistUseCase,</span>
+<span class="nc" id="L30">    private val getUserByIdUseCase: GetUserByIdUseCase,</span>
+<span class="nc" id="L31">    private val savedStateHandle: SavedStateHandle,</span>
+<span class="nc" id="L32">) : ViewModel() {</span>
+<span class="nc" id="L33">    private val _uiState = MutableStateFlow&lt;VideoUiState&gt;(VideoUiState.Loading)</span>
+<span class="nc" id="L34">    val uiState = _uiState.asStateFlow()</span>
+
+<span class="nc" id="L36">    private val _video = MutableStateFlow&lt;VideoView?&gt;(null)</span>
+<span class="nc" id="L37">    val video = _video.asStateFlow()</span>
+
+<span class="nc" id="L39">    private val _playlists = MutableStateFlow&lt;List&lt;PlaylistView&gt;&gt;(emptyList())</span>
+<span class="nc" id="L40">    val playlists = _playlists.asStateFlow()</span>
+
+<span class="nc" id="L42">    private val _userId = MutableStateFlow&lt;Long?&gt;(null)</span>
+<span class="nc" id="L43">    val userId = _userId.asStateFlow()</span>
+
+<span class="nc" id="L45">    private val _owner = MutableStateFlow(&quot;&quot;)</span>
+<span class="nc" id="L46">    val owner = _owner.asStateFlow()</span>
+
+<span class="nc" id="L48">    private val _events = MutableSharedFlow&lt;Int&gt;(</span>
+<span class="nc" id="L49">        extraBufferCapacity = 16,</span>
+<span class="nc" id="L50">        onBufferOverflow = BufferOverflow.DROP_OLDEST,</span>
+    )
+<span class="nc" id="L52">    val events = _events.asSharedFlow()</span>
+
+    private var currentPlaylistId: Long? = null
+
+<span class="nc" id="L56">    init {</span>
+<span class="nc" id="L57">        load()</span>
+<span class="nc" id="L58">    }</span>
+
+    fun load() {
+<span class="nc bnc" id="L61" title="All 6 branches missed.">        _userId.value = savedStateHandle.get&lt;Long&gt;(&quot;userId&quot;)?.takeIf { it != -1L }</span>
+<span class="nc bnc" id="L62" title="All 6 branches missed.">        val videoId = savedStateHandle.get&lt;Long&gt;(&quot;videoId&quot;)?.takeIf { it != -1L }</span>
+<span class="nc bnc" id="L63" title="All 6 branches missed.">        currentPlaylistId = savedStateHandle.get&lt;Long&gt;(&quot;playlistId&quot;)?.takeIf { it != -1L }</span>
+
+<span class="nc bnc" id="L65" title="All 2 branches missed.">        if (videoId != null) {</span>
+<span class="nc" id="L66">            loadVideo(videoId)</span>
+<span class="nc" id="L67">            loadPlaylists()</span>
+        } else {
+<span class="nc" id="L69">            _uiState.value = VideoUiState.Error(R.string.unknown_error)</span>
+        }
+<span class="nc" id="L71">    }</span>
+
+    private fun loadVideo(videoId: Long) {
+<span class="nc" id="L74">        viewModelScope.launch {</span>
+<span class="nc" id="L75">            _uiState.value = VideoUiState.Loading</span>
+
+<span class="nc" id="L77">            val result = getVideoByIdUseCase(videoId, _userId.value)</span>
+
+<span class="nc bnc" id="L79" title="All 6 branches missed.">            if (result.videos != null &amp;&amp; result.videos!!.isNotEmpty()) {</span>
+<span class="nc" id="L80">                _video.value = result.videos!!.first().toUi()</span>
+<span class="nc" id="L81">                loadOwnerInfo(_video.value!!.ownerId)</span>
+<span class="nc" id="L82">                _uiState.value = VideoUiState.Done</span>
+            } else {
+<span class="nc" id="L84">                val messageId = result.error.toErrorMessageId()</span>
+<span class="nc" id="L85">                _uiState.value = VideoUiState.Error(messageId) { load() }</span>
+            }
+<span class="nc" id="L87">        }</span>
+<span class="nc" id="L88">    }</span>
+
+<span class="nc" id="L90">    private suspend fun loadOwnerInfo(ownerId: Long) {</span>
+<span class="nc" id="L91">        val result = getUserByIdUseCase(ownerId)</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">        if (result.error == UserError.OK) {</span>
+<span class="nc" id="L93">            _owner.value = result.users!![0].username</span>
+        }
+<span class="nc" id="L95">    }</span>
+
+    private fun loadPlaylists() {
+<span class="nc" id="L98">        viewModelScope.launch {</span>
+<span class="nc" id="L99">            val playlistsResult = getPlaylistsUseCase()</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">            if (playlistsResult.playlists != null) {</span>
+<span class="nc" id="L101">                _playlists.value = playlistsResult.playlists!!.map { it.toPlaylistView() }</span>
+            }
+<span class="nc" id="L103">        }</span>
+<span class="nc" id="L104">    }</span>
+
+    fun addToPlaylist(playlistId: Long, videoId: Long) {
+<span class="nc" id="L107">        viewModelScope.launch {</span>
+<span class="nc" id="L108">            val result = addContentToPlaylistUseCase(</span>
+<span class="nc" id="L109">                playlistId = playlistId,</span>
+<span class="nc" id="L110">                contentId = videoId</span>
+            )
+<span class="nc" id="L112">            val messageId = result.error.toErrorMessageId()</span>
+<span class="nc" id="L113">            _events.emit(messageId)</span>
+<span class="nc" id="L114">        }</span>
+<span class="nc" id="L115">    }</span>
+
+    fun clear() {
+<span class="nc" id="L118">        _video.value = null</span>
+<span class="nc" id="L119">        _playlists.value = emptyList()</span>
+<span class="nc" id="L120">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

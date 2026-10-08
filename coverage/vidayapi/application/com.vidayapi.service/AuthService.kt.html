@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthService.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">application</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.service</a> &gt; <span class="el_source">AuthService.kt</span></div><h1>AuthService.kt</h1><pre class="source lang-java linenums">package com.vidayapi.service
+
+import com.vidayapi.model.Error
+import com.vidayapi.model.Result
+import com.vidayapi.model.Role
+import com.vidayapi.model.flatMap
+import com.vidayapi.model.left
+import com.vidayapi.model.right
+import com.vidayapi.port.PasswordEncoder
+import com.vidayapi.port.UserRepository
+import org.springframework.stereotype.Service
+
+<span class="nc" id="L13">@Service</span>
+<span class="nc" id="L14">class AuthService(</span>
+<span class="nc" id="L15">    private val userRepository: UserRepository,</span>
+<span class="nc" id="L16">    private val jwtService: JwtService</span>
+) {
+
+    fun login(username: String, password: String, passwordEncoder: PasswordEncoder): Result&lt;String&gt; {
+<span class="nc" id="L20">        return userRepository.findByUsername(username)</span>
+<span class="nc" id="L21">            .flatMap { user -&gt;</span>
+<span class="nc bnc" id="L22" title="All 2 branches missed.">                if (user == null) {</span>
+<span class="nc" id="L23">                    Error.Unauthorized.left()</span>
+<span class="nc bnc" id="L24" title="All 2 branches missed.">                } else if (!passwordEncoder.matches(password, user.passwordHash)) {</span>
+<span class="nc" id="L25">                    Error.Unauthorized.left()</span>
+                } else {
+<span class="nc" id="L27">                    val userId = user.id</span>
+<span class="nc bnc" id="L28" title="All 2 branches missed.">                    if (userId == null) {</span>
+<span class="nc" id="L29">                        Error.StorageFailure.left()</span>
+                    } else {
+<span class="nc" id="L31">                        val token = jwtService.generateToken(userId, user.username, user.role)</span>
+<span class="nc" id="L32">                        token.right()</span>
+                    }
+<span class="nc" id="L34">                }</span>
+            }
+    }
+
+    fun validateToken(token: String): Result&lt;Int&gt; {
+<span class="nc" id="L39">        return jwtService.validateAndGetUserId(token)</span>
+    }
+
+    fun getCurrentUserRole(token: String): Result&lt;Role&gt; {
+<span class="nc" id="L43">        return jwtService.validateAndGetUserId(token)</span>
+<span class="nc" id="L44">            .flatMap { userId -&gt;</span>
+<span class="nc" id="L45">                userRepository.findById(userId)</span>
+<span class="nc" id="L46">                    .flatMap { user -&gt;</span>
+<span class="nc bnc" id="L47" title="All 4 branches missed.">                        user?.role?.right() ?: Error.NotFound.left()</span>
+<span class="nc" id="L48">                    }</span>
+            }
+    }
+
+    fun canCreatePlaylist(token: String): Result&lt;Unit&gt; {
+<span class="nc" id="L53">        val role = jwtService.getRoleFromToken(token)</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        return when (role) {</span>
+<span class="nc" id="L55">            Role.USER, Role.CREATOR, Role.ADMIN -&gt; Unit.right()</span>
+<span class="nc" id="L56">            else -&gt; Error.Unauthorized.left()</span>
+        }
+    }
+
+    fun canUploadVideo(token: String): Result&lt;Unit&gt; {
+<span class="nc" id="L61">        val role = jwtService.getRoleFromToken(token)</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        return when (role) {</span>
+<span class="nc" id="L63">            Role.CREATOR, Role.ADMIN -&gt; Unit.right()</span>
+<span class="nc" id="L64">            else -&gt; Error.CreatorRequired.left()</span>
+        }
+    }
+
+    fun getRoleForUserId(userId: Int): Result&lt;Role&gt; =
+<span class="nc" id="L69">        userRepository.findById(userId).flatMap { user -&gt;</span>
+<span class="nc bnc" id="L70" title="All 4 branches missed.">            user?.role?.right() ?: Error.NotFound.left()</span>
+<span class="nc" id="L71">        }</span>
+
+    fun refreshToken(token: String): Result&lt;String&gt; =
+<span class="nc" id="L74">        jwtService.validateAndGetUserId(token).flatMap { userId -&gt;</span>
+<span class="nc" id="L75">            userRepository.findById(userId).flatMap { user -&gt;</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">                if (user != null) {</span>
+<span class="nc" id="L77">                    val newToken = jwtService.generateToken(</span>
+<span class="nc" id="L78">                        userId = user.id!!,</span>
+<span class="nc" id="L79">                        username = user.username,</span>
+<span class="nc" id="L80">                        role = user.role</span>
+                    )
+<span class="nc" id="L82">                    newToken.right()</span>
+                } else {
+<span class="nc" id="L84">                    Error.NotFound.left()</span>
+<span class="nc" id="L85">                }</span>
+<span class="nc" id="L86">            }</span>
+<span class="nc" id="L87">        }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

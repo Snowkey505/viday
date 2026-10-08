@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SecurityConfig.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">infrastructure</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.config</a> &gt; <span class="el_source">SecurityConfig.kt</span></div><h1>SecurityConfig.kt</h1><pre class="source lang-java linenums">package com.vidayapi.config
+
+import com.vidayapi.security.JwtAuthenticationFilter
+import com.vidayapi.security.RlsBootstrapFilter
+import com.vidayapi.security.RlsContextFilter
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.security.authentication.AuthenticationManager
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration
+import org.springframework.security.config.annotation.web.builders.HttpSecurity
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
+import org.springframework.security.config.http.SessionCreationPolicy
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.http.HttpMethod
+import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+
+<span class="nc" id="L19">@Configuration</span>
+@EnableWebSecurity
+<span class="nc" id="L21">class SecurityConfig(</span>
+<span class="nc" id="L22">    private val jwtAuthenticationFilter: JwtAuthenticationFilter,</span>
+<span class="nc" id="L23">    private val rlsBootstrapFilter: RlsBootstrapFilter,</span>
+<span class="nc" id="L24">    private val rlsContextFilter: RlsContextFilter,</span>
+) {
+
+    @Bean
+    fun springPasswordEncoder(): PasswordEncoder {
+<span class="nc" id="L29">        return BCryptPasswordEncoder()</span>
+    }
+
+    @Bean
+    fun authenticationManager(config: AuthenticationConfiguration): AuthenticationManager {
+<span class="nc" id="L34">        return config.authenticationManager</span>
+    }
+
+    @Bean
+    fun filterChain(http: HttpSecurity): SecurityFilterChain {
+<span class="nc" id="L39">        http</span>
+<span class="nc" id="L40">            .csrf { it.disable() }</span>
+<span class="nc" id="L41">            .cors { it.disable() }</span>
+<span class="nc" id="L42">            .authorizeHttpRequests { auth -&gt;</span>
+<span class="nc" id="L43">                auth</span>
+<span class="nc" id="L44">                    .requestMatchers(</span>
+<span class="nc" id="L45">                        &quot;/api/auth/**&quot;,</span>
+<span class="nc" id="L46">                        &quot;/api/videos&quot;,</span>
+<span class="nc" id="L47">                        &quot;/api/videos/*&quot;,</span>
+<span class="nc" id="L48">                        &quot;/api/streams/live&quot;,</span>
+<span class="nc" id="L49">                        &quot;/swagger-ui/**&quot;,</span>
+<span class="nc" id="L50">                        &quot;/swagger-ui.html&quot;,</span>
+<span class="nc" id="L51">                        &quot;/v3/api-docs/**&quot;,</span>
+<span class="nc" id="L52">                        &quot;/v3/api-docs.yaml&quot;,</span>
+<span class="nc" id="L53">                        &quot;/webjars/**&quot;,</span>
+<span class="nc" id="L54">                        &quot;/swagger-resources/**&quot;,</span>
+<span class="nc" id="L55">                        &quot;/swagger-resources&quot;,</span>
+<span class="nc" id="L56">                    ).permitAll()</span>
+<span class="nc" id="L57">                    .requestMatchers(HttpMethod.GET, &quot;/api/streams/{contentId:[0-9]+}&quot;).permitAll()</span>
+<span class="nc" id="L58">                    .anyRequest().authenticated()</span>
+<span class="nc" id="L59">            }</span>
+<span class="nc" id="L60">            .sessionManagement { </span>
+<span class="nc" id="L61">                it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)</span>
+<span class="nc" id="L62">            }</span>
+<span class="nc" id="L63">            .addFilterBefore(rlsBootstrapFilter, UsernamePasswordAuthenticationFilter::class.java)</span>
+<span class="nc" id="L64">            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)</span>
+<span class="nc" id="L65">            .addFilterBefore(rlsContextFilter, UsernamePasswordAuthenticationFilter::class.java)</span>
+        
+<span class="nc" id="L67">        return http.build()</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>
