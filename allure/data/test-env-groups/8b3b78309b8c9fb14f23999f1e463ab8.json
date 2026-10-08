@@ -1,1 +1,1 @@
-{"id":"8b3b78309b8c9fb14f23999f1e463ab8","fullName":"com.vidayapi.usecase.FollowUserLondonTest.propagates repository failure from findById","name":"propagates repository failure from findById()","status":"passed","testResultsByEnv":{"default":"96c93fe47b955a2a2c56ac88ac99ea22"}}
+{"id":"8b3b78309b8c9fb14f23999f1e463ab8","fullName":"com.vidayapi.usecase.FollowUserLondonTest.propagates repository failure from findById","name":"propagates repository failure from findById()","status":"passed","testResultsByEnv":{"default":"aca4fdbd1a7f9f24f34478287aa8eb4c"}}

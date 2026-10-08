@@ -1,0 +1,1 @@
+{"id":"0d69ecd55a1949e2a249b9a433168379","fullName":"com.vidayapi.integration.UserSaveFindIT.save then findByUsername returns persisted user with role","name":"save then findByUsername returns persisted user with role()","status":"passed","testResultsByEnv":{"default":"c967f595145530ad8625805f77d6d470"}}

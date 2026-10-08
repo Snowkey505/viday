@@ -7,6 +7,24 @@ td,th{border:1px solid #ccc;padding:6px 10px;text-align:left}
 th{background:#f0f0f0}.ok{color:#0a7d32;font-weight:600}.bad{color:#c00;font-weight:600}
 </style></head><body>
 <h1>SonarQube — vidayapi</h1>
-<p>Статический снимок отчёта SonarQube из CI · 2026-10-08 14:22 UTC · проект: <code>vidayapi</code> · покрытие: JaCoCo (unit + integration + e2e)</p>
-<p><b>Не удалось получить данные SonarQube API:</b> HTTP Error 404: . Сканер мог не опубликовать анализ — см. лог CI-джобы; report-task.txt приложен рядом.</p>
+<p>Статический снимок отчёта SonarQube из CI · 2026-10-08 16:37 UTC · проект: <code>vidayapi</code> · покрытие: JaCoCo (unit + integration + e2e)</p>
+<h2>Метрики проекта</h2>
+<table><tr><th>Метрика</th><th>Значение</th></tr>
+<tr><td>Quality Gate</td><td class='ok'>OK</td></tr>
+<tr><td>Покрытие, %</td><td>15.5</td></tr>
+<tr><td>Строки кода</td><td>5221</td></tr>
+<tr><td>Всего строк</td><td>5946</td></tr>
+<tr><td>Баги</td><td>1</td></tr>
+<tr><td>Уязвимости</td><td>0</td></tr>
+<tr><td>Code smells</td><td>9</td></tr>
+<tr><td>Security hotspots</td><td>0</td></tr>
+<tr><td>Дублирование, %</td><td>0.8</td></tr>
+<tr><td>Успех тестов, %</td><td>100.0</td></tr>
+<tr><td>Тестов</td><td>34</td></tr>
+<tr><td>Рейтинг надёжности</td><td>B</td></tr>
+<tr><td>Рейтинг безопасности</td><td>A</td></tr>
+<tr><td>Рейтинг сопровождаемости</td><td>A</td></tr>
+</table>
+<h2>Открытые замечания (10)</h2>
+<table><tr><th>Серьёзность</th><th>Тип</th><th>Файл</th><th>Строка</th><th>Сообщение</th></tr><tr><td>MINOR</td><td>CODE_SMELL</td><td>application/src/main/kotlin/com/vidayapi/service/JwtService.kt</td><td>8</td><td>Remove this unused import.</td></tr><tr><td>MINOR</td><td>CODE_SMELL</td><td>domain/src/main/kotlin/com/vidayapi/port/ViewStatsRepository.kt</td><td>3</td><td>Remove this unused import.</td></tr><tr><td>MINOR</td><td>CODE_SMELL</td><td>infrastructure/src/main/kotlin/com/vidayapi/config/RedisConfig.kt</td><td>8</td><td>Remove this unused import.</td></tr><tr><td>CRITICAL</td><td>CODE_SMELL</td><td>infrastructure/src/main/kotlin/com/vidayapi/repository/JdbcPlaylistRepository.kt</td><td>81</td><td>Define a constant instead of duplicating this literal &quot;DB Error {}: {}&quot; 3 times.</td></tr><tr><td>MINOR</td><td>CODE_SMELL</td><td>infrastructure/src/main/kotlin/com/vidayapi/security/RlsContext.kt</td><td>85</td><td>Remove this unused &quot;userId&quot; local variable.</td></tr><tr><td>MINOR</td><td>BUG</td><td>infrastructure/src/main/kotlin/com/vidayapi/service/FFmpegVideoProcessor.kt</td><td>59</td><td>Do something with the &quot;Boolean&quot; value returned by &quot;delete&quot;.</td></tr><tr><td>CRITICAL</td><td>CODE_SMELL</td><td>presentation/src/main/kotlin/com/vidayapi/controller/UserController.kt</td><td>36</td><td>Define a constant instead of duplicating this literal &quot;User not found&quot; 3 times.</td></tr><tr><td>CRITICAL</td><td>CODE_SMELL</td><td>presentation/src/main/kotlin/com/vidayapi/cui/ConsoleUi.kt</td><td>152</td><td>Define a constant instead of duplicating this literal &quot;Please login first&quot; 9 times.</td></tr><tr><td>CRITICAL</td><td>CODE_SMELL</td><td>presentation/src/main/kotlin/com/vidayapi/cui/ConsoleUi.kt</td><td>177</td><td>Define a constant instead of duplicating this literal &quot;Invalid token&quot; 9 times.</td></tr><tr><td>CRITICAL</td><td>CODE_SMELL</td><td>presentation/src/main/kotlin/com/vidayapi/cui/ConsoleUi.kt</td><td>212</td><td>Define a constant instead of duplicating this literal &quot;Invalid playlist id&quot; 3 times.</td></tr></table>
 </body></html>
