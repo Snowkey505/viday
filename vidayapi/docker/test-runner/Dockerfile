@@ -20,4 +20,4 @@ COPY docker/test-runner/pipeline.sh /workspace/docker/test-runner/pipeline.sh
 COPY scripts /workspace/scripts
 RUN chmod +x /workspace/docker/test-runner/pipeline.sh /workspace/scripts/*.sh
 
-ENTRYPOINT ["/workspace/docker/test-runner/pipeline.sh"]
+ENTRYPOINT ["bash", "/workspace/docker/test-runner/pipeline.sh"]
