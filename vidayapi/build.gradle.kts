@@ -148,6 +148,31 @@ subprojects {
                 "allure.results.directory",
                 layout.buildDirectory.dir(allureResultsDirName).get().asFile.absolutePath,
             )
+            // ВАЖНО: плагин io.qameta.allure 4.x сам конфигурирует каталог результатов
+            // (build/allure-results) и ПЕРЕБИВАЕТ systemProperty выше — integration/e2e
+            // результаты оказывались в общем каталоге, а allure-results-it/-e2e оставались
+            // пустыми (в CI артефакты it/e2e загружались без allure-результатов).
+            // Поэтому stage-каталог выделяется перемещением файлов ПОСЛЕ прогона:
+            // doFirst запоминает содержимое build/allure-results до старта тестовой JVM,
+            // doLast переносит только НОВЫЕ файлы в build/allure-results-it | -e2e.
+            // Локальный full сохраняет unit-результаты нетронутыми, в CI каждая стадия
+            // отдаёт в upload-артефакт свой чистый каталог.
+            if (allureResultsDirName != "allure-results") {
+                val defaultResultsDir = layout.buildDirectory.dir("allure-results").get().asFile
+                val stageResultsDir = layout.buildDirectory.dir(allureResultsDirName).get().asFile
+                val preExisting = mutableSetOf<String>()
+                doFirst {
+                    preExisting.clear()
+                    defaultResultsDir.listFiles()?.forEach { preExisting.add(it.name) }
+                }
+                doLast {
+                    stageResultsDir.deleteRecursively()
+                    stageResultsDir.mkdirs()
+                    defaultResultsDir.listFiles()
+                        ?.filter { it.name !in preExisting }
+                        ?.forEach { it.renameTo(java.io.File(stageResultsDir, it.name)) }
+                }
+            }
             doFirst {
                 logger.lifecycle("JUnit random order seed: $seed")
             }

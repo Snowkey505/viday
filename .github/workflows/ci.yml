@@ -782,6 +782,9 @@ jobs:
       - name: Build SonarQube HTML snapshot (браузерный отчёт)
         if: always()
         run: |
+          # Контейнер сканера (-u root) создаёт build/sonar от root — без chown
+          # sonar-snapshot.py падает с "Permission denied: build/sonar/sonar-report.html".
+          sudo chown -R "$(id -u):$(id -g)" build/sonar 2>/dev/null || true
           # Дождаться фоновой обработки (compute engine), иначе метрики ещё
           # не рассчитаны. Затем scripts/sonar-snapshot.py снимает метрики и
           # замечания через Web API в автономный sonar-report.html — он
