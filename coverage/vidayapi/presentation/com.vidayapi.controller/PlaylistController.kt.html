@@ -215,10 +215,10 @@ import java.time.ZoneOffset
     fun getAvailablePlaylists(
         @AuthenticationPrincipal userDetails: UserDetails?
     ): ResponseEntity&lt;Any&gt; {
-<span class="pc bpc" id="L218" title="2 of 4 branches missed.">        val userId = userDetails?.username?.toIntOrNull()</span>
+<span class="nc bnc" id="L218" title="All 4 branches missed.">        val userId = userDetails?.username?.toIntOrNull()</span>
 
-<span class="pc bpc" id="L220" title="1 of 2 branches missed.">        return playlistRepository.findAvailablePlaylists(userId).fold(</span>
-<span class="fc" id="L221">            onSuccess = { playlists -&gt; ResponseEntity.ok(playlists.map { it.toResponse() }) },</span>
+<span class="nc bnc" id="L220" title="All 2 branches missed.">        return playlistRepository.findAvailablePlaylists(userId).fold(</span>
+<span class="nc" id="L221">            onSuccess = { playlists -&gt; ResponseEntity.ok(playlists.map { it.toResponse() }) },</span>
 <span class="nc" id="L222">            onFailure = { ResponseEntity.status(500).body(mapOf(&quot;error&quot; to &quot;Failed to fetch playlists&quot;)) }</span>
         )
     }

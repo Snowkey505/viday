@@ -42,15 +42,15 @@ import tools.jackson.databind.ObjectMapper
         @RequestParam(defaultValue = &quot;0&quot;) page: Int,
         @RequestParam(defaultValue = &quot;20&quot;) size: Int,
     ): ResponseEntity&lt;Any&gt; =
-<span class="pc bpc" id="L45" title="1 of 2 branches missed.">        listVideosUseCase.execute(userId, playlistId, page, size).fold(</span>
-<span class="fc" id="L46">            onSuccess = { ResponseEntity.ok(it) },</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">        listVideosUseCase.execute(userId, playlistId, page, size).fold(</span>
+<span class="nc" id="L46">            onSuccess = { ResponseEntity.ok(it) },</span>
             onFailure = { error -&gt;
 <span class="nc" id="L48">                when (error) {</span>
 <span class="nc bnc" id="L49" title="All 2 branches missed.">                    is Error.Unauthorized -&gt; ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Unauthorized&quot;))</span>
 <span class="nc" id="L50">                    else -&gt; ResponseEntity.status(500).body(mapOf(&quot;error&quot; to &quot;Failed to fetch videos&quot;))</span>
 <span class="nc" id="L51">                }</span>
             }
-<span class="fc" id="L53">        )</span>
+<span class="nc" id="L53">        )</span>
 
     @DeleteMapping(&quot;/{id}&quot;)
     fun deleteVideo(

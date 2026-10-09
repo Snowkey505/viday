@@ -59,10 +59,10 @@ import org.springframework.web.bind.annotation.RestController
         @PathVariable userId: Int,
         @AuthenticationPrincipal userDetails: UserDetails?,
     ): ResponseEntity&lt;Any&gt; {
-<span class="pc bpc" id="L62" title="1 of 2 branches missed.">        val followerId = resolveUserId(userDetails) ?: return unauthorized()</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        val followerId = resolveUserId(userDetails) ?: return unauthorized()</span>
 
-<span class="pc bpc" id="L64" title="1 of 2 branches missed.">        return followUserUseCase.execute(followerId, userId).fold(</span>
-<span class="fc" id="L65">            onSuccess = { ResponseEntity.ok(mapOf(&quot;message&quot; to &quot;Subscribed&quot;)) },</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        return followUserUseCase.execute(followerId, userId).fold(</span>
+<span class="nc" id="L65">            onSuccess = { ResponseEntity.ok(mapOf(&quot;message&quot; to &quot;Subscribed&quot;)) },</span>
             onFailure = { error -&gt;
 <span class="nc" id="L67">                when (error) {</span>
 <span class="nc bnc" id="L68" title="All 2 branches missed.">                    is Error.CannotFollowSelf -&gt;</span>
@@ -99,7 +99,7 @@ import org.springframework.web.bind.annotation.RestController
     }
 
     private fun resolveUserId(userDetails: UserDetails?): Int? =
-<span class="pc bpc" id="L102" title="2 of 4 branches missed.">        userDetails?.username?.toIntOrNull()</span>
+<span class="nc bnc" id="L102" title="All 4 branches missed.">        userDetails?.username?.toIntOrNull()</span>
 
     private fun unauthorized(): ResponseEntity&lt;Any&gt; =
 <span class="nc" id="L105">        ResponseEntity.status(401).body(mapOf(&quot;error&quot; to &quot;Unauthorized&quot;))</span>
