@@ -796,8 +796,11 @@ jobs:
               found=$((found + 1))
             done < <(find "$1" -type f -print0)
           }
-          # 1) всё, что уже было на gh-pages (включая history/ для тренда)
-          merge_dir gh-pages/_reports/allure-results
+          # 1) всё, что уже было на gh-pages (включая history/ для тренда).
+          # ВАЖНО: peaceiris деплоит publish_dir=_reports в КОРЕНЬ ветки gh-pages,
+          # поэтому на чекауте gh-pages пути — allure-results/, allure/ и т.д.
+          merge_dir gh-pages/allure-results
+          merge_dir gh-pages/_reports/allure-results   # fallback: старый layout
           # 2) результаты текущего прогона
           merge_dir tmp/allure-results-new
           result_count=$(find "$cum" -type f \( -name '*-result.json' -o -name '*-container.json' \) | wc -l)
@@ -848,6 +851,13 @@ jobs:
           mkdir -p _reports/allure-results
           rm -rf _reports/allure-results/*
           cp -r vidayapi/build/allure-results-cumulative/. _reports/allure-results/
+          # Обновлённую history (тренды после этого прогона) из свежесгенерированного
+          # отчёта кладём ОБРАТНО в результаты: следующий прогон возьмёт её из
+          # gh-pages/allure-results/history — так History виден за все прогоны
+          if [ -d _reports/allure/history ]; then
+            rm -rf _reports/allure-results/history
+            cp -r _reports/allure/history _reports/allure-results/history
+          fi
           echo "Allure staged cumulative ($(find _reports/allure -name index.html | wc -l) index.html, $(find _reports/allure-results -name '*-result.json' | wc -l) raw results)"
           # Покрытие viday: tmp/coverage-viday/<module>/build/reports/jacoco/.../html/
           for d in $(find tmp/coverage-viday -path "*reports/jacoco*html" -type d 2>/dev/null | sort); do
