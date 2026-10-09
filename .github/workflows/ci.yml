@@ -1,17 +1,16 @@
 # =============================================================================
 # GitHub Actions CI для ЛР2.
 #
-# Архитектура:
-#   * build-vidayapi собирает образы test-runner и postgres-test ОДИН раз,
-#     пушит их в GitHub Container Registry (ghcr.io);
-#   * тестовые джобы только docker pull + docker run/compose run;
-#   * порядок: unit ∥ integration (ПАРАЛЛЕЛЬНО) -> build (bootJar, после
-#     юнитов) -> e2e (после build + integration) -> отчёты;
-#   * integration-результаты публикуются артефактами сразу после прогона;
+# Архитектура (порядок стадий):
+#   1) unit-viday ∥ unit-vidayapi ∥ integration-vidayapi — ПАРАЛЛЕЛЬНО
+#      (build-vidayapi только готовит образы test-runner/postgres-test в ghcr);
+#   2) build обоих: build-viday (APK) ∥ build-vidayapi-jar (bootJar);
+#   3) e2e (после билдов + integration);
+#   4) отчёты: report-vidayapi (Allure) ∥ sonar-vidayapi;
+#   5) publish на gh-pages (Allure — НАКОПИТЕЛЬНЫЙ: к результатам прошлых
+#      прогонов ветки добавляются новые, ничего не перезаписывается);
 #   * report выполняется ВСЕГДА (if: !cancelled()), НЕ перезапускает тесты:
 #     Allure собирается из allure-results*, пришедших артефактами;
-#   * Allure на gh-pages — НАКОПИТЕЛЬНЫЙ: к результатам прошлых прогонов
-#     ветки добавляются новые (merge по UUID, ничего не перезаписывается);
 #   * Junit-отчёты публикуются аннотациями dorny/test-reporter;
 #   * история Allure (тренды, Требование 9) — actions/cache + gh-pages.
 #
@@ -60,7 +59,7 @@ permissions:
 
 jobs:
   # ---------------------------------------------------------------------------
-  # STAGE: build
+  # STAGE 0: образы для CI (build-vidayapi) — ОДИН раз, дальше только pull
   # ---------------------------------------------------------------------------
   build-vidayapi:
     runs-on: ubuntu-latest
@@ -99,39 +98,11 @@ jobs:
       # bootJar собирается ОТДЕЛЬНОЙ джобой build-vidayapi-jar — ПОСЛЕ unit-тестов
       # (jar — артефакт для curl-демо и локальных запусков)
 
-  build-viday:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: viday
-    steps:
-      - uses: actions/checkout@v4
-      - name: Cache Gradle + Android SDK
-        uses: actions/cache@v4
-        with:
-          # Только caches/wrapper (без lock-файлов): полный .gradle в кэше
-          # приводил к "Could not find <artifact>" из-за частичного кэша.
-          path: |
-            viday/.gradle/caches
-            viday/.gradle/wrapper
-            viday/.android-sdk
-            viday/**/build
-          key: viday-build-v2-${{ hashFiles('viday/gradle/libs.versions.toml', 'viday/build.gradle.kts') }}
-      - name: Install Android SDK
-        run: bash scripts/ci-install-sdk.sh
-        env:
-          ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
-      - name: Assemble debug APK (early compile check)
-        run: ./gradlew --no-daemon :app:assembleDebug
-        env:
-          ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
-          ANDROID_SDK_ROOT: ${{ github.workspace }}/viday/.android-sdk
-
   # ---------------------------------------------------------------------------
-  # STAGE: unit
+  # STAGE 1: unit-viday ∥ unit-vidayapi ∥ integration-vidayapi — ПАРАЛЛЕЛЬНО
+  # (unit-viday сам ставит Android SDK из кэша).
   # ---------------------------------------------------------------------------
   unit-viday:
-    needs: [build-viday]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -155,7 +126,7 @@ jobs:
           ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
       - name: JVM unit tests + JaCoCo coverage
         run: |
-          # literal block: переводы строк сохраняются, '\' — настоящий перенос команды
+          # literal block: переводы строк сохраняются, '\\' — настоящий перенос команды
           ./gradlew --no-daemon :domain:test :data:testDebugUnitTest :app:testDebugUnitTest \
             :domain:jacocoTestReport :data:jacocoTestReport :app:jacocoTestReport
         env:
@@ -191,6 +162,36 @@ jobs:
             viday/**/build/reports/jacoco/**/*.csv
           if-no-files-found: ignore
           retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # STAGE 2: build обоих проектов — ПОСЛЕ unit-тестов
+  # ---------------------------------------------------------------------------
+  build-viday:
+    needs: [unit-viday]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: viday
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache Gradle + Android SDK
+        uses: actions/cache@v4
+        with:
+          path: |
+            viday/.gradle/caches
+            viday/.gradle/wrapper
+            viday/.android-sdk
+            viday/**/build
+          key: viday-build-v2-${{ hashFiles('viday/gradle/libs.versions.toml', 'viday/build.gradle.kts') }}
+      - name: Install Android SDK
+        run: bash scripts/ci-install-sdk.sh
+        env:
+          ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
+      - name: Assemble debug APK (после unit)
+        run: ./gradlew --no-daemon :app:assembleDebug
+        env:
+          ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
+          ANDROID_SDK_ROOT: ${{ github.workspace }}/viday/.android-sdk
 
   unit-vidayapi:
     needs: [build-vidayapi]
@@ -263,7 +264,7 @@ jobs:
           retention-days: 7
 
   # ---------------------------------------------------------------------------
-  # STAGE: build — bootJar собирается ПОСЛЕ unit-тестов
+  # STAGE 2 (backend): bootJar собирается ПОСЛЕ unit-тестов
   # (артефакт vidayapi-jar — для curl-демо и локальных запусков)
   # ---------------------------------------------------------------------------
   build-vidayapi-jar:
@@ -370,11 +371,11 @@ jobs:
           retention-days: 7
 
   # ---------------------------------------------------------------------------
-  # STAGE: e2e (Задание 3, Требование 13).
-  # E2E идёт ПОСЛЕ build (bootJar готов) и после integration-стадии.
+  # STAGE 3: e2e (Задание 3, Требование 13).
+  # E2E идёт ПОСЛЕ обоих билдов (STAGE 2) и после integration.
   # ---------------------------------------------------------------------------
   e2e-vidayapi:
-    needs: [build-vidayapi-jar, integration-vidayapi]
+    needs: [build-viday, build-vidayapi-jar, integration-vidayapi]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -434,8 +435,9 @@ jobs:
           retention-days: 7
 
   # ---------------------------------------------------------------------------
-  # STAGE: report — Allure ВСЕГДА (Требование 8), без повторного прогона тестов.
-  # Стенд не нужен: отчёт генерируется из allure-results*, пришедших артефактами.
+  # STAGE 4: отчёты — Allure ВСЕГДА (Требование 8), без повторного прогона
+  # тестов. Стенд не нужен: отчёт генерируется из allure-results*,
+  # пришедших артефактами. Параллельно с sonar-vidayapi.
   # ---------------------------------------------------------------------------
   report-vidayapi:
     needs: [unit-vidayapi, integration-vidayapi, e2e-vidayapi]
@@ -600,7 +602,7 @@ jobs:
           key: vidayapi-allure-history-${{ github.sha }}-${{ github.run_id }}
 
   # ---------------------------------------------------------------------------
-  # STAGE: sonar — SonarQube анализ backend'а (coverage tree-view + quality).
+  # STAGE 4 (параллельно с report): SonarQube анализ backend'а (coverage tree-view + quality).
   # Сервер поднимается прямо в джобе через docker-compose.sonar.yml; токен
   # генерируется через REST API (свежий сервер, admin/admin). Тесты НЕ
   # перезапускаются: JaCoCo exec-файлы и JUnit XML приходят артефактами из
@@ -735,7 +737,7 @@ jobs:
         run: docker compose -f docker/docker-compose.sonar.yml down -v || true
 
   # ---------------------------------------------------------------------------
-  # STAGE: publish — итоговые отчёты в git-ветку gh-pages.
+  # STAGE 5: publish — итоговые отчёты в git-ветку gh-pages.
   # Проблема: Allure-отчёт, открытый локально через file://, показывает только
   # загрузку (SPA читает данные через fetch — file:// блокирует). Деплой в ветку
   # даёт просмотр по https://<owner>.github.io/<repo>/allure/ в браузере.
@@ -743,7 +745,7 @@ jobs:
   #   allure/ | coverage/{viday,vidayapi}/<module>/ | sonar/ | index.html
   # ---------------------------------------------------------------------------
   publish-reports:
-    needs: [report-vidayapi, unit-viday, sonar-vidayapi]
+    needs: [report-vidayapi, sonar-vidayapi]
     # Публикуем на push, вручную и на PR из этого же репозитория (раннеры у вас
     # ходят именно по pull_request — без этого условия джоба скипалась).
     # Скипаются только форк-PR, где GITHUB_TOKEN не имеет прав на gh-pages.
