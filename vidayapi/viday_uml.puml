@@ -1,0 +1,757 @@
+@startuml
+class com.vidayapi.usecase.CreatePlaylistUseCaseIntegrationTest$Companion {
++  postgresContainer
+- HikariDataSource dataSource
+- JdbcTemplate jdbcTemplate
+- JdbcPlaylistRepository playlistRepository
+- JdbcUserRepository userRepository
+- BCryptPasswordEncoder passwordEncoder
+- CreatePlaylistUseCase createPlaylistUseCase
+- RegisterUserUseCase registerUserUseCase
++ void setUpAll()
+- void initDatabase()
++ void tearDownAll()
+}
+
+
+class com.vidayapi.usecase.CreatePlaylistUseCaseIntegrationTest {
++ void setUp()
++ void should create playlist successfully for registered user()
++ void should return ValidationFailed when playlist name is blank()
++ void should return AlreadyExists when playlist with same name exists for same owner()
++ void should allow same playlist name for different owners()
++ void should return StorageFailure when owner does not exist()
++ void should create multiple playlists for same user()
++ void should create playlist with different access types()
+}
+
+class com.vidayapi.usecase.ListVideosUseCase {
++ Result<PageResponse<VideoResponse>> execute(Int?,Int?,Int,Int)
+- PageResponse<VideoResponse> readPage(String)
+}
+
+class com.vidayapi.dto.responses.PageResponse$Companion {
++ PageResponse<T> from(Page<T>)
+}
+
+class com.vidayapi.dto.responses.PageResponse {
+}
+class com.vidayapi.model.Stream {
+}
+enum com.vidayapi.model.StreamStatus {
++  SCHEDULED
++  LIVE
++  ENDED
++  ERROR
+}
+
+class com.vidayapi.usecase.StopStreamUseCase {
++ Result<StreamWithContent> execute(Int,Int)
+}
+
+class com.vidayapi.usecase.AssignAdminRoleUseCase {
++ Result<User> execute(String,Int)
+}
+
+class com.vidayapi.security.JwtAuthenticationFilter {
++ void doFilterInternal(HttpServletRequest,HttpServletResponse,FilterChain)
+- String? extractTokenFromRequest(HttpServletRequest)
+}
+
+class com.vidayapi.model.UserFollow {
+}
+class com.vidayapi.cui.ConsoleUi {
+- String? currentToken
++ void run(String)
+- String? getCurrentUsername()
+- Role? getCurrentRole()
+- void loginFlow(Scanner)
+- void logoutFlow()
+- void registerUserFlow(Scanner)
+- void createPlaylistFlow(Scanner)
+- void deletePlaylistFlow(Scanner)
+- void addContentToPlaylistFlow(Scanner)
+- void removeContentFromPlaylistFlow(Scanner)
+- void followCreatorFlow(Scanner)
+- void unfollowCreatorFlow(Scanner)
+- Int? resolveUserIdOrNull(String)
+- Boolean ensurePlaylistOwnedByCli(Int,Int)
+- String explainPlaylistCliError(Error)
+- String followExplain(Error)
+- void uploadVideoFlow(Scanner)
+- void uploadTestVideo()
+- void activateChannelFlow()
+}
+
+
+class com.vidayapi.controller.VideoController {
++ ResponseEntity<Any> getVideos(Int?,Int?,Int,Int)
++ ResponseEntity<Any> deleteVideo(Int,UserDetails?)
++ ResponseEntity<Any> uploadVideo(MultipartFile,MultipartFile,String,String?,AccessType,UserDetails?)
++ ResponseEntity<Any> getVideo(Int)
+}
+
+class com.vidayapi.config.UseCaseConfig {
++ RegisterUserUseCase registerUserUseCase(UserRepository,PasswordEncoder)
++ ActivateChannelUseCase activateChannelUseCase(UserRepository)
++ AssignAdminRoleUseCase assignAdminRoleUseCase(UserRepository)
++ AssignAnalystRoleUseCase assignAnalystRoleUseCase(UserRepository)
++ CreatePlaylistUseCase createPlaylistUseCase(PlaylistRepository)
++ FollowUserUseCase followUserUseCase(UserRepository)
++ UnfollowUserUseCase unfollowUserUseCase(UserRepository)
++ VideoProcessor videoProcessor()
++ ContentDeletionService contentDeletionService(ContentRepository,FileStoragePort,CachePort)
++ UploadVideoUseCase uploadVideoUseCase(ContentRepository,FileStoragePort,VideoProcessor,VideoBusinessConfig,CachePort)
++ DeleteVideoUseCase deleteVideoUseCase(ContentDeletionService)
++ AdminDeleteUserUseCase adminDeleteUserUseCase(UserRepository)
++ AdminDeleteContentUseCase adminDeleteContentUseCase(UserRepository,ContentDeletionService)
++ AdminDeletePlaylistUseCase adminDeletePlaylistUseCase(UserRepository,PlaylistRepository)
++ GetViewStatsUseCase getViewStatsUseCase(UserRepository,ViewStatsRepository)
++ CreateStreamUseCase createStreamUseCase(StreamRepository,CachePort)
++ StartStreamUseCase startStreamUseCase(StreamRepository,CachePort)
++ StopStreamUseCase stopStreamUseCase(StreamRepository,CachePort)
++ DeleteStreamUseCase deleteStreamUseCase(StreamRepository,CachePort)
++ VideoResponseMapper videoResponseMapper(FileStoragePort)
+}
+
+class com.vidayapi.controller.UserController {
++ ResponseEntity<Any> getUserById(Int,UserDetails?)
++ ResponseEntity<Any> followCreator(Int,UserDetails?)
++ ResponseEntity<Any> unfollowCreator(Int,UserDetails?)
+- Int? resolveUserId(UserDetails?)
+- ResponseEntity<Any> unauthorized()
+}
+
+class com.vidayapi.dto.requests.UpdatePlaylistRequest {
+}
+class com.vidayapi.dto.requests.UploadVideoRequest {
+}
+class com.vidayapi.controller.PlaylistController {
++ ResponseEntity<Any> createPlaylist(CreatePlaylistRequest,UserDetails?)
++ ResponseEntity<Any> getPlaylists(UserDetails?,Int,Int)
++ ResponseEntity<Any> getPlaylistById(Int)
++ ResponseEntity<Any> addContentToPlaylist(Int,AddContentToPlaylistRequest,UserDetails?)
++ ResponseEntity<Any> deletePlaylist(Int,UserDetails?)
++ ResponseEntity<Any> removeContentFromPlaylist(Int,Int,UserDetails?)
+- Either<Error, Playlist> ensurePlaylistOwner(Int,Int)
+- ResponseEntity<Any> playlistAccessErrorResponse(Error)
+- PlaylistResponse toResponse()
++ ResponseEntity<Any> getAvailablePlaylists(UserDetails?)
+}
+
+class com.vidayapi.usecase.ActivateChannelUseCase {
++ Result<User> execute(Int)
+}
+
+enum com.vidayapi.model.AccessType {
++  PUBLIC
++  PRIVATE
++  FOLLOWERS
+}
+
+class com.vidayapi.config.VideoBusinessConfig {
+}
+class com.vidayapi.repository.TestConfig {
++ PasswordEncoder testPasswordEncoder()
+}
+
+class com.vidayapi.dto.requests.SignUpRequest {
+}
+class com.vidayapi.dto.responses.ContentViewStatsResponse$Companion {
++ void from(ContentViewStatsEntry)
+}
+
+class com.vidayapi.dto.responses.ContentViewStatsResponse {
+}
+class com.vidayapi.dto.responses.LoginResponse {
+}
+class com.vidayapi.model.ContentViewStats {
+}
+class com.vidayapi.cache.NoOpCacheAdapter {
++ String? get(String)
++ void set(String,String,Long)
++ void delete(String)
++ void deleteByPrefix(String)
+}
+
+class com.vidayapi.config.ReferenceDataInitializer {
++ ApplicationRunner referenceDataRunner(JdbcTemplate)
+}
+
+interface com.vidayapi.port.PlaylistRepository {
++ Result<Playlist> findById(Int)
++ Result<List<Playlist>> findByOwnerId(Int)
++ Result<Page<Playlist>> findPlaylistsByOwnerIdPage(Int,PageRequest)
++ Result<List<Playlist>> findPublicPlaylists()
++ Result<Page<Playlist>> findPublicPlaylistsPage(PageRequest)
++ Result<Playlist> save(Playlist)
++ Result<PlaylistItem> addContentToPlaylist(Int,Int,Int?)
++ Result<Int> countItemsInPlaylist(Int)
++ Result<Boolean> existsByNameAndOwnerId(String,Int)
++ Result<Unit> deletePlaylist(Int,Int)
++ Result<Unit> removeContentFromPlaylist(Int,Int)
++ Result<List<Playlist>> findAvailablePlaylists(Int?)
++ Result<Unit> deleteByIdAsAdmin(Int)
+}
+
+interface com.vidayapi.port.PasswordEncoder {
++ String encode(String)
++ Boolean matches(String,String)
+}
+
+class com.vidayapi.repository.JdbcStreamRepository {
+-  streamWithContentMapper
+-  baseSelect
++ Result<StreamWithContent> save(Stream,String,String?,Int,String)
++ Result<StreamWithContent> findByContentId(Int)
++ Result<List<StreamWithContent>> findByOwnerId(Int)
++ Result<List<StreamWithContent>> findLiveStreams()
++ Result<Page<StreamWithContent>> findLiveStreamsPage(PageRequest)
++ Result<StreamWithContent> findByStreamKey(String)
++ Result<Stream> update(Stream)
++ Result<Unit> delete(Int,Int)
++ Result<Boolean> hasActiveLiveStream(Int)
+}
+
+
+class com.vidayapi.model.Video {
+}
+class com.vidayapi.usecase.UploadVideoUseCase {
+-  logger
++ Result<Video> execute(UploadVideoRequest,Int)
+}
+
+
+class com.vidayapi.dto.requests.CreateStreamRequest {
+}
+class com.vidayapi.repository.JdbcUserRepository {
+-  rowMapper
++ Result<User?> findById(Int)
++ Result<User?> findByUsername(String)
++ Result<User> save(User)
++ Result<Boolean> existsByUsername(String)
++ Result<User> update(User)
++ Result<Unit> follow(Int,Int)
++ Result<Unit> unfollow(Int,Int)
++ Result<Unit> deleteById(Int)
+}
+
+
+class com.vidayapi.controller.AdminController {
++ ResponseEntity<Any> deleteUser(Int,UserDetails?)
++ ResponseEntity<Any> deleteContent(Int,UserDetails?)
++ ResponseEntity<Any> deletePlaylist(Int,UserDetails?)
++ ResponseEntity<Any> promoteToAdmin(String,UserDetails?)
++ ResponseEntity<Any> promoteToAnalyst(String,UserDetails?)
+- Int? resolveAdminId(UserDetails?)
+- ResponseEntity<Any> adminError(Error)
+}
+
+class com.vidayapi.config.SecurityConfig {
++ PasswordEncoder springPasswordEncoder()
++ AuthenticationManager authenticationManager(AuthenticationConfiguration)
++ SecurityFilterChain filterChain(HttpSecurity)
+}
+
+class com.vidayapi.usecase.GetViewStatsUseCase {
++ Result<List<ContentViewStatsEntry>> listAll(Int)
++ Result<ContentViewStatsEntry> getByContentId(Int,Int)
++ Result<List<ContentViewStatsEntry>> getTop(Int,Int)
+- Result<Unit> authorize(Int)
+}
+
+interface com.vidayapi.port.ContentRepository {
++ Result<Content> findById(Int)
++ Result<List<Content>> findPublicContent()
++ Result<Page<Video>> findPublicVideosPage(PageRequest)
++ Result<List<Content>> findByOwnerId(Int)
++ Result<Page<Video>> findVideosByOwnerIdPage(Int,PageRequest)
++ Result<List<Content>> findByPlaylistId(Int)
++ Result<Page<Video>> findVideosByPlaylistIdPage(Int,PageRequest)
++ Result<Content> save(Content)
++ Result<Video> saveVideo(Video)
++ Result<Video> findVideoByContentId(Int)
++ Result<MediaVariant> saveMediaVariant(MediaVariant)
++ Result<List<MediaVariant>> findMediaVariantsByContentId(Int)
++ Result<MediaVariant> findSourceMediaVariant(Int)
++ Result<Unit> deleteById(Int,Int)
++ Result<Unit> deleteByIdAsAdmin(Int)
+}
+
+class com.vidayapi.usecase.AssignAnalystRoleUseCase {
++ Result<User> execute(String,Int)
+}
+
+class com.vidayapi.model.ContentViewStatsEntry {
+}
+class com.vidayapi.dto.responses.UserResponse {
+}
+interface com.vidayapi.port.ViewStatsRepository {
++ Result<List<ContentViewStatsEntry>> findAll()
++ Result<ContentViewStatsEntry> findByContentId(Int)
++ Result<List<ContentViewStatsEntry>> findTopByViewCount(Int)
+}
+
+class com.vidayapi.controller.AuthController {
+-  logger
++ ResponseEntity<Any> login(LoginRequest)
++ ResponseEntity<Any> register(SignUpRequest)
+}
+
+
+class com.vidayapi.model.PlaylistItem {
+}
+interface com.vidayapi.port.CachePort {
++ String? get(String)
++ void set(String,String,Long)
++ void delete(String)
++ void deleteByPrefix(String)
+}
+
+interface com.vidayapi.port.StreamRepository {
++ Result<StreamWithContent> save(Stream,String,String?,Int,String)
++ Result<StreamWithContent> findByContentId(Int)
++ Result<List<StreamWithContent>> findByOwnerId(Int)
++ Result<List<StreamWithContent>> findLiveStreams()
++ Result<Page<StreamWithContent>> findLiveStreamsPage(PageRequest)
++ Result<StreamWithContent> findByStreamKey(String)
++ Result<Stream> update(Stream)
++ Result<Unit> delete(Int,Int)
++ Result<Boolean> hasActiveLiveStream(Int)
+}
+
+class com.vidayapi.repository.JdbcViewStatsRepository {
+-  rowMapper
+-  baseSelect
++ Result<List<ContentViewStatsEntry>> findAll()
++ Result<ContentViewStatsEntry> findByContentId(Int)
++ Result<List<ContentViewStatsEntry>> findTopByViewCount(Int)
+}
+
+
+class com.vidayapi.dto.responses.VideoResponse {
+}
+class com.vidayapi.usecase.UnfollowUserUseCase {
++ Result<Unit> execute(Int,Int)
+}
+
+class com.vidayapi.dto.requests.AddContentToPlaylistRequest {
+}
+class com.vidayapi.usecase.DeleteStreamUseCase {
++ Result<Unit> execute(Int,Int)
+}
+
+class com.vidayapi.config.VideoBusinessConfig {
++ Int maxDurationSeconds
++ List<String> allowedFormats
++ Int maxFileSizeMb
+}
+
+class com.vidayapi.controller.StreamController {
++ ResponseEntity<Any> listLiveStreams(Int,Int)
++ ResponseEntity<Any> myStreams(UserDetails?)
++ ResponseEntity<Any> getStream(Int)
++ ResponseEntity<Any> createStream(CreateStreamRequest,UserDetails?)
++ ResponseEntity<Any> startStream(Int,UserDetails?)
++ ResponseEntity<Any> stopStream(Int,UserDetails?)
++ ResponseEntity<Any> deleteStream(Int,UserDetails?)
+- ResponseEntity<Any> streamErrorResponse(Error)
+}
+
+class com.vidayapi.service.JwtService {
+-  key
++ String generateToken(Int,String,Role)
++ Result<Int> validateAndGetUserId(String)
++ String? getUsernameFromToken(String)
++ Role? getRoleFromToken(String)
+}
+
+
+class com.vidayapi.dto.responses.StreamResponse$Companion {
++ void from(StreamWithContent)
+}
+
+class com.vidayapi.dto.responses.StreamResponse {
+}
+class com.vidayapi.service.AuthService {
++ Result<String> login(String,String,PasswordEncoder)
++ Result<Int> validateToken(String)
++ Result<Role> getCurrentUserRole(String)
++ Result<Unit> canCreatePlaylist(String)
++ Result<Unit> canUploadVideo(String)
++ Result<Role> getRoleForUserId(Int)
++ Result<String> refreshToken(String)
+}
+
+class com.vidayapi.config.PasswordEncoderConfig {
++ PasswordEncoder passwordEncoder()
+}
+
+class com.vidayapi.service.VideoResponseMapper {
++ VideoResponse toResponse(Video)
+- String toExternalUrl(String?)
+}
+
+class com.vidayapi.model.Error$NotFound {
+}
+class com.vidayapi.model.Error$Unauthorized {
+}
+class com.vidayapi.model.Error$Forbidden {
+}
+class com.vidayapi.model.Error$AlreadyExists {
+}
+class com.vidayapi.model.Error$InvalidInput {
+}
+class com.vidayapi.model.Error$StorageFailure {
+}
+class com.vidayapi.model.Error$ValidationFailed {
+}
+class com.vidayapi.model.Error$UserAlreadyFollowed {
+}
+class com.vidayapi.model.Error$CannotFollowSelf {
+}
+class com.vidayapi.model.Error$PlaylistPositionConflict {
+}
+class com.vidayapi.model.Error$StreamKeyInvalid {
+}
+class com.vidayapi.model.Error$StreamNotFound {
+}
+class com.vidayapi.model.Error$StreamAlreadyLive {
+}
+class com.vidayapi.model.Error$StreamNotLive {
+}
+class com.vidayapi.model.Error$NotVideoOwner {
+}
+class com.vidayapi.model.Error$AlreadyCreator {
+}
+class com.vidayapi.model.Error$InvalidRoleTransition {
+}
+class com.vidayapi.model.Error$CreatorRequired {
+}
+class com.vidayapi.model.Error {
+}
+class com.vidayapi.config.RedisConfig {
++ StringRedisTemplate stringRedisTemplate(RedisConnectionFactory)
+}
+
+class com.vidayapi.usecase.DeleteVideoUseCase {
++ Result<Unit> execute(Int,Int)
+}
+
+class com.vidayapi.storage.MinioFileStorageAdapter {
+-  logger
+- MinioClient publicMinioClient
++ Result<String> uploadFile(String,String,InputStream,String,Long)
++ Result<String> getFileUrl(String,String)
++ Result<Unit> deleteFile(String,String)
+}
+
+
+class com.vidayapi.model.PageRequest$Companion {
++  DEFAULT_SIZE
++  MAX_SIZE
+}
+
+class com.vidayapi.model.PageRequest {
++ Long offset
++ PageRequest normalized(Int)
+}
+
+
+class com.vidayapi.model.Page {
++ Int totalPages
++ Boolean hasNext
++ Boolean hasPrevious
++ Page<R> map((T) -> R)
+}
+
+
+class com.vidayapi.service.RoleAuthorization {
++ Result<Unit> requireAdmin(Role)
++ Result<Unit> requireAnalyst(Role)
+}
+
+class com.vidayapi.dto.requests.CreatePlaylistRequest {
+}
+class com.vidayapi.VidayApplication {
+}
+class com.vidayapi.model.StreamWithContent {
+}
+class com.vidayapi.service.CustomUserDetailsService {
++ UserDetails loadUserByUsername(String)
+}
+
+class com.vidayapi.model.MediaVariant {
+}
+enum com.vidayapi.model.Codec {
++  H264
++  VP9
++  AV1
++  H265
+}
+
+class com.vidayapi.dto.responses.PlaylistResponse {
+}
+class com.vidayapi.controller.ChannelController {
++ ResponseEntity<Any> activateChannel(UserDetails?)
++ ResponseEntity<Any> refreshToken(UserDetails?,String?)
+}
+
+class com.vidayapi.security.JwtTokenProvider {
+-  key
++ String generateToken(Long,String,Role)
++ Long? getUserIdFromToken(String)
++ Boolean validateToken(String)
+}
+
+
+class com.vidayapi.usecase.CreatePlaylistUseCase {
++ Result<Playlist> execute(String,Int,AccessType)
+}
+
+class com.vidayapi.usecase.RegisterUserUseCase {
++ Result<User> execute(String,String)
+}
+
+class com.vidayapi.model.User {
+}
+enum com.vidayapi.model.Role {
++  GUEST
++  USER
++  CREATOR
++  ADMIN
++  ANALYST
+}
+
+class com.vidayapi.controller.AnalystController {
++ ResponseEntity<Any> listViewStats(UserDetails?)
++ ResponseEntity<Any> topViewStats(UserDetails?,Int)
++ ResponseEntity<Any> getViewStats(Int,UserDetails?)
+- Int? resolveUserId(UserDetails?)
+- ResponseEntity<Any> analystError(Error)
+}
+
+interface com.vidayapi.port.FileStoragePort {
++ Result<String> uploadFile(String,String,InputStream,String,Long)
++ Result<String> getFileUrl(String,String)
++ Result<Unit> deleteFile(String,String)
+}
+
+class com.vidayapi.usecase.ListLiveStreamsUseCase {
++ Result<PageResponse<StreamResponse>> execute(Int,Int)
+- PageResponse<StreamResponse> readPage(String)
+}
+
+class com.vidayapi.usecase.FollowUserUseCase {
++ Result<Unit> execute(Int,Int)
+}
+
+class com.vidayapi.service.ContentDeletionService {
++ Result<Unit> deleteVideoOwned(Int,Int)
++ Result<Unit> deleteContentAsAdmin(Int)
+- Result<Unit> purgeContent(Int,Int,() -> Result<Unit>)
+- void invalidateContentCache(Int,Int)
+- void deleteStoragePath(String?)
+}
+
+class com.vidayapi.cache.CacheKeys {
++  PUBLIC_VIDEOS_PREFIX
++  VIDEO_BY_ID
++  USER_BY_ID
++  PLAYLIST_BY_ID
++  LIVE_STREAMS_PREFIX
++  IS_FOLLOWING
++ void publicVideos(Int,Int)
++ void liveStreams(Int,Int)
++ void video(Int)
++ void user(Int)
++ void playlist(Int)
++ void isFollowing(Int,Int)
+}
+
+
+class com.vidayapi.cache.CacheTtl {
++  PUBLIC_VIDEOS_SEC
++  VIDEO_SEC
++  USER_SEC
++  PLAYLIST_SEC
++  LIVE_STREAMS_SEC
++  FOLLOW_CHECK_SEC
+}
+
+interface com.vidayapi.port.UserRepository {
++ Result<User?> findById(Int)
++ Result<User?> findByUsername(String)
++ Result<Boolean> existsByUsername(String)
++ Result<User> save(User)
++ Result<User> update(User)
++ Result<Unit> follow(Int,Int)
++ Result<Unit> unfollow(Int,Int)
++ Result<Unit> deleteById(Int)
+}
+
+interface com.vidayapi.port.VideoProcessor {
++ Result<VideoMetadata> analyze(InputStream,Long)
+}
+
+class com.vidayapi.port.VideoMetadata {
+}
+class com.vidayapi.model.Content {
+}
+enum com.vidayapi.model.ContentType {
++  VIDEO
++  STREAM
+}
+
+class com.vidayapi.controller.HealthController {
++ ResponseEntity<Map<String, String>> health()
+}
+
+class com.vidayapi.service.FFmpegVideoProcessor {
++ Result<VideoMetadata> analyze(InputStream,Long)
+}
+
+class com.vidayapi.usecase.AdminDeleteUserUseCase {
++ Result<Unit> execute(Int,Int)
+}
+
+class com.vidayapi.usecase.AdminDeletePlaylistUseCase {
++ Result<Unit> execute(Int,Int)
+}
+
+class com.vidayapi.usecase.AdminDeleteContentUseCase {
++ Result<Unit> execute(Int,Int)
+}
+
+class com.vidayapi.model.Playlist {
+}
+class com.vidayapi.repository.JdbcContentRepository {
+-  contentRowMapper
+-  videoRowMapper
+-  mediaVariantRowMapper
++ Result<Content> findById(Int)
++ Result<Content> save(Content)
++ Result<Video> saveVideo(Video)
++ Result<Video> findVideoByContentId(Int)
++ Result<MediaVariant> saveMediaVariant(MediaVariant)
++ Result<Page<Video>> findPublicVideosPage(PageRequest)
++ Result<Page<Video>> findVideosByOwnerIdPage(Int,PageRequest)
++ Result<Page<Video>> findVideosByPlaylistIdPage(Int,PageRequest)
+- Result<Page<Video>> queryVideoPage(String,Array<Any?>,String,PageRequest,Any?)
++ Result<List<Content>> findPublicContent()
++ Result<List<Content>> findByOwnerId(Int)
++ Result<List<Content>> findByPlaylistId(Int)
++ Result<List<MediaVariant>> findMediaVariantsByContentId(Int)
++ Result<Unit> deleteById(Int,Int)
++ Result<Unit> deleteByIdAsAdmin(Int)
++ Result<MediaVariant> findSourceMediaVariant(Int)
+}
+
+
+class com.vidayapi.repository.JdbcPlaylistRepository {
+-  playlistRowMapper
++ Result<Playlist> findById(Int)
++ Result<Playlist> save(Playlist)
++ Result<PlaylistItem> addContentToPlaylist(Int,Int,Int?)
++ Result<Int> countItemsInPlaylist(Int)
++ Result<List<Playlist>> findByOwnerId(Int)
++ Result<Page<Playlist>> findPlaylistsByOwnerIdPage(Int,PageRequest)
++ Result<Page<Playlist>> findPublicPlaylistsPage(PageRequest)
+- Result<Page<Playlist>> queryPlaylistPage(String,Array<Any?>,String,PageRequest,Any?)
++ Result<List<Playlist>> findPublicPlaylists()
++ Result<Boolean> existsByNameAndOwnerId(String,Int)
++ Result<Unit> deletePlaylist(Int,Int)
++ Result<Unit> removeContentFromPlaylist(Int,Int)
++ Result<Unit> deleteByIdAsAdmin(Int)
++ Result<List<Playlist>> findAvailablePlaylists(Int?)
+}
+
+
+class com.vidayapi.config.PresentationUseCaseConfig {
++ ListVideosUseCase listVideosUseCase(ContentRepository,CachePort,VideoResponseMapper,ObjectMapper)
++ ListLiveStreamsUseCase listLiveStreamsUseCase(StreamRepository,CachePort,ObjectMapper)
+}
+
+class com.vidayapi.usecase.StartStreamUseCase {
++ Result<StreamWithContent> execute(Int,Int)
+}
+
+class com.vidayapi.cache.RedisCacheAdapter {
++ String? get(String)
++ void set(String,String,Long)
++ void delete(String)
++ void deleteByPrefix(String)
+}
+
+class com.vidayapi.dto.requests.LoginRequest {
+}
+class com.vidayapi.config.MinioConfig {
+- String endpoint
+- String accessKey
+- String secretKey
+- String region
+-  logger
++ MinioClient minioClient()
+}
+
+
+class com.vidayapi.usecase.CreateStreamUseCase {
++ Result<StreamWithContent> execute(String,String?,Int,AccessType,OffsetDateTime?)
+}
+
+
+
+com.vidayapi.usecase.CreatePlaylistUseCaseIntegrationTest +.. com.vidayapi.usecase.CreatePlaylistUseCaseIntegrationTest$Companion
+com.vidayapi.dto.responses.PageResponse +.. com.vidayapi.dto.responses.PageResponse$Companion
+org.springframework.web.filter.OncePerRequestFilter <|-- com.vidayapi.security.JwtAuthenticationFilter
+org.springframework.boot.CommandLineRunner <|.. com.vidayapi.cui.ConsoleUi
+com.vidayapi.dto.responses.ContentViewStatsResponse +.. com.vidayapi.dto.responses.ContentViewStatsResponse$Companion
+com.vidayapi.port.CachePort <|.. com.vidayapi.cache.NoOpCacheAdapter
+com.vidayapi.port.StreamRepository <|.. com.vidayapi.repository.JdbcStreamRepository
+com.vidayapi.port.UserRepository <|.. com.vidayapi.repository.JdbcUserRepository
+com.vidayapi.port.ViewStatsRepository <|.. com.vidayapi.repository.JdbcViewStatsRepository
+com.vidayapi.dto.responses.StreamResponse +.. com.vidayapi.dto.responses.StreamResponse$Companion
+com.vidayapi.model.Error +.. com.vidayapi.model.Error$NotFound
+com.vidayapi.model.Error <|-- com.vidayapi.model.Error$NotFound
+com.vidayapi.model.Error +.. com.vidayapi.model.Error$Unauthorized
+com.vidayapi.model.Error <|-- com.vidayapi.model.Error$Unauthorized
+com.vidayapi.model.Error +.. com.vidayapi.model.Error$Forbidden
+com.vidayapi.model.Error <|-- com.vidayapi.model.Error$Forbidden
+com.vidayapi.model.Error +.. com.vidayapi.model.Error$AlreadyExists
+com.vidayapi.model.Error <|-- com.vidayapi.model.Error$AlreadyExists
+com.vidayapi.model.Error +.. com.vidayapi.model.Error$InvalidInput
+com.vidayapi.model.Error <|-- com.vidayapi.model.Error$InvalidInput
+com.vidayapi.model.Error +.. com.vidayapi.model.Error$StorageFailure
+com.vidayapi.model.Error <|-- com.vidayapi.model.Error$StorageFailure
+com.vidayapi.model.Error +.. com.vidayapi.model.Error$ValidationFailed
+com.vidayapi.model.Error <|-- com.vidayapi.model.Error$ValidationFailed
+com.vidayapi.model.Error +.. com.vidayapi.model.Error$UserAlreadyFollowed
+com.vidayapi.model.Error <|-- com.vidayapi.model.Error$UserAlreadyFollowed
+com.vidayapi.model.Error +.. com.vidayapi.model.Error$CannotFollowSelf
+com.vidayapi.model.Error <|-- com.vidayapi.model.Error$CannotFollowSelf
+com.vidayapi.model.Error +.. com.vidayapi.model.Error$PlaylistPositionConflict
+com.vidayapi.model.Error <|-- com.vidayapi.model.Error$PlaylistPositionConflict
+com.vidayapi.model.Error +.. com.vidayapi.model.Error$StreamKeyInvalid
+com.vidayapi.model.Error <|-- com.vidayapi.model.Error$StreamKeyInvalid
+com.vidayapi.model.Error +.. com.vidayapi.model.Error$StreamNotFound
+com.vidayapi.model.Error <|-- com.vidayapi.model.Error$StreamNotFound
+com.vidayapi.model.Error +.. com.vidayapi.model.Error$StreamAlreadyLive
+com.vidayapi.model.Error <|-- com.vidayapi.model.Error$StreamAlreadyLive
+com.vidayapi.model.Error +.. com.vidayapi.model.Error$StreamNotLive
+com.vidayapi.model.Error <|-- com.vidayapi.model.Error$StreamNotLive
+com.vidayapi.model.Error +.. com.vidayapi.model.Error$NotVideoOwner
+com.vidayapi.model.Error <|-- com.vidayapi.model.Error$NotVideoOwner
+com.vidayapi.model.Error +.. com.vidayapi.model.Error$AlreadyCreator
+com.vidayapi.model.Error <|-- com.vidayapi.model.Error$AlreadyCreator
+com.vidayapi.model.Error +.. com.vidayapi.model.Error$InvalidRoleTransition
+com.vidayapi.model.Error <|-- com.vidayapi.model.Error$InvalidRoleTransition
+com.vidayapi.model.Error +.. com.vidayapi.model.Error$CreatorRequired
+com.vidayapi.model.Error <|-- com.vidayapi.model.Error$CreatorRequired
+com.vidayapi.port.FileStoragePort <|.. com.vidayapi.storage.MinioFileStorageAdapter
+com.vidayapi.model.PageRequest +.. com.vidayapi.model.PageRequest$Companion
+org.springframework.security.core.userdetails.UserDetailsService <|.. com.vidayapi.service.CustomUserDetailsService
+com.vidayapi.port.VideoProcessor <|.. com.vidayapi.service.FFmpegVideoProcessor
+com.vidayapi.port.ContentRepository <|.. com.vidayapi.repository.JdbcContentRepository
+com.vidayapi.port.PlaylistRepository <|.. com.vidayapi.repository.JdbcPlaylistRepository
+com.vidayapi.port.CachePort <|.. com.vidayapi.cache.RedisCacheAdapter
+@enduml

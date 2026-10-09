@@ -1,0 +1,17 @@
+# Исключаем из docker-контекстов (Dockerfile.app, Dockerfile.test-runner) всё,
+# что не нужно для сборки/запуска тестов.
+.git
+.idea
+.gradle
+build
+**/build
+logs
+**/logs
+traffic
+research_output
+*.pcap
+docker/postgres/research
+docs
+.vscode
+# gradle/node НЕ исключаем: build.gradle.kts требует локальный Node.js-архив
+# для Allure-отчётов (node-v22.22.0-linux-x64.tar.gz)

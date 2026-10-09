@@ -1,0 +1,912 @@
+# =============================================================================
+# GitHub Actions CI для ЛР2.
+#
+# Архитектура (порядок стадий):
+#   1) unit-viday ∥ unit-vidayapi ∥ integration-vidayapi — ПАРАЛЛЕЛЬНО
+#      (build-vidayapi только готовит образы test-runner/postgres-test в ghcr);
+#   2) build обоих: build-viday (APK) ∥ build-vidayapi-jar (bootJar);
+#   3) e2e (после билдов + integration);
+#   4) отчёты: report-vidayapi (Allure) ∥ sonar-vidayapi;
+#   5) publish на gh-pages (Allure — НАКОПИТЕЛЬНЫЙ: к результатам прошлых
+#      прогонов ветки добавляются новые, ничего не перезаписывается);
+#   * report выполняется ВСЕГДА (if: !cancelled()), НЕ перезапускает тесты:
+#     Allure собирается из allure-results*, пришедших артефактами;
+#   * Junit-отчёты публикуются аннотациями dorny/test-reporter;
+#   * история Allure (тренды, Требование 9) — actions/cache + gh-pages.
+#
+# Раннеры:
+#   * ubuntu-latest достаточно для ВСЕХ джоб (docker уже есть). Если
+#     используете СВОЙ раннер — замените runs-on на [self-hosted, linux, x64]
+#     и убедитесь, что у него есть Docker.
+#   * Для пуша образов в ghcr.io нужен secret GITHUB_TOKEN (автоматический)
+#     и разрешение packages: write (задано ниже).
+#
+# Запуск: push в main/master, pull request, вручную (workflow_dispatch).
+# =============================================================================
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'vidayapi/**'
+      - 'viday/**'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    paths:
+      - 'vidayapi/**'
+      - 'viday/**'
+      - '.github/workflows/ci.yml'
+  workflow_dispatch:
+
+# Не даём параллельным прогонам одного рефа мешать друг другу.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Имена образов ghcr.io вычисляются в каждой джобе шагом "Set GHCR image
+  # names": docker требует lowercase в имени образа, а expression-язык GitHub
+  # Actions не умеет lower() — поэтому используем ${VAR,,} в bash + $GITHUB_ENV.
+  COMPOSE_FILE: docker/docker-compose.ci.yml
+  COMPOSE_PROJECT_NAME: viday-ci-${{ github.run_id }}
+  ALLURE_HISTORY_DIR: /workspace/allure-history
+  GRADLE_CACHE: .gradle-ci
+
+permissions:
+  contents: write          # publish-reports пушит Allure/покрытие/Sonar на gh-pages
+  packages: write          # build-vidayapi пушит образы в ghcr.io
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # STAGE 0: образы для CI (build-vidayapi) — ОДИН раз, дальше только pull
+  # ---------------------------------------------------------------------------
+  build-vidayapi:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vidayapi
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set GHCR image names (lowercase)
+        run: |
+          REPO="${GITHUB_REPOSITORY,,}"
+          echo "TEST_RUNNER_IMAGE=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "POSTGRES_TEST_IMAGE=ghcr.io/${REPO}/postgres-test:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "IMAGE_NAME=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cache Gradle (restore)
+        uses: actions/cache/restore@v4
+        with:
+          path: vidayapi/.gradle-ci
+          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
+      # 1) контейнер запуска тестов (Требование 1): собирается один раз, дальше только pull
+      - name: Build and push test-runner image
+        run: |
+          docker build -t "$TEST_RUNNER_IMAGE" -f docker/test-runner/Dockerfile .
+          docker push "$TEST_RUNNER_IMAGE"
+      # 2) postgres со схемой init 01..05 (Требование 4) — стенд CI
+      - name: Build and push postgres-test image
+        run: |
+          docker build -t "$POSTGRES_TEST_IMAGE" docker/postgres
+          docker push "$POSTGRES_TEST_IMAGE"
+      # bootJar собирается ОТДЕЛЬНОЙ джобой build-vidayapi-jar — ПОСЛЕ unit-тестов
+      # (jar — артефакт для curl-демо и локальных запусков)
+
+  # ---------------------------------------------------------------------------
+  # STAGE 1: unit-viday ∥ unit-vidayapi ∥ integration-vidayapi — ПАРАЛЛЕЛЬНО
+  # (unit-viday сам ставит Android SDK из кэша).
+  # ---------------------------------------------------------------------------
+  unit-viday:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: viday
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache Gradle + Android SDK
+        uses: actions/cache@v4
+        with:
+          # Только caches/wrapper (без lock-файлов): полный .gradle в кэше
+          # приводил к "Could not find <artifact>" из-за частичного кэша.
+          path: |
+            viday/.gradle/caches
+            viday/.gradle/wrapper
+            viday/.android-sdk
+            viday/**/build
+          key: viday-build-v2-${{ hashFiles('viday/gradle/libs.versions.toml', 'viday/build.gradle.kts') }}
+      - name: Install Android SDK
+        run: bash scripts/ci-install-sdk.sh
+        env:
+          ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
+      - name: JVM unit tests + JaCoCo coverage
+        run: |
+          # literal block: переводы строк сохраняются, '\\' — настоящий перенос команды
+          ./gradlew --no-daemon :domain:test :data:testDebugUnitTest :app:testDebugUnitTest \
+            :domain:jacocoTestReport :data:jacocoTestReport :app:jacocoTestReport
+        env:
+          ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
+          ANDROID_SDK_ROOT: ${{ github.workspace }}/viday/.android-sdk
+          GRADLE_USER_HOME: ${{ github.workspace }}/viday/.gradle
+      - name: Publish JUnit report
+        if: success() || failure()
+        continue-on-error: true   # не маскируем реальную ошибку gradle отсутствием XML
+        uses: dorny/test-reporter@v1
+        with:
+          name: Android unit tests (JUnit)
+          path: viday/**/build/test-results/**/*.xml
+          reporter: java-junit
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: viday-unit-results
+          path: |
+            viday/app/build/reports/tests/
+            viday/domain/build/reports/tests/
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Upload coverage (JaCoCo XML/HTML/CSV)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: viday-jacoco
+          path: |
+            viday/**/build/reports/jacoco/**/*.xml
+            viday/**/build/reports/jacoco/**/html/**
+            viday/**/build/reports/jacoco/**/*.csv
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # STAGE 2: build обоих проектов — ПОСЛЕ unit-тестов
+  # ---------------------------------------------------------------------------
+  build-viday:
+    needs: [unit-viday]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: viday
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache Gradle + Android SDK
+        uses: actions/cache@v4
+        with:
+          path: |
+            viday/.gradle/caches
+            viday/.gradle/wrapper
+            viday/.android-sdk
+            viday/**/build
+          key: viday-build-v2-${{ hashFiles('viday/gradle/libs.versions.toml', 'viday/build.gradle.kts') }}
+      - name: Install Android SDK
+        run: bash scripts/ci-install-sdk.sh
+        env:
+          ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
+      - name: Assemble debug APK (после unit)
+        run: ./gradlew --no-daemon :app:assembleDebug
+        env:
+          ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
+          ANDROID_SDK_ROOT: ${{ github.workspace }}/viday/.android-sdk
+
+  unit-vidayapi:
+    needs: [build-vidayapi]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vidayapi
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set GHCR image names (lowercase)
+        run: |
+          REPO="${GITHUB_REPOSITORY,,}"
+          echo "TEST_RUNNER_IMAGE=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "POSTGRES_TEST_IMAGE=ghcr.io/${REPO}/postgres-test:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "IMAGE_NAME=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Restore Gradle cache
+        uses: actions/cache/restore@v4
+        with:
+          path: vidayapi/.gradle-ci
+          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
+      - name: Run unit tests (LR1) in test-runner container
+        run: |
+          docker pull "$TEST_RUNNER_IMAGE"
+          docker run --rm -u root \
+            -v "$PWD:/workspace" \
+            -v "$PWD/allure-history:/workspace/allure-history" \
+            -v "$PWD/$GRADLE_CACHE:/cache/.gradle" \
+            -e ALLURE_HISTORY_DIR=$ALLURE_HISTORY_DIR \
+            -e GRADLE_USER_HOME=/cache/.gradle \
+            "$TEST_RUNNER_IMAGE" unit
+      - name: Publish JUnit report
+        if: success() || failure()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Backend unit tests (JUnit)
+          path: vidayapi/application/build/test-results/test/**/*.xml, vidayapi/domain/build/test-results/test/**/*.xml, vidayapi/infrastructure/build/test-results/test/**/*.xml
+          reporter: java-junit
+      - name: Upload allure-results + JUnit XML + JaCoCo exec
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vidayapi-unit-results
+          path: |
+            vidayapi/**/build/allure-results/**/*
+            vidayapi/application/build/test-results/test/**/*.xml
+            vidayapi/domain/build/test-results/test/**/*.xml
+            vidayapi/infrastructure/build/test-results/test/**/*.xml
+            # exec-файлы JaCoCo: джоба sonar собирает из них полное покрытие
+            # БЕЗ повторного прогона unit-тестов.
+            vidayapi/**/build/jacoco/test.exec
+            vidayapi/allure-history/
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Upload coverage (JaCoCo XML/HTML/CSV)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vidayapi-jacoco-unit
+          path: |
+            vidayapi/**/build/reports/jacoco/test/jacocoTestReport.xml
+            vidayapi/**/build/reports/jacoco/test/jacocoTestReport.csv
+            vidayapi/**/build/reports/jacoco/test/html/**
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # STAGE 2 (backend): bootJar собирается ПОСЛЕ unit-тестов
+  # (артефакт vidayapi-jar — для curl-демо и локальных запусков)
+  # ---------------------------------------------------------------------------
+  build-vidayapi-jar:
+    needs: [unit-vidayapi]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vidayapi
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set GHCR image names (lowercase)
+        run: |
+          REPO="${GITHUB_REPOSITORY,,}"
+          echo "TEST_RUNNER_IMAGE=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Restore Gradle cache
+        uses: actions/cache/restore@v4
+        with:
+          path: vidayapi/.gradle-ci
+          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
+      - name: Assemble backend bootJar (после unit)
+        run: |
+          docker pull "$TEST_RUNNER_IMAGE"
+          docker run --rm -u root \
+            -v "$PWD:/workspace" \
+            -v "$PWD/$GRADLE_CACHE:/cache/.gradle" \
+            -e GRADLE_USER_HOME=/cache/.gradle \
+            "$TEST_RUNNER_IMAGE" assemble
+      - name: Upload bootJar artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vidayapi-jar
+          path: vidayapi/presentation/build/libs/*.jar
+          if-no-files-found: error
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # STAGE: integration (Требования 2-4, 6, 10, 14).
+  # Запускается ПАРАЛЛЕЛЬНО с unit-vidayapi: зависит только от образов.
+  # ---------------------------------------------------------------------------
+  integration-vidayapi:
+    needs: [build-vidayapi]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vidayapi
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set GHCR image names (lowercase)
+        run: |
+          REPO="${GITHUB_REPOSITORY,,}"
+          echo "TEST_RUNNER_IMAGE=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "POSTGRES_TEST_IMAGE=ghcr.io/${REPO}/postgres-test:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "IMAGE_NAME=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Restore Gradle cache
+        uses: actions/cache/restore@v4
+        with:
+          path: vidayapi/.gradle-ci
+          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
+      - name: Run integration tests on the LR2 stand
+        run: |
+          docker pull "$TEST_RUNNER_IMAGE"
+          docker pull "$POSTGRES_TEST_IMAGE"
+          docker compose -f $COMPOSE_FILE up -d postgres-test redis-test minio-test
+          docker compose -f $COMPOSE_FILE run --rm -u root \
+            -v "$PWD:/workspace" \
+            -v "$PWD/allure-history:/workspace/allure-history" \
+            -v "$PWD/$GRADLE_CACHE:/cache/.gradle" \
+            -e ALLURE_HISTORY_DIR=$ALLURE_HISTORY_DIR \
+            -e GRADLE_USER_HOME=/cache/.gradle \
+            test-runner integration
+      - name: Tear down stand
+        if: always()
+        run: docker compose -f $COMPOSE_FILE down -v || true
+      - name: Publish JUnit report
+        if: success() || failure()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Integration tests (JUnit)
+          path: vidayapi/infrastructure/build/test-results/testIntegration/**/*.xml
+          reporter: java-junit
+      - name: Upload allure-results-it + JUnit XML + JaCoCo exec
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vidayapi-it-results
+          path: |
+            vidayapi/infrastructure/build/allure-results-it/**/*
+            vidayapi/infrastructure/build/test-results/testIntegration/**/*.xml
+            vidayapi/infrastructure/build/jacoco/testIntegration.exec
+            vidayapi/allure-history/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # STAGE 3: e2e (Задание 3, Требование 13).
+  # E2E идёт ПОСЛЕ обоих билдов (STAGE 2) и после integration.
+  # ---------------------------------------------------------------------------
+  e2e-vidayapi:
+    needs: [build-viday, build-vidayapi-jar, integration-vidayapi]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vidayapi
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set GHCR image names (lowercase)
+        run: |
+          REPO="${GITHUB_REPOSITORY,,}"
+          echo "TEST_RUNNER_IMAGE=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "POSTGRES_TEST_IMAGE=ghcr.io/${REPO}/postgres-test:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "IMAGE_NAME=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Restore Gradle cache
+        uses: actions/cache/restore@v4
+        with:
+          path: vidayapi/.gradle-ci
+          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
+      - name: Run E2E MVP scenario
+        run: |
+          docker pull "$TEST_RUNNER_IMAGE"
+          docker pull "$POSTGRES_TEST_IMAGE"
+          docker compose -f $COMPOSE_FILE up -d postgres-test redis-test minio-test
+          docker compose -f $COMPOSE_FILE run --rm -u root \
+            -v "$PWD:/workspace" \
+            -v "$PWD/allure-history:/workspace/allure-history" \
+            -v "$PWD/$GRADLE_CACHE:/cache/.gradle" \
+            -e ALLURE_HISTORY_DIR=$ALLURE_HISTORY_DIR \
+            -e GRADLE_USER_HOME=/cache/.gradle \
+            test-runner e2e
+      - name: Tear down stand
+        if: always()
+        run: docker compose -f $COMPOSE_FILE down -v || true
+      - name: Publish JUnit report
+        if: success() || failure()
+        uses: dorny/test-reporter@v1
+        with:
+          name: E2E tests (JUnit)
+          path: vidayapi/presentation/build/test-results/testE2E/**/*.xml
+          reporter: java-junit
+      - name: Upload allure-results-e2e + JUnit XML + JaCoCo exec
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vidayapi-e2e-results
+          path: |
+            vidayapi/presentation/build/allure-results-e2e/**/*
+            vidayapi/presentation/build/test-results/testE2E/**/*.xml
+            vidayapi/presentation/build/jacoco/testE2E.exec
+            vidayapi/allure-history/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # STAGE 4: отчёты — Allure ВСЕГДА (Требование 8), без повторного прогона
+  # тестов. Стенд не нужен: отчёт генерируется из allure-results*,
+  # пришедших артефактами. Параллельно с sonar-vidayapi.
+  # ---------------------------------------------------------------------------
+  report-vidayapi:
+    needs: [unit-vidayapi, integration-vidayapi, e2e-vidayapi]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vidayapi
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set GHCR image names (lowercase)
+        run: |
+          REPO="${GITHUB_REPOSITORY,,}"
+          echo "TEST_RUNNER_IMAGE=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "POSTGRES_TEST_IMAGE=ghcr.io/${REPO}/postgres-test:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "IMAGE_NAME=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Restore Gradle cache
+        id: restore-gradle
+        uses: actions/cache/restore@v4
+        with:
+          path: vidayapi/.gradle-ci
+          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
+      - name: Restore Allure history (последний прогон)
+        uses: actions/cache/restore@v4
+        with:
+          path: vidayapi/allure-history
+          key: vidayapi-allure-history-${{ github.sha }}
+          restore-keys: |
+            vidayapi-allure-history-
+      # ВАЖНО: артефакты упакованы относительно vidayapi (наименьший общий
+      # предок путей загрузки), поэтому распаковывать нужно в vidayapi/,
+      # а не в корень репозитория. Без path: allure-results* оказываются
+      # вне /workspace контейнера и отчёт генерируется ПУСТЫМ.
+      - name: Download unit allure-results
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: vidayapi-unit-results
+          path: vidayapi
+      - name: Download integration allure-results
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: vidayapi-it-results
+          path: vidayapi
+      - name: Download e2e allure-results
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: vidayapi-e2e-results
+          path: vidayapi
+      - name: Download unit coverage (JaCoCo XML/HTML) для Allure
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: vidayapi-jacoco-unit
+          path: vidayapi
+      # Нормализуем содержимое артефактов в build/allure-results-ci-input —
+      # каталог, который ожидает collectAllureResultsCi (build.gradle.kts) и
+      # pipeline.sh report. Тесты при этом НЕ перезапускаются: только cp
+      # уже сгенерированных allure-results* из распакованных артефактов.
+      # ВАЖНО: выражения find — строго в одну строку. В YAML block-скаляре
+      # перенос строки внутри аргументов find (без '\' в конце строки) рвёт
+      # команду: find получает '\(' без ')' -> "invalid expression" ->
+      # 0 собранных файлов -> джоба report падает, хотя тесты прошли.
+      - name: Collect Allure results from artifacts (no re-run)
+        run: |
+          set -euo pipefail
+          input=build/allure-results-ci-input
+          rm -rf "$input"
+          mkdir -p "$input"
+          found=0
+          while IFS= read -r -d '' dir; do
+            while IFS= read -r -d '' file; do
+              base="$(basename "$file")"
+              target="$input/$base"
+              # UUID-имена result/container/attachment файлов уникальны, но
+              # вспомогательные файлы могут совпадать между артефактами
+              # разных стадий — никогда не перезаписываем чужой файл.
+              if [ -e "$target" ]; then
+                stem="${base%.*}"
+                ext="${base##*.}"
+                n=1
+                while [ -e "$input/${stem}-${n}.${ext}" ]; do
+                  n=$((n + 1))
+                done
+                target="$input/${stem}-${n}.${ext}"
+              fi
+              cp -p "$file" "$target"
+              found=$((found + 1))
+            done < <(find "$dir" -type f -print0)
+          done < <(find . -type d \( -path './.gradle-ci' -o -path './allure-history' \) -prune -o -type d \( -name 'allure-results' -o -name 'allure-results-it' -o -name 'allure-results-e2e' \) -print0)
+          echo "Collected Allure files: $found"
+          result_count=$(find "$input" -maxdepth 1 -type f \( -name '*-result.json' -o -name '*-container.json' \) | wc -l)
+          echo "Collected Allure result/container files: $result_count"
+          test "$result_count" -gt 0
+      - name: Generate Allure report from existing results (no re-run)
+        run: |
+          docker pull "$TEST_RUNNER_IMAGE"
+          docker run --rm -u root \
+            -v "$PWD:/workspace" \
+            -v "$PWD/allure-history:/workspace/allure-history" \
+            -v "$PWD/$GRADLE_CACHE:/cache/.gradle" \
+            -e ALLURE_HISTORY_DIR=$ALLURE_HISTORY_DIR \
+            -e GRADLE_USER_HOME=/cache/.gradle \
+            "$TEST_RUNNER_IMAGE" report
+      - name: Upload Allure report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report-ci
+          path: |
+            vidayapi/build/reports/allure-report-ci/
+            vidayapi/allure-history/
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Upload raw Allure results (для накопительного отчёта в publish)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          # Сырые allure-results прогона: publish-reports мержит их с
+          # накопленными на gh-pages и генерирует отчёт по ВСЕМ прогонам
+          name: vidayapi-allure-raw-results
+          path: vidayapi/build/allure-results-ci-input/
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Fix cache permissions (root-owned files from docker)
+        if: always()
+        run: |
+          # Контейнер (-u root) пишет кэш от root: без sudo раннер не может
+          # ни читать файлы для tar, ни chmod'ить чужие файлы.
+          sudo chown -R "$(id -u):$(id -g)" .gradle-ci allure-history 2>/dev/null || true
+          chmod -R a+rX .gradle-ci allure-history 2>/dev/null || true
+      # Кэш сохраняет ТОЛЬКО эта джоба: GitHub разрешает создать запись с одним
+      # ключом лишь одному процессу — параллельные save падают с
+      # "Unable to reserve cache ... another job may be creating this cache".
+      # Сохраняем только когда кэш НЕ был восстановлен (cache-hit=false):
+      # стабильный ключ уже существует на повторных прогонах — повторный save
+      # дал бы 409 "another job may be creating this cache".
+      - name: Save Gradle cache (если не был восстановлен)
+        if: always() && steps.restore-gradle.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: vidayapi/.gradle-ci
+          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
+      # История Allure пишется под УНИКАЛЬНЫМ ключом (sha+run_id): запись никогда
+      # не конфликтует, а следующий прогон достаёт последнюю через restore-keys
+      # (тренды, Требование 9).
+      - name: Save Allure history (уникальный ключ)
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: vidayapi/allure-history
+          key: vidayapi-allure-history-${{ github.sha }}-${{ github.run_id }}
+
+  # ---------------------------------------------------------------------------
+  # STAGE 4 (параллельно с report): SonarQube анализ backend'а (coverage tree-view + quality).
+  # Сервер поднимается прямо в джобе через docker-compose.sonar.yml; токен
+  # генерируется через REST API (свежий сервер, admin/admin). Тесты НЕ
+  # перезапускаются: JaCoCo exec-файлы и JUnit XML приходят артефактами из
+  # реальных прогонов (unit / integration / e2e), jacocoTestReport только
+  # сливает их в итоговое покрытие. Результат: (1) проект на сервере с деревом
+  # модулей и coverage, (2) автономный HTML-снимок отчёта
+  # (scripts/sonar-snapshot.py) + полный JaCoCo HTML — оба уходят на gh-pages.
+  # Джоба не блокирует конвейер (continue-on-error).
+  # ---------------------------------------------------------------------------
+  sonar-vidayapi:
+    # Скан запускается ПОСЛЕ всех тестовых стадий backend'а: покрытие и
+    # результаты должны быть итоговыми (unit + integration + e2e уже прошли).
+    needs: [unit-vidayapi, integration-vidayapi, e2e-vidayapi]
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vidayapi
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set GHCR image names (lowercase)
+        run: |
+          REPO="${GITHUB_REPOSITORY,,}"
+          echo "TEST_RUNNER_IMAGE=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "POSTGRES_TEST_IMAGE=ghcr.io/${REPO}/postgres-test:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "IMAGE_NAME=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Restore Gradle cache
+        uses: actions/cache/restore@v4
+        with:
+          path: vidayapi/.gradle-ci
+          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
+      - name: Start SonarQube server
+        run: |
+          docker compose -f docker/docker-compose.sonar.yml up -d
+          timeout 600 bash -c \
+            'until curl -fsS http://localhost:9002/api/system/status | grep -q "UP"; do sleep 5; done' \
+            || { docker compose -f docker/docker-compose.sonar.yml logs; exit 1; }
+      - name: Generate SonarQube analysis token
+        run: |
+          # Если задан secret SONAR_TOKEN (свой сервер) — используем его,
+          # иначе генерируем токен на свежем локальном инстансе (admin/admin).
+          if [ -n "${{ secrets.SONAR_TOKEN }}" ]; then
+            echo "SONAR_TOKEN=${{ secrets.SONAR_TOKEN }}" >> "$GITHUB_ENV"
+          else
+            TOKEN=$(curl -fsS -u admin:admin -X POST "http://localhost:9002/api/user_tokens/generate" \
+              -d "name=ci-${{ github.run_id }}" \
+              | python3 -c 'import sys, json; print(json.load(sys.stdin)["token"])')
+            echo "SONAR_TOKEN=$TOKEN" >> "$GITHUB_ENV"
+          fi
+      # Тесты НЕ перезапускаются: JaCoCo exec-файлы и JUnit XML приходят
+      # артефактами из реальных прогонов (unit / integration / e2e).
+      # jacocoTestReport здесь только СЛИВАЕТ exec-файлы в отчёт модуля
+      # (попутно компилируя классы), затем сканер импортирует его в SonarQube.
+      - name: Download unit test artifacts (JaCoCo exec + JUnit XML)
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: vidayapi-unit-results
+          path: vidayapi
+      - name: Download integration test artifacts (JaCoCo exec + JUnit XML)
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: vidayapi-it-results
+          path: vidayapi
+      - name: Download e2e test artifacts (JaCoCo exec + JUnit XML)
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: vidayapi-e2e-results
+          path: vidayapi
+      - name: "Run SonarQube analysis (aggregated coverage: unit + IT + e2e)"
+        run: |
+          docker run --rm --network host -u root \
+            -v "$PWD:/workspace" \
+            -v "$PWD/$GRADLE_CACHE:/cache/.gradle" \
+            -e GRADLE_USER_HOME=/cache/.gradle \
+            -e SONAR_TOKEN="$SONAR_TOKEN" \
+            -e SONAR_HOST_URL="http://localhost:9002" \
+            "$TEST_RUNNER_IMAGE" sonar
+      - name: Build SonarQube HTML snapshot (браузерный отчёт)
+        if: always()
+        run: |
+          # Контейнер сканера (-u root) создаёт build/sonar от root — без chown
+          # sonar-snapshot.py падает с "Permission denied: build/sonar/sonar-report.html".
+          sudo chown -R "$(id -u):$(id -g)" build/sonar 2>/dev/null || true
+          # Дождаться фоновой обработки (compute engine), иначе метрики ещё
+          # не рассчитаны. Затем scripts/sonar-snapshot.py снимает метрики и
+          # замечания через Web API в автономный sonar-report.html — он
+          # публикуется на gh-pages, т.к. живой сервер умирает вместе с джобой.
+          if [ -f build/sonar/report-task.txt ]; then
+            TASK_ID=$(sed -n 's/^ceTaskId=//p' build/sonar/report-task.txt)
+            for _ in $(seq 1 60); do
+              STATUS=$(curl -fsS -u "$SONAR_TOKEN:" \
+                "http://localhost:9002/api/ce/task?id=$TASK_ID" \
+                | python3 -c 'import sys,json; print(json.load(sys.stdin)["task"]["status"])' 2>/dev/null \
+                || echo "UNKNOWN")
+              echo "compute-engine task: $STATUS"
+              [ "$STATUS" = "SUCCESS" ] && break
+              [ "$STATUS" = "FAILED" ] && break
+              sleep 10
+            done
+          fi
+          python3 scripts/sonar-snapshot.py
+      - name: Upload SonarQube report (HTML snapshot + scanner report)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vidayapi-sonar-report
+          path: vidayapi/build/sonar/
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Upload full coverage (JaCoCo XML/HTML/CSV, unit + IT + e2e)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vidayapi-jacoco-full
+          path: |
+            vidayapi/**/build/reports/jacoco/test/jacocoTestReport.xml
+            vidayapi/**/build/reports/jacoco/test/jacocoTestReport.csv
+            vidayapi/**/build/reports/jacoco/test/html/**
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Tear down SonarQube
+        if: always()
+        run: docker compose -f docker/docker-compose.sonar.yml down -v || true
+
+  # ---------------------------------------------------------------------------
+  # STAGE 5: publish — итоговые отчёты в git-ветку gh-pages.
+  # Проблема: Allure-отчёт, открытый локально через file://, показывает только
+  # загрузку (SPA читает данные через fetch — file:// блокирует). Деплой в ветку
+  # даёт просмотр по https://<owner>.github.io/<repo>/allure/ в браузере.
+  # Структура ветки gh-pages (keep_files сохраняет старое между прогонами):
+  #   allure/ | coverage/{viday,vidayapi}/<module>/ | sonar/ | index.html
+  # ---------------------------------------------------------------------------
+  publish-reports:
+    needs: [report-vidayapi, sonar-vidayapi]
+    # Публикуем на push, вручную и на PR из этого же репозитория (раннеры у вас
+    # ходят именно по pull_request — без этого условия джоба скипалась).
+    # Скипаются только форк-PR, где GITHUB_TOKEN не имеет прав на gh-pages.
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Checkout gh-pages (накопленные результаты прошлых прогонов)
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages
+      - name: Download raw Allure results of current run
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: vidayapi-allure-raw-results
+          path: tmp/allure-results-new
+      # НАКОПИТЕЛЬНЫЙ Allure: к результатам, уже опубликованным на gh-pages,
+      # добавляются результаты текущего прогона. UUID-имена result/container/
+      # attachment-файлов уникальны между прогонами, поэтому старые тесты
+      # НЕ перезаписываются — отчёт содержит все прогоны ветки.
+      - name: Merge Allure results (gh-pages + текущий прогон)
+        run: |
+          set -euo pipefail
+          # Очистка staging-каталога ЗДЕСЬ (а не в шаге stage ниже): отчёт
+          # генерируется в _reports/allure ДО шага staging — rm в staging
+          # стёр бы его.
+          rm -rf _reports
+          cum=vidayapi/build/allure-results-cumulative
+          rm -rf "$cum"
+          mkdir -p "$cum"
+          found=0
+          merge_dir() {
+            [ -d "$1" ] || return 0
+            while IFS= read -r -d '' file; do
+              base="$(basename "$file")"
+              target="$cum/$base"
+              if [ -e "$target" ]; then
+                stem="${base%.*}"; ext="${base##*.}"; n=1
+                while [ -e "$cum/${stem}-${n}.${ext}" ]; do n=$((n+1)); done
+                target="$cum/${stem}-${n}.${ext}"
+              fi
+              cp -p "$file" "$target"
+              found=$((found + 1))
+            done < <(find "$1" -type f -print0)
+          }
+          # 1) всё, что уже было на gh-pages (включая history/ для тренда).
+          # ВАЖНО: peaceiris деплоит publish_dir=_reports в КОРЕНЬ ветки gh-pages,
+          # поэтому на чекауте gh-pages пути — allure-results/, allure/ и т.д.
+          merge_dir gh-pages/allure-results
+          merge_dir gh-pages/_reports/allure-results   # fallback: старый layout
+          # 2) результаты текущего прогона
+          merge_dir tmp/allure-results-new
+          result_count=$(find "$cum" -type f \( -name '*-result.json' -o -name '*-container.json' \) | wc -l)
+          echo "Cumulative Allure result/container files: $result_count"
+          test "$result_count" -gt 0
+      - name: Install Allure CLI
+        run: |
+          curl -fsSL https://github.com/allure-framework/allure2/releases/download/2.29.0/allure-2.29.0.tgz -o /tmp/allure.tgz
+          tar -xzf /tmp/allure.tgz -C /tmp
+          echo "/tmp/allure-2.29.0/bin" >> "$GITHUB_PATH"
+      - name: Generate cumulative Allure report (все прогоны ветки)
+        run: |
+          set -euo pipefail
+          # allure generate читает history/ из каталога results — он попал туда
+          # на шаге merge (из gh-pages), поэтому тренд продолжает накапливаться
+          allure generate vidayapi/build/allure-results-cumulative -o _reports/allure --clean
+          echo "Allure generated ($(find _reports/allure -name index.html | wc -l) index.html)"
+      - name: Download Android coverage (JaCoCo)
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: viday-jacoco
+          path: tmp/coverage-viday
+      - name: Download backend coverage (JaCoCo, unit + IT + e2e)
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: vidayapi-jacoco-full
+          path: tmp/coverage-vidayapi
+      - name: Download SonarQube scanner report
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: vidayapi-sonar-report
+          path: tmp/sonar
+      - name: Stage reports for gh-pages
+        env:
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          mkdir -p _reports/allure _reports/coverage/viday _reports/coverage/vidayapi _reports/sonar
+          # ВАЖНО: артефакты упакованы относительно viday/ и vidayapi/ (наименьший
+          # общий предок путей загрузки), поэтому после распаковки префикса
+          # viday|vidayapi в путях НЕТ. Раньше staging искал tmp/.../vidayapi/...
+          # и находил пустоту — на gh-pages не попадало ничего.
+          # Накопительный Allure сгенерирован выше из старых (gh-pages) + новых
+          # результатов; результаты остаются на gh-pages для следующего прогона
+          mkdir -p _reports/allure-results
+          rm -rf _reports/allure-results/*
+          cp -r vidayapi/build/allure-results-cumulative/. _reports/allure-results/
+          # Обновлённую history (тренды после этого прогона) из свежесгенерированного
+          # отчёта кладём ОБРАТНО в результаты: следующий прогон возьмёт её из
+          # gh-pages/allure-results/history — так History виден за все прогоны
+          if [ -d _reports/allure/history ]; then
+            rm -rf _reports/allure-results/history
+            cp -r _reports/allure/history _reports/allure-results/history
+          fi
+          echo "Allure staged cumulative ($(find _reports/allure -name index.html | wc -l) index.html, $(find _reports/allure-results -name '*-result.json' | wc -l) raw results)"
+          # Покрытие viday: tmp/coverage-viday/<module>/build/reports/jacoco/.../html/
+          for d in $(find tmp/coverage-viday -path "*reports/jacoco*html" -type d 2>/dev/null | sort); do
+            mod=$(echo "$d" | sed -E 's#tmp/coverage-viday/([^/]+)/.*#\1#')
+            mkdir -p "_reports/coverage/viday/$mod"
+            cp -r "$d/." "_reports/coverage/viday/$mod/"
+          done
+          # Покрытие vidayapi: tmp/coverage-vidayapi/<module>/build/reports/jacoco/test/html/
+          for d in $(find tmp/coverage-vidayapi -path "*reports/jacoco*html" -type d 2>/dev/null | sort); do
+            mod=$(echo "$d" | sed -E 's#tmp/coverage-vidayapi/([^/]+)/.*#\1#')
+            mkdir -p "_reports/coverage/vidayapi/$mod"
+            cp -r "$d/." "_reports/coverage/vidayapi/$mod/"
+          done
+          # SonarQube: автономный HTML-снимок (sonar-report.html) + report-task.txt
+          if [ -d tmp/sonar ] && [ -n "$(ls -A tmp/sonar 2>/dev/null)" ]; then
+            cp -r tmp/sonar/. _reports/sonar/
+          fi
+          # Лендинг со ссылками
+          cat > _reports/index.html <<EOF
+          <!DOCTYPE html>
+          <html lang="ru"><head><meta charset="utf-8"><title>viday — отчёты CI</title>
+          <style>body{font-family:system-ui,sans-serif;margin:2rem}li{margin:.35rem 0}</style></head>
+          <body>
+            <h1>Отчёты viday · CI run #${RUN_NUMBER}</h1>
+            <ul>
+              <li><a href="allure/">Allure report (unit + integration + e2e + coverage)</a></li>
+              <li><a href="sonar/sonar-report.html">SonarQube report (полный снимок: метрики + замечания)</a></li>
+              <li>Покрытие viday (JaCoCo HTML):
+                <a href="coverage/viday/app/">app</a> ·
+                <a href="coverage/viday/data/">data</a> ·
+                <a href="coverage/viday/domain/">domain</a></li>
+              <li>Покрытие vidayapi (JaCoCo HTML, unit + integration + e2e):
+                <a href="coverage/vidayapi/application/">application</a> ·
+                <a href="coverage/vidayapi/domain/">domain</a> ·
+                <a href="coverage/vidayapi/infrastructure/">infrastructure</a> ·
+                <a href="coverage/vidayapi/presentation/">presentation</a></li>
+            </ul>
+            <p>Обновлено: $(date -u)</p>
+          </body></html>
+          EOF
+          echo "=== staged tree (maxdepth 3) ==="
+          find _reports -maxdepth 3 | sort | head -60
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: _reports
+          keep_files: true
+          user_name: "github-actions[bot]"
+          user_email: "github-actions[bot]@users.noreply.github.com"
+          commit_message: "Reports (Allure + coverage + Sonar): run #${{ github.run_number }}"

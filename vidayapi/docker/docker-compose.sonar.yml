@@ -1,0 +1,68 @@
+# SonarQube Community Build (free) + its own PostgreSQL 16 database.
+#
+# Usage:
+#   docker compose -f docker/docker-compose.sonar.yml up -d
+#   open http://localhost:9002            (default admin/admin, change on first login)
+#   ./gradlew sonar -PsonarToken=<TOKEN>  (token: My Account -> Security -> Generate Token)
+#
+# Host port is 9002 because 9000 is taken by MinIO (docker-compose.yml) and
+# 9001 by the MinIO console. Inside the container SonarQube keeps port 9000.
+services:
+  sonar-db:
+    image: postgres:16-alpine
+    container_name: viday_sonar_db
+    environment:
+      POSTGRES_DB: sonar
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+    volumes:
+      - sonar_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sonar -d sonar"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sonar_network
+
+  sonarqube:
+    # Free SonarQube Community Build image (official Docker Hub repo "sonarqube").
+    # Community Build includes Kotlin analysis; no paid license required.
+    image: sonarqube:lts-community
+    container_name: viday_sonar
+    depends_on:
+      sonar-db:
+        condition: service_healthy
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonar-db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+      # Keep the embedded Elasticsearch within the 1 GiB default container memory limit.
+      # Elasticsearch bootstrap check requires -Xms == -Xmx for the search JVM.
+      SONAR_SEARCH_JAVAOPTS: "-Xmx512m -Xms512m"
+      SONAR_CE_JAVAOPTS: "-Xmx512m -Xms256m"
+      SONAR_WEB_JAVAOPTS: "-Xmx512m -Xms256m"
+    ports:
+      - "9002:9000"
+    volumes:
+      - sonar_data:/opt/sonarqube/data
+      - sonar_logs:/opt/sonarqube/logs
+      - sonar_extensions:/opt/sonarqube/extensions
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/localhost/9000'"]
+      interval: 15s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    networks:
+      - sonar_network
+
+volumes:
+  sonar_db_data:
+  sonar_data:
+  sonar_logs:
+  sonar_extensions:
+
+networks:
+  sonar_network:
+    driver: bridge
