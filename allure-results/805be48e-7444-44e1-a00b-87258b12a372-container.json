@@ -1,0 +1,1 @@
+{"uuid":"805be48e-7444-44e1-a00b-87258b12a372","name":"UserDuplicateUsernameIT","children":["ec2b750e-bbed-4f76-8ee2-22002d9d1ce9"],"befores":[],"afters":[{"name":"closePool","status":"passed","stage":"finished","steps":[],"attachments":[],"parameters":[],"start":1791536308911,"stop":1791536308912}],"start":1791536308842,"stop":1791536308913}
