@@ -1,0 +1,1 @@
+{"uuid":"8f65f9d3-b457-447e-9320-1dfa21f9587c","name":"PlaylistFindPublicIT","children":["9d79e290-7341-4506-b8d4-d1e85a914ffe"],"befores":[],"afters":[{"name":"closePool","status":"passed","stage":"finished","steps":[],"attachments":[],"parameters":[],"start":1791532292947,"stop":1791532292955}],"start":1791532290347,"stop":1791532292971}
