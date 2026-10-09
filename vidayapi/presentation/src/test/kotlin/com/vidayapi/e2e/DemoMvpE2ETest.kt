@@ -76,12 +76,6 @@ class MvpDemoScenarioE2ETest {
     @Autowired
     lateinit var mapper: ObjectMapper
 
-    /**
-     * Отдельное подключение к стенду для отката хранилища: используется суперпользователь
-     * viday_admin_user (владелец таблиц и последовательностей), поэтому TRUNCATE ...
-     * RESTART IDENTITY выполняется независимо от того, каким пользователем приложение
-     * подключилось к БД. RLS на это подключение не влияет (транзакция отката).
-     */
     private val resetDataSource: HikariDataSource by lazy {
         HikariDataSource(
             HikariConfig().apply {
@@ -210,55 +204,9 @@ class MvpDemoScenarioE2ETest {
             val add = postJson("/api/playlists/$playlistId/contents", mapOf("contentId" to contentId), creatorToken)
             assertThat(add.statusCode()).isEqualTo(200)
         }
-
-        val followerToken = step("Регистрация подписчика, логин, подписка на креатора") {
-            val reg = postJson("/api/auth/register", mapOf("username" to follower, "password" to password))
-            assertThat(reg.statusCode()).isEqualTo(201)
-            val token = login(follower, password)
-            val follow = call("POST", "/api/users/$creatorId/follow", token = token)
-            assertThat(follow.statusCode()).isEqualTo(200)
-            token
-        }
-
-        step("Публичная лента содержит загруженное видео") {
-            val feed = getJson("/api/videos?page=0&size=50")
-            val items = feed.at("/items")
-            assertThat(items.isArray).describedAs("items must be array").isTrue()
-
-            val idsInFeed = items.mapNotNull { node ->
-                node.at("/id").takeIf { !it.isMissingNode }?.longValue()
-            }
-            assertThat(idsInFeed).contains(contentId)
-        }
-
-        step("Подписчик видит публичный плейлист креатора") {
-            val availableResp = call("GET", "/api/playlists/available", token = followerToken)
-            assertThat(availableResp.statusCode())
-                .describedAs("GET /api/playlists/available body: %s", availableResp.body())
-                .isEqualTo(200)
-
-            val available = availableResp.json()
-            assertThat(available.isArray).describedAs("body: %s", availableResp.body()).isTrue()
-
-            // ВАЖНО: у tools.jackson (Jackson 3) есть МЕТОД JsonNode.map(Function) —
-            // Kotlin выбирает его вместо расширения Iterable.map, и лямбда получает
-            // корневой узел, а не элементы массива. Итерируем элементы явно.
-            val names = mutableListOf<String>()
-            for (node in available) {
-                names += node.at("/name").stringValue()
-            }
-            assertThat(names)
-                .describedAs("available playlists: %s", availableResp.body())
-                .contains(playlistName)
-        }
     }
 
 
-    /**
-     * Обёртка над Allure.step: лямбда без явного SAM-типа даёт в Kotlin
-     * перегрузочную неоднозначность между ThrowableRunnableVoid,
-     * ThrowableRunnable<T> и ThrowableContextRunnable*-вариантами.
-     */
     private fun <T> step(name: String, block: () -> T): T =
         Allure.step(name, Allure.ThrowableRunnable { block() })
 

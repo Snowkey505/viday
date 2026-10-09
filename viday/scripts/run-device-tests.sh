@@ -38,8 +38,9 @@ until [ "$("$ADB" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = 
 done
 echo "==> device is booted: $("$ADB" devices)"
 
-echo "==> adb reverse tcp:8080 tcp:8080 (API стенда)"
-"$ADB" reverse tcp:8080 tcp:8080 || echo "WARN: adb reverse failed (API may be unreachable from device)"
+echo "==> adb reverse: API (8080) + MinIO (59002) стенда"
+"$ADB" reverse tcp:8080 tcp:8080 || echo "WARN: adb reverse 8080 failed (API may be unreachable from device)"
+"$ADB" reverse tcp:59002 tcp:59002 || echo "WARN: adb reverse 59002 failed (MinIO may be unreachable from device)"
 
 echo "==> unit tests (JVM)"
 ./gradlew --no-daemon :app:testDebugUnitTest :domain:test :data:testDebugUnitTest || true

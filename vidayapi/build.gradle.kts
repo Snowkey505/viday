@@ -291,6 +291,12 @@ subprojects {
             executionData(
                 fileTree(layout.buildDirectory.dir("jacoco")) { include("*.exec") },
             )
+            // Gradle 9: exec-файлы — выходы Test-задач, поэтому при совместном
+            // запуске (например, `testIntegration jacocoTestReport`) возникает
+            // ошибка валидации "implicit dependency". Объявляем порядок через
+            // mustRunAfter (не dependsOn — отчёт НЕ должен сам запускать тесты,
+            // он конвертирует уже существующие *.exec).
+            mustRunAfter(tasks.matching { it.name in setOf("test", "testIntegration", "testE2E") })
             reports {
                 xml.required.set(true)
                 xml.outputLocation.set(layout.buildDirectory.file("reports/jacoco/test/jacocoTestReport.xml"))

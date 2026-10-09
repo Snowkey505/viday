@@ -1,4 +1,4 @@
-.PHONY: build run run-console clean test test-offline test-fixtures-demo test-integration test-e2e coverage allure allure-serve sonar-up sonar-down sonar benchmark-db benchmark-db-copy stand-up stand-down stand-logs stand-ps app-up app-down reset-test-db e2e-curl traffic-demo ci-runner
+.PHONY: build run run-console clean test test-offline test-fixtures-demo test-integration test-e2e coverage allure allure-serve sonar-up sonar-down sonar benchmark-db benchmark-db-copy stand-up stand-down stand-logs stand-ps app-up app-down reset-test-db e2e-curl traffic-demo e2e-traffic wireshark ci-runner
 
 build:
 	cd docker && make build && cd .. && ./gradlew build
@@ -65,6 +65,23 @@ e2e-curl:
 # Имитация E2E-действий + захват трафика tcpdump (Задание 5)
 traffic-demo:
 	./scripts/traffic-capture.sh
+
+# E2E одним касанием + pcap для Wireshark:
+#   make e2e-traffic
+# 1) поднимает стенд и контейнер приложения (viday_api слушает localhost:8080);
+# 2) прогоняет E2E-сценарий под tcpdump;
+# 3) сохраняет traffic/viday-e2e-<ts>.pcap и печатает HTTP-дайджест.
+e2e-traffic: stand-up
+	# Образ собирается один раз; при повторных запусках просто поднимается
+	docker image inspect viday-test-app-api:latest >/dev/null 2>&1 || \
+	  docker compose -f docker/docker-compose.app.yml build
+	docker compose -f docker/docker-compose.app.yml up -d
+	./scripts/traffic-capture.sh
+
+# Открыть последний pcap в Wireshark (тела запросов видны: HTTP, не HTTPS):
+#   make wireshark
+wireshark:
+	wireshark $$(ls -t traffic/*.pcap | head -1)
 
 # Контейнер запуска тестов + стенд в одной сети (Требование 1):
 #   make ci-runner    -> docker compose -p viday-ci -f docker/docker-compose.ci.yml run --rm test-runner full

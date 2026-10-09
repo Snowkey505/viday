@@ -3,21 +3,22 @@
 #
 # Архитектура:
 #   * build-vidayapi собирает образы test-runner и postgres-test ОДИН раз,
-#     пушит их в GitHub Container Registry (ghcr.io), собирает bootJar;
+#     пушит их в GitHub Container Registry (ghcr.io);
 #   * тестовые джобы только docker pull + docker run/compose run;
-#   * порядок Требования 5: unit -> integration -> e2e (через needs);
+#   * порядок: unit ∥ integration (ПАРАЛЛЕЛЬНО) -> build (bootJar, после
+#     юнитов) -> e2e (после build + integration) -> отчёты;
+#   * integration-результаты публикуются артефактами сразу после прогона;
 #   * report выполняется ВСЕГДА (if: !cancelled()), НЕ перезапускает тесты:
 #     Allure собирается из allure-results*, пришедших артефактами;
-#   * device: эмулятор Android (KVM) + API из jar-артефакта + стенд
-#     (postgres со схемой/redis/minio через docker-compose.device.yml);
+#   * Allure на gh-pages — НАКОПИТЕЛЬНЫЙ: к результатам прошлых прогонов
+#     ветки добавляются новые (merge по UUID, ничего не перезаписывается);
 #   * Junit-отчёты публикуются аннотациями dorny/test-reporter;
-#   * история Allure (тренды, Требование 9) — actions/cache.
+#   * история Allure (тренды, Требование 9) — actions/cache + gh-pages.
 #
 # Раннеры:
-#   * ubuntu-latest достаточно для ВСЕХ джоб (docker уже есть; KVM для
-#     эмулятора на GitHub-hosted включён). Если используете СВОЙ раннер —
-#     замените runs-on на [self-hosted, linux, x64] и убедитесь, что у него
-#     есть Docker и /dev/kvm.
+#   * ubuntu-latest достаточно для ВСЕХ джоб (docker уже есть). Если
+#     используете СВОЙ раннер — замените runs-on на [self-hosted, linux, x64]
+#     и убедитесь, что у него есть Docker.
 #   * Для пуша образов в ghcr.io нужен secret GITHUB_TOKEN (автоматический)
 #     и разрешение packages: write (задано ниже).
 #
@@ -90,26 +91,13 @@ jobs:
         run: |
           docker build -t "$TEST_RUNNER_IMAGE" -f docker/test-runner/Dockerfile .
           docker push "$TEST_RUNNER_IMAGE"
-      # 2) postgres со схемой init 01..05 (Требование 4) — стенд CI + device
+      # 2) postgres со схемой init 01..05 (Требование 4) — стенд CI
       - name: Build and push postgres-test image
         run: |
           docker build -t "$POSTGRES_TEST_IMAGE" docker/postgres
           docker push "$POSTGRES_TEST_IMAGE"
-      # 3) bootJar backend'а — артефакт для device (java -jar) и curl-демо
-      - name: Assemble backend bootJar
-        run: |
-          docker run --rm -u root \
-            -v "$PWD:/workspace" \
-            -v "$PWD/$GRADLE_CACHE:/cache/.gradle" \
-            -e GRADLE_USER_HOME=/cache/.gradle \
-            "$TEST_RUNNER_IMAGE" assemble
-      - name: Upload bootJar artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: vidayapi-jar
-          path: vidayapi/presentation/build/libs/*.jar
-          if-no-files-found: error
-          retention-days: 7
+      # bootJar собирается ОТДЕЛЬНОЙ джобой build-vidayapi-jar — ПОСЛЕ unit-тестов
+      # (jar — артефакт для curl-демо и локальных запусков)
 
   build-viday:
     runs-on: ubuntu-latest
@@ -275,10 +263,54 @@ jobs:
           retention-days: 7
 
   # ---------------------------------------------------------------------------
-  # STAGE: integration (Требования 2-4, 6, 10, 14)
+  # STAGE: build — bootJar собирается ПОСЛЕ unit-тестов
+  # (артефакт vidayapi-jar — для curl-демо и локальных запусков)
+  # ---------------------------------------------------------------------------
+  build-vidayapi-jar:
+    needs: [unit-vidayapi]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vidayapi
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set GHCR image names (lowercase)
+        run: |
+          REPO="${GITHUB_REPOSITORY,,}"
+          echo "TEST_RUNNER_IMAGE=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Restore Gradle cache
+        uses: actions/cache/restore@v4
+        with:
+          path: vidayapi/.gradle-ci
+          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
+      - name: Assemble backend bootJar (после unit)
+        run: |
+          docker pull "$TEST_RUNNER_IMAGE"
+          docker run --rm -u root \
+            -v "$PWD:/workspace" \
+            -v "$PWD/$GRADLE_CACHE:/cache/.gradle" \
+            -e GRADLE_USER_HOME=/cache/.gradle \
+            "$TEST_RUNNER_IMAGE" assemble
+      - name: Upload bootJar artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vidayapi-jar
+          path: vidayapi/presentation/build/libs/*.jar
+          if-no-files-found: error
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # STAGE: integration (Требования 2-4, 6, 10, 14).
+  # Запускается ПАРАЛЛЕЛЬНО с unit-vidayapi: зависит только от образов.
   # ---------------------------------------------------------------------------
   integration-vidayapi:
-    needs: [unit-vidayapi]
+    needs: [build-vidayapi]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -338,10 +370,11 @@ jobs:
           retention-days: 7
 
   # ---------------------------------------------------------------------------
-  # STAGE: e2e (Задание 3, Требование 13)
+  # STAGE: e2e (Задание 3, Требование 13).
+  # E2E идёт ПОСЛЕ build (bootJar готов) и после integration-стадии.
   # ---------------------------------------------------------------------------
   e2e-vidayapi:
-    needs: [integration-vidayapi]
+    needs: [build-vidayapi-jar, integration-vidayapi]
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -399,141 +432,6 @@ jobs:
             vidayapi/allure-history/
           if-no-files-found: ignore
           retention-days: 7
-
-  # ---------------------------------------------------------------------------
-  # STAGE: device — тесты Android НА УСТРОЙСТВЕ (Требование 7).
-  # Эмулятор: reactivecircus/android-emulator-runner (нужен KVM). API стенда
-  # поднимается на хосте из jar-артефакта build-vidayapi; postgres (со схемой)/
-  # redis/minio — docker-compose.device.yml с опубликованными портами.
-  # ---------------------------------------------------------------------------
-  device-viday:
-    needs: [build-viday, build-vidayapi]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set GHCR image names (lowercase)
-        run: |
-          REPO="${GITHUB_REPOSITORY,,}"
-          echo "TEST_RUNNER_IMAGE=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
-          echo "POSTGRES_TEST_IMAGE=ghcr.io/${REPO}/postgres-test:${GITHUB_SHA}" >> "$GITHUB_ENV"
-          echo "IMAGE_NAME=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
-      - name: Download backend bootJar
-        uses: actions/download-artifact@v4
-        continue-on-error: true
-        with:
-          name: vidayapi-jar
-          path: vidayapi
-      - name: Cache Android SDK + Gradle
-        uses: actions/cache@v4
-        with:
-          # Только caches/wrapper (без lock-файлов): полный .gradle в кэше
-          # приводил к "Could not find <artifact>" из-за частичного кэша.
-          path: |
-            viday/.gradle/caches
-            viday/.gradle/wrapper
-            viday/.android-sdk
-            viday/**/build
-          key: viday-build-v2-${{ hashFiles('viday/gradle/libs.versions.toml', 'viday/build.gradle.kts') }}
-      - name: Setup Java 17 (для bootJar на хосте)
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '17'
-      - name: Install Android SDK (for host-side adb/gradle)
-        run: bash viday/scripts/ci-install-sdk.sh
-        env:
-          ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
-          INSTALL_EMULATOR: "1"
-          ANDROID_EMULATOR_TARGET: "aosp_atd"
-      - name: Login to GHCR and start device stand
-        run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-          docker pull "$POSTGRES_TEST_IMAGE"
-          docker compose -f vidayapi/docker/docker-compose.device.yml up -d
-          # postgres: порт открывается до завершения init-скриптов 01..05
-          timeout 120 bash -c 'until (echo > /dev/tcp/localhost/55432) 2>/dev/null; do sleep 2; done'
-          sleep 10
-          timeout 120 bash -c 'until (echo > /dev/tcp/localhost/56380) 2>/dev/null; do sleep 2; done'
-          timeout 120 bash -c 'until (echo > /dev/tcp/localhost/59002) 2>/dev/null; do sleep 2; done'
-      - name: Start API (bootJar from build-vidayapi)
-        run: |
-          JAR=$(ls "$GITHUB_WORKSPACE"/vidayapi/presentation/build/libs/viday-application-*.jar 2>/dev/null | head -1)
-          if [ -z "$JAR" ] || [ ! -f "$JAR" ]; then
-            echo "WARN: API jar отсутствует — AndroidApiFlowTest будет SKIPPED (assumeTrue)"
-          else
-            export SPRING_DATASOURCE_URL="jdbc:postgresql://localhost:55432/viday"
-            export SPRING_DATASOURCE_USERNAME="viday_admin_user"
-            export SPRING_DATASOURCE_PASSWORD="admin_password_change_me"
-            export SPRING_DATA_REDIS_HOST="localhost"
-            export SPRING_DATA_REDIS_PORT="56380"
-            export MINIO_ENDPOINT="http://localhost:59002"
-            export MINIO_PUBLIC_ENDPOINT="http://localhost:59002"
-            export VIDAY_CONSOLE_ENABLED="false"
-            nohup java -jar "$JAR" --server.port=8080 > /tmp/viday-api.log 2>&1 &
-            echo $! > /tmp/viday-api.pid
-            timeout 240 bash -c 'until (echo > /dev/tcp/127.0.0.1/8080) 2>/dev/null; do sleep 3; done' \
-              || echo "WARN: API не поднялся за 240s (лог: /tmp/viday-api.log)"
-          fi
-      - name: Emulator environment check
-        run: |
-          ls -l /dev/kvm || true
-          "$ANDROID_HOME/emulator/emulator" -version 2>&1 | head -2 || true
-          "$ANDROID_HOME/emulator/emulator" -accel-check 2>&1 || true
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --list_installed 2>/dev/null \
-            | grep -E "system-images;|^emulator|platform-tools" || true
-        env:
-          ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
-          ANDROID_SDK_ROOT: ${{ github.workspace }}/viday/.android-sdk
-      - name: Instrumented tests on emulator (Требование 7)
-        # ВАЖНО: на GitHub-hosted Linux-раннерах приватных репозиториев KVM нет
-        # ("hardware acceleration is not available") — эмулятор работает в
-        # программном режиме. Поэтому используем aosp_atd (ATD): облегчённый
-        # образ для headless-CI, который реально успевает загрузиться в TCG.
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 30
-          target: aosp_atd
-          arch: x86_64
-          profile: pixel_4
-          cores: 2
-          ram-size: 2048
-          emulator-boot-timeout: 900
-          force-avd-creation: true
-          disable-animations: true
-          working-directory: viday
-          # ВАЖНО: android-emulator-runner выполняет КАЖДУЮ строку script отдельным
-          # `sh -c` — переносы строки с '\' в конце ломают команду (Gradle получает
-          # '\' как имя таска: "Task '\' not found"). Только однострочные команды.
-          script: |
-            adb reverse tcp:8080 tcp:8080 || echo "WARN: reverse failed (тест будет SKIPPED)"
-            # Retry с --refresh-dependencies: первый прогон может наткнуться на
-            # частичный кэш модулей -> повтор гарантированно перекачает метаданные.
-            ./gradlew --no-daemon :app:connectedDebugAndroidTest || { echo "WARN: повтор с --refresh-dependencies"; ./gradlew --no-daemon :app:connectedDebugAndroidTest --refresh-dependencies; }
-        env:
-          ANDROID_HOME: ${{ github.workspace }}/viday/.android-sdk
-          ANDROID_SDK_ROOT: ${{ github.workspace }}/viday/.android-sdk
-          GRADLE_USER_HOME: ${{ github.workspace }}/viday/.gradle
-      - name: Publish JUnit report
-        if: success() || failure()
-        continue-on-error: true   # эмулятор мог упасть до появления результатов
-        uses: dorny/test-reporter@v1
-        with:
-          name: Device tests (JUnit)
-          path: viday/app/build/outputs/androidTest-results/connected/**/*.xml
-          reporter: java-junit
-      - name: Upload device test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: viday-device-results
-          path: |
-            viday/app/build/reports/androidTests/connected/
-            viday/app/build/outputs/androidTest-results/
-          if-no-files-found: ignore
-          retention-days: 7
-      - name: Tear down device stand
-        if: always()
-        run: docker compose -f vidayapi/docker/docker-compose.device.yml down -v || true
 
   # ---------------------------------------------------------------------------
   # STAGE: report — Allure ВСЕГДА (Требование 8), без повторного прогона тестов.
@@ -660,6 +558,16 @@ jobs:
             vidayapi/allure-history/
           if-no-files-found: ignore
           retention-days: 14
+      - name: Upload raw Allure results (для накопительного отчёта в publish)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          # Сырые allure-results прогона: publish-reports мержит их с
+          # накопленными на gh-pages и генерирует отчёт по ВСЕМ прогонам
+          name: vidayapi-allure-raw-results
+          path: vidayapi/build/allure-results-ci-input/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Fix cache permissions (root-owned files from docker)
         if: always()
         run: |
@@ -845,12 +753,66 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Download Allure report artifact
+      - name: Checkout gh-pages (накопленные результаты прошлых прогонов)
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages
+      - name: Download raw Allure results of current run
         uses: actions/download-artifact@v4
         continue-on-error: true
         with:
-          name: allure-report-ci
-          path: tmp/allure
+          name: vidayapi-allure-raw-results
+          path: tmp/allure-results-new
+      # НАКОПИТЕЛЬНЫЙ Allure: к результатам, уже опубликованным на gh-pages,
+      # добавляются результаты текущего прогона. UUID-имена result/container/
+      # attachment-файлов уникальны между прогонами, поэтому старые тесты
+      # НЕ перезаписываются — отчёт содержит все прогоны ветки.
+      - name: Merge Allure results (gh-pages + текущий прогон)
+        run: |
+          set -euo pipefail
+          # Очистка staging-каталога ЗДЕСЬ (а не в шаге stage ниже): отчёт
+          # генерируется в _reports/allure ДО шага staging — rm в staging
+          # стёр бы его.
+          rm -rf _reports
+          cum=vidayapi/build/allure-results-cumulative
+          rm -rf "$cum"
+          mkdir -p "$cum"
+          found=0
+          merge_dir() {
+            [ -d "$1" ] || return 0
+            while IFS= read -r -d '' file; do
+              base="$(basename "$file")"
+              target="$cum/$base"
+              if [ -e "$target" ]; then
+                stem="${base%.*}"; ext="${base##*.}"; n=1
+                while [ -e "$cum/${stem}-${n}.${ext}" ]; do n=$((n+1)); done
+                target="$cum/${stem}-${n}.${ext}"
+              fi
+              cp -p "$file" "$target"
+              found=$((found + 1))
+            done < <(find "$1" -type f -print0)
+          }
+          # 1) всё, что уже было на gh-pages (включая history/ для тренда)
+          merge_dir gh-pages/_reports/allure-results
+          # 2) результаты текущего прогона
+          merge_dir tmp/allure-results-new
+          result_count=$(find "$cum" -type f \( -name '*-result.json' -o -name '*-container.json' \) | wc -l)
+          echo "Cumulative Allure result/container files: $result_count"
+          test "$result_count" -gt 0
+      - name: Install Allure CLI
+        run: |
+          curl -fsSL https://github.com/allure-framework/allure2/releases/download/2.29.0/allure-2.29.0.tgz -o /tmp/allure.tgz
+          tar -xzf /tmp/allure.tgz -C /tmp
+          echo "/tmp/allure-2.29.0/bin" >> "$GITHUB_PATH"
+      - name: Generate cumulative Allure report (все прогоны ветки)
+        run: |
+          set -euo pipefail
+          # allure generate читает history/ из каталога results — он попал туда
+          # на шаге merge (из gh-pages), поэтому тренд продолжает накапливаться
+          allure generate vidayapi/build/allure-results-cumulative -o _reports/allure --clean
+          echo "Allure generated ($(find _reports/allure -name index.html | wc -l) index.html)"
       - name: Download Android coverage (JaCoCo)
         uses: actions/download-artifact@v4
         continue-on-error: true
@@ -874,17 +836,17 @@ jobs:
           RUN_NUMBER: ${{ github.run_number }}
         run: |
           set -euo pipefail
-          rm -rf _reports
           mkdir -p _reports/allure _reports/coverage/viday _reports/coverage/vidayapi _reports/sonar
           # ВАЖНО: артефакты упакованы относительно viday/ и vidayapi/ (наименьший
           # общий предок путей загрузки), поэтому после распаковки префикса
           # viday|vidayapi в путях НЕТ. Раньше staging искал tmp/.../vidayapi/...
           # и находил пустоту — на gh-pages не попадало ничего.
-          # Allure: корень артефакта = vidayapi -> tmp/allure/build/reports/allure-report-ci/
-          if [ -d tmp/allure/build/reports/allure-report-ci ]; then
-            cp -r tmp/allure/build/reports/allure-report-ci/. _reports/allure/
-            echo "Allure staged ($(find _reports/allure -name index.html | wc -l) index.html)"
-          fi
+          # Накопительный Allure сгенерирован выше из старых (gh-pages) + новых
+          # результатов; результаты остаются на gh-pages для следующего прогона
+          mkdir -p _reports/allure-results
+          rm -rf _reports/allure-results/*
+          cp -r vidayapi/build/allure-results-cumulative/. _reports/allure-results/
+          echo "Allure staged cumulative ($(find _reports/allure -name index.html | wc -l) index.html, $(find _reports/allure-results -name '*-result.json' | wc -l) raw results)"
           # Покрытие viday: tmp/coverage-viday/<module>/build/reports/jacoco/.../html/
           for d in $(find tmp/coverage-viday -path "*reports/jacoco*html" -type d 2>/dev/null | sort); do
             mod=$(echo "$d" | sed -E 's#tmp/coverage-viday/([^/]+)/.*#\1#')

@@ -8,16 +8,18 @@ ADB ?= adb
 run:
 	$(SDK)/emulator/emulator -avd $(AVD) -dns-server 8.8.8.8
 
-# Ожидание полной загрузки устройства + проброс порта API стенда
+# Ожидание полной загрузки устройства + проброс портов стенда
+# (8080 — API, 59002 — MinIO: источник video.source для плеера)
 device-wait:
 	$(ADB) wait-for-device
 	until [ "$$($(ADB) shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; do sleep 2; done
-	$(ADB) reverse tcp:8080 tcp:8080
+	$(MAKE) device-reverse
 	@echo "device ready: $$($(ADB) devices)"
 
-# Проброс порта API стенда (если устройство уже загружено)
+# Проброс портов стенда (если устройство уже загружено)
 device-reverse:
-	$(ADB) reverse tcp:8080 tcp:8080
+	$(ADB) reverse tcp:8080 tcp:8080 || true
+	$(ADB) reverse tcp:59002 tcp:59002 || true
 
 # Unit-тесты (JVM)
 test-unit:

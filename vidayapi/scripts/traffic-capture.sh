@@ -66,8 +66,28 @@ capture_host() {
     | grep -aE 'HTTP:' | sed 's/^.*HTTP:/HTTP:/' | sort -u | head -60 || true
 }
 
-if [ "${CAPTURE_MODE:-container}" = "host" ]; then
-  capture_host
-else
-  capture_container
+# Режим захвата:
+#   CAPTURE_MODE=container|host  — явно;
+#   по умолчанию: контейнер viday_api запущен -> container,
+#   иначе если localhost:8080 отвечает -> host (нужен sudo),
+#   иначе — понятная ошибка с подсказкой как поднять окружение.
+mode="${CAPTURE_MODE:-}"
+if [ -z "$mode" ]; then
+  if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx "$APP_CONTAINER"; then
+    mode="container"
+  elif curl -sS -o /dev/null --max-time 3 http://localhost:8080/api/videos 2>/dev/null; then
+    mode="host"
+    echo "auto: viday_api контейнер не запущен, но localhost:8080 отвечает -> host mode (нужен sudo)"
+  else
+    echo "ERROR: нет ни контейнера $APP_CONTAINER, ни приложения на localhost:8080." >&2
+    echo "Поднимите окружение:  make e2e-traffic" >&2
+    echo "или приложение локально:  make run   (затем: CAPTURE_MODE=host sudo ./scripts/traffic-capture.sh)" >&2
+    exit 1
+  fi
 fi
+
+case "$mode" in
+  container) capture_container ;;
+  host)      capture_host ;;
+  *) echo "ERROR: неизвестный CAPTURE_MODE='$mode' (container|host)" >&2; exit 1 ;;
+esac
