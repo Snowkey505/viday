@@ -1,0 +1,1 @@
+{"uuid":"82cfb37f-d17d-4d37-bf6c-fec8be0b9a78","name":"UserDeleteIT","children":["45ad0803-bef0-4b29-99b9-6e8fd725575a"],"befores":[],"afters":[{"name":"closePool","status":"passed","stage":"finished","steps":[],"attachments":[],"parameters":[],"start":1793835899584,"stop":1793835899586}],"start":1793835899515,"stop":1793835899586}
