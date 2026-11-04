@@ -1,4 +1,4 @@
-.PHONY: build run run-console clean test test-offline test-fixtures-demo test-integration test-e2e coverage allure allure-serve sonar-up sonar-down sonar benchmark-db benchmark-db-copy stand-up stand-down stand-logs stand-ps app-up app-down reset-test-db e2e-curl traffic-demo e2e-traffic wireshark ci-runner
+.PHONY: build run run-console clean test test-offline test-fixtures-demo test-integration test-e2e coverage allure allure-serve sonar-up sonar-down sonar benchmark-db benchmark-db-copy benchmark benchmark-local benchmark-import benchmark-dashboard grafana-up grafana-down grafana-logs stand-up stand-down stand-logs stand-ps app-up app-down reset-test-db e2e-curl traffic-demo e2e-traffic wireshark ci-runner
 
 build:
 	cd docker && make build && cd .. && ./gradlew build
@@ -125,6 +125,43 @@ sonar-down:
 
 sonar:
 	./gradlew sonar -PsonarToken=$(SONAR_TOKEN)
+
+# ---- ЛР3: микробенчмарк (собственный харнесс: warmup/teardown, статистика,
+# перцентили, гистограммы). Сравнение Jackson 3 vs kotlinx.serialization на
+# ТРЁХ моделях (x1/x4/x8). Отчёт и ВСЕ графики — в Grafana.
+#   make benchmark        -> каждый прогон = отдельный docker-образ (Требование 6),
+#                            закрепление на 1 ядре (Требование 4), результаты +
+#                            автоимпорт в Grafana DB (если стенд поднят)
+#   make benchmark-local  -> локальный прогон через Gradle (для быстрой проверки)
+#   make grafana-up       -> стенд визуализации: Grafana http://localhost:3000
+#                            (admin/admin) + PostgreSQL с результатами
+#   make benchmark-import -> импорт последнего report.json в Grafana DB
+#   make benchmark-dashboard -> перегенерировать дашборд benchmark.json
+benchmark:
+	./scripts/run-benchmark.sh
+
+benchmark-local:
+	./gradlew :benchmark:run --args="--samples 1000 --batch 256 --out benchmark/build/reports/benchmark/local"
+
+# ---- ЛР3: Grafana (отчёт и все графики перенесены в Grafana) ----
+grafana-up:
+	docker compose -f docker/docker-compose.grafana.yml up -d
+	./scripts/setup-grafana-dashboard.sh
+	@echo "Grafana: http://localhost:3000 (admin/admin). Дашборд: http://localhost:3000/d/benchmark-lr3"
+
+grafana-down:
+	docker compose -f docker/docker-compose.grafana.yml down
+
+grafana-logs:
+	docker compose -f docker/docker-compose.grafana.yml logs -f
+
+benchmark-import:
+	./scripts/import-benchmark-to-db.sh
+	./scripts/setup-grafana-dashboard.sh
+
+benchmark-dashboard:
+	python3 scripts/generate-grafana-dashboard.py
+	./scripts/setup-grafana-dashboard.sh
 
 benchmark-multidim:
 	chmod +x docker/postgres/research/run_multidim.sh
