@@ -1,0 +1,740 @@
+{
+  "run_id": "lr4-v2-matrix-c1-r512-co300",
+  "scenario": "ramp",
+  "components": {
+    "api": {
+      "samples": 5,
+      "cpu_percent": {
+        "min": 0.2886,
+        "max": 100.0,
+        "median": 100.0,
+        "mean": 79.9822
+      },
+      "ram_bytes": {
+        "min": 312967168.0,
+        "max": 411594752.0,
+        "median": 355848192.0,
+        "mean": 361001779.2
+      },
+      "ram_mib": {
+        "min": 298.46875,
+        "max": 392.52734375,
+        "median": 339.36328125,
+        "mean": 344.278125
+      },
+      "ram_limit_bytes": 536870912.0,
+      "disk_read_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "disk_write_bps": {
+        "min": 0.0,
+        "max": 4901.735462193354,
+        "median": 860.515636065081,
+        "mean": 1561.1294232074038
+      },
+      "net_rx_bps": {
+        "min": 0.0,
+        "max": 139916.45378238338,
+        "median": 52934.09575713951,
+        "mean": 62028.71726578331
+      },
+      "net_tx_bps": {
+        "min": 0.0,
+        "max": 262410.6616836922,
+        "median": 103985.7623438615,
+        "mean": 118933.64164905094
+      },
+      "pids_max": 237
+    },
+    "generator": {
+      "samples": 4,
+      "cpu_percent": {
+        "min": 5.2915,
+        "max": 13.353,
+        "median": 10.36895,
+        "mean": 9.8456
+      },
+      "ram_bytes": {
+        "min": 65437696.0,
+        "max": 106110976.0,
+        "median": 94633984.0,
+        "mean": 90204160.0
+      },
+      "ram_mib": {
+        "min": 62.40625,
+        "max": 101.1953125,
+        "median": 90.25,
+        "mean": 86.025390625
+      },
+      "ram_limit_bytes": 1073741824.0,
+      "disk_read_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "disk_write_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "net_rx_bps": {
+        "min": 0.0,
+        "max": 113655.18733532935,
+        "median": 30947.42544179876,
+        "mean": 43887.50955473172
+      },
+      "net_tx_bps": {
+        "min": 0.0,
+        "max": 30883.136764645835,
+        "median": 15532.367591887338,
+        "mean": 15486.967987105127
+      },
+      "pids_max": 18
+    },
+    "minio": {
+      "samples": 5,
+      "cpu_percent": {
+        "min": 0.0153,
+        "max": 3.2865,
+        "median": 0.0429,
+        "mean": 1.30146
+      },
+      "ram_bytes": {
+        "min": 60862464.0,
+        "max": 61382656.0,
+        "median": 60911616.0,
+        "mean": 61072998.4
+      },
+      "ram_mib": {
+        "min": 58.04296875,
+        "max": 58.5390625,
+        "median": 58.08984375,
+        "mean": 58.24375
+      },
+      "ram_limit_bytes": 268435456.0,
+      "disk_read_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "disk_write_bps": {
+        "min": 0.0,
+        "max": 996.8870842314299,
+        "median": 215.12890901627026,
+        "mean": 324.1390393606834
+      },
+      "net_rx_bps": {
+        "min": 0.0,
+        "max": 47.7837314951426,
+        "median": 0.0,
+        "mean": 10.953599045556848
+      },
+      "net_tx_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "pids_max": 8
+    },
+    "postgres": {
+      "samples": 5,
+      "cpu_percent": {
+        "min": 0.029,
+        "max": 5.2056,
+        "median": 1.0177,
+        "mean": 1.8599999999999999
+      },
+      "ram_bytes": {
+        "min": 50843648.0,
+        "max": 92438528.0,
+        "median": 72769536.0,
+        "mean": 71806976.0
+      },
+      "ram_mib": {
+        "min": 48.48828125,
+        "max": 88.15625,
+        "median": 69.3984375,
+        "mean": 68.48046875
+      },
+      "ram_limit_bytes": 805306368.0,
+      "disk_read_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "disk_write_bps": {
+        "min": 0.0,
+        "max": 66581.90669479306,
+        "median": 2326.0698632066697,
+        "mean": 17395.760983073284
+      },
+      "net_rx_bps": {
+        "min": 0.0,
+        "max": 61983.24534807482,
+        "median": 17935.124686398387,
+        "mean": 22700.65531826549
+      },
+      "net_tx_bps": {
+        "min": 0.0,
+        "max": 109247.5539803921,
+        "median": 17763.29795752451,
+        "mean": 35964.92009004182
+      },
+      "pids_max": 27
+    },
+    "redis": {
+      "samples": 5,
+      "cpu_percent": {
+        "min": 0.4178,
+        "max": 3.7741,
+        "median": 0.7292,
+        "mean": 1.6496399999999998
+      },
+      "ram_bytes": {
+        "min": 3444736.0,
+        "max": 3977216.0,
+        "median": 3756032.0,
+        "mean": 3765043.2
+      },
+      "ram_mib": {
+        "min": 3.28515625,
+        "max": 3.79296875,
+        "median": 3.58203125,
+        "mean": 3.590625
+      },
+      "ram_limit_bytes": 167772160.0,
+      "disk_read_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "disk_write_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "net_rx_bps": {
+        "min": 0.0,
+        "max": 6069.926567420668,
+        "median": 835.6879764540982,
+        "mean": 1987.4361844725706
+      },
+      "net_tx_bps": {
+        "min": 0.0,
+        "max": 38229.86416855676,
+        "median": 7346.931252855023,
+        "mean": 11164.813527166256
+      },
+      "pids_max": 6
+    }
+  },
+  "phases": [
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "component": "api",
+      "samples": 3,
+      "cpu_percent": {
+        "min": 99.6224,
+        "max": 100.0,
+        "median": 100.0,
+        "mean": 99.87413333333332
+      },
+      "ram_bytes": {
+        "min": 344141824.0,
+        "max": 380456960.0,
+        "median": 355848192.0,
+        "mean": 360148992.0
+      },
+      "ram_mib": {
+        "min": 328.19921875,
+        "max": 362.83203125,
+        "median": 339.36328125,
+        "mean": 343.46484375
+      },
+      "ram_limit_bytes": 536870912.0,
+      "disk_read_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "disk_write_bps": {
+        "min": 0.0,
+        "max": 4901.735462193354,
+        "median": 2043.3960177785846,
+        "mean": 2315.043826657313
+      },
+      "net_rx_bps": {
+        "min": 52934.09575713951,
+        "max": 139916.45378238338,
+        "median": 91096.15507627028,
+        "mean": 94648.90153859773
+      },
+      "net_tx_bps": {
+        "min": 103985.7623438615,
+        "max": 262410.6616836922,
+        "median": 181797.95239566808,
+        "mean": 182731.4588077406
+      },
+      "pids_max": 158
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "component": "generator",
+      "samples": 3,
+      "cpu_percent": {
+        "min": 8.4073,
+        "max": 13.353,
+        "median": 12.3306,
+        "mean": 11.363633333333333
+      },
+      "ram_bytes": {
+        "min": 65437696.0,
+        "max": 101625856.0,
+        "median": 87642112.0,
+        "mean": 84901888.0
+      },
+      "ram_mib": {
+        "min": 62.40625,
+        "max": 96.91796875,
+        "median": 83.58203125,
+        "mean": 80.96875
+      },
+      "ram_limit_bytes": 1073741824.0,
+      "disk_read_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "disk_write_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "net_rx_bps": {
+        "min": 0.0,
+        "max": 113655.18733532935,
+        "median": 51600.43888312975,
+        "mean": 55085.20873948637
+      },
+      "net_tx_bps": {
+        "min": 0.0,
+        "max": 30883.136764645835,
+        "median": 12116.899374563813,
+        "mean": 14333.34537973655
+      },
+      "pids_max": 18
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "component": "minio",
+      "samples": 3,
+      "cpu_percent": {
+        "min": 0.0278,
+        "max": 3.2865,
+        "median": 3.1348,
+        "mean": 2.1496999999999997
+      },
+      "ram_bytes": {
+        "min": 60866560.0,
+        "max": 61341696.0,
+        "median": 60911616.0,
+        "mean": 61039957.333333336
+      },
+      "ram_mib": {
+        "min": 58.046875,
+        "max": 58.5,
+        "median": 58.08984375,
+        "mean": 58.212239583333336
+      },
+      "ram_limit_bytes": 268435456.0,
+      "disk_read_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "disk_write_bps": {
+        "min": 0.0,
+        "max": 996.8870842314299,
+        "median": 408.6792035557169,
+        "mean": 468.52209592904893
+      },
+      "net_rx_bps": {
+        "min": 0.0,
+        "max": 47.7837314951426,
+        "median": 6.984263732641647,
+        "mean": 18.255998409261412
+      },
+      "net_tx_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "pids_max": 8
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "component": "postgres",
+      "samples": 3,
+      "cpu_percent": {
+        "min": 0.0871,
+        "max": 5.2056,
+        "median": 2.9606,
+        "mean": 2.7510999999999997
+      },
+      "ram_bytes": {
+        "min": 60297216.0,
+        "max": 82685952.0,
+        "median": 72769536.0,
+        "mean": 71917568.0
+      },
+      "ram_mib": {
+        "min": 57.50390625,
+        "max": 78.85546875,
+        "median": 69.3984375,
+        "mean": 68.5859375
+      },
+      "ram_limit_bytes": 805306368.0,
+      "disk_read_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "disk_write_bps": {
+        "min": 0.0,
+        "max": 66581.90669479306,
+        "median": 2326.0698632066697,
+        "mean": 22969.32551933324
+      },
+      "net_rx_bps": {
+        "min": 17935.124686398387,
+        "max": 61983.24534807482,
+        "median": 24893.71964127944,
+        "mean": 34937.36322525088
+      },
+      "net_tx_bps": {
+        "min": 17763.29795752451,
+        "max": 109247.5539803921,
+        "median": 46118.018784279986,
+        "mean": 57709.62357406553
+      },
+      "pids_max": 22
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "component": "redis",
+      "samples": 3,
+      "cpu_percent": {
+        "min": 0.4178,
+        "max": 0.7292,
+        "median": 0.4368,
+        "mean": 0.5279333333333334
+      },
+      "ram_bytes": {
+        "min": 3698688.0,
+        "max": 3977216.0,
+        "median": 3948544.0,
+        "mean": 3874816.0
+      },
+      "ram_mib": {
+        "min": 3.52734375,
+        "max": 3.79296875,
+        "median": 3.765625,
+        "mean": 3.6953125
+      },
+      "ram_limit_bytes": 167772160.0,
+      "disk_read_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "disk_write_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "net_rx_bps": {
+        "min": 835.6879764540982,
+        "max": 6069.926567420668,
+        "median": 3018.6985604439005,
+        "mean": 3308.1043681062224
+      },
+      "net_tx_bps": {
+        "min": 7346.931252855023,
+        "max": 38229.86416855676,
+        "median": 10224.215185352563,
+        "mean": 18600.33686892145
+      },
+      "pids_max": 6
+    }
+  ],
+  "all": [
+    {
+      "phase": "all",
+      "component": "api",
+      "samples": 5,
+      "cpu_percent": {
+        "min": 0.2886,
+        "max": 100.0,
+        "median": 100.0,
+        "mean": 79.9822
+      },
+      "ram_bytes": {
+        "min": 312967168.0,
+        "max": 411594752.0,
+        "median": 355848192.0,
+        "mean": 361001779.2
+      },
+      "ram_mib": {
+        "min": 298.46875,
+        "max": 392.52734375,
+        "median": 339.36328125,
+        "mean": 344.278125
+      },
+      "ram_limit_bytes": 536870912.0,
+      "disk_read_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "disk_write_bps": {
+        "min": 0.0,
+        "max": 4901.735462193354,
+        "median": 860.515636065081,
+        "mean": 1561.1294232074038
+      },
+      "net_rx_bps": {
+        "min": 0.0,
+        "max": 139916.45378238338,
+        "median": 52934.09575713951,
+        "mean": 62028.71726578331
+      },
+      "net_tx_bps": {
+        "min": 0.0,
+        "max": 262410.6616836922,
+        "median": 103985.7623438615,
+        "mean": 118933.64164905094
+      },
+      "pids_max": 237
+    },
+    {
+      "phase": "all",
+      "component": "generator",
+      "samples": 4,
+      "cpu_percent": {
+        "min": 5.2915,
+        "max": 13.353,
+        "median": 10.36895,
+        "mean": 9.8456
+      },
+      "ram_bytes": {
+        "min": 65437696.0,
+        "max": 106110976.0,
+        "median": 94633984.0,
+        "mean": 90204160.0
+      },
+      "ram_mib": {
+        "min": 62.40625,
+        "max": 101.1953125,
+        "median": 90.25,
+        "mean": 86.025390625
+      },
+      "ram_limit_bytes": 1073741824.0,
+      "disk_read_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "disk_write_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "net_rx_bps": {
+        "min": 0.0,
+        "max": 113655.18733532935,
+        "median": 30947.42544179876,
+        "mean": 43887.50955473172
+      },
+      "net_tx_bps": {
+        "min": 0.0,
+        "max": 30883.136764645835,
+        "median": 15532.367591887338,
+        "mean": 15486.967987105127
+      },
+      "pids_max": 18
+    },
+    {
+      "phase": "all",
+      "component": "minio",
+      "samples": 5,
+      "cpu_percent": {
+        "min": 0.0153,
+        "max": 3.2865,
+        "median": 0.0429,
+        "mean": 1.30146
+      },
+      "ram_bytes": {
+        "min": 60862464.0,
+        "max": 61382656.0,
+        "median": 60911616.0,
+        "mean": 61072998.4
+      },
+      "ram_mib": {
+        "min": 58.04296875,
+        "max": 58.5390625,
+        "median": 58.08984375,
+        "mean": 58.24375
+      },
+      "ram_limit_bytes": 268435456.0,
+      "disk_read_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "disk_write_bps": {
+        "min": 0.0,
+        "max": 996.8870842314299,
+        "median": 215.12890901627026,
+        "mean": 324.1390393606834
+      },
+      "net_rx_bps": {
+        "min": 0.0,
+        "max": 47.7837314951426,
+        "median": 0.0,
+        "mean": 10.953599045556848
+      },
+      "net_tx_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "pids_max": 8
+    },
+    {
+      "phase": "all",
+      "component": "postgres",
+      "samples": 5,
+      "cpu_percent": {
+        "min": 0.029,
+        "max": 5.2056,
+        "median": 1.0177,
+        "mean": 1.8599999999999999
+      },
+      "ram_bytes": {
+        "min": 50843648.0,
+        "max": 92438528.0,
+        "median": 72769536.0,
+        "mean": 71806976.0
+      },
+      "ram_mib": {
+        "min": 48.48828125,
+        "max": 88.15625,
+        "median": 69.3984375,
+        "mean": 68.48046875
+      },
+      "ram_limit_bytes": 805306368.0,
+      "disk_read_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "disk_write_bps": {
+        "min": 0.0,
+        "max": 66581.90669479306,
+        "median": 2326.0698632066697,
+        "mean": 17395.760983073284
+      },
+      "net_rx_bps": {
+        "min": 0.0,
+        "max": 61983.24534807482,
+        "median": 17935.124686398387,
+        "mean": 22700.65531826549
+      },
+      "net_tx_bps": {
+        "min": 0.0,
+        "max": 109247.5539803921,
+        "median": 17763.29795752451,
+        "mean": 35964.92009004182
+      },
+      "pids_max": 27
+    },
+    {
+      "phase": "all",
+      "component": "redis",
+      "samples": 5,
+      "cpu_percent": {
+        "min": 0.4178,
+        "max": 3.7741,
+        "median": 0.7292,
+        "mean": 1.6496399999999998
+      },
+      "ram_bytes": {
+        "min": 3444736.0,
+        "max": 3977216.0,
+        "median": 3756032.0,
+        "mean": 3765043.2
+      },
+      "ram_mib": {
+        "min": 3.28515625,
+        "max": 3.79296875,
+        "median": 3.58203125,
+        "mean": 3.590625
+      },
+      "ram_limit_bytes": 167772160.0,
+      "disk_read_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "disk_write_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "net_rx_bps": {
+        "min": 0.0,
+        "max": 6069.926567420668,
+        "median": 835.6879764540982,
+        "mean": 1987.4361844725706
+      },
+      "net_tx_bps": {
+        "min": 0.0,
+        "max": 38229.86416855676,
+        "median": 7346.931252855023,
+        "mean": 11164.813527166256
+      },
+      "pids_max": 6
+    }
+  ]
+}

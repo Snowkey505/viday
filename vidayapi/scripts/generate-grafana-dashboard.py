@@ -684,6 +684,28 @@ def main():
         "refresh": "",
         "time": {"from": "now-6h", "to": "now"},
         "timepicker": {"hidden": True},
+        "links": [
+            {
+                "title": "ЛР4: auth (матрикс)",
+                "url": "/d/loadtest-lr4-auth",
+                "type": "link",
+                "icon": "external link",
+                "targetBlank": False,
+                "keepTime": True,
+                "includeVars": False,
+                "tooltip": "Перейти к нагрузочным прогонам ЛР4 (auth)",
+            },
+            {
+                "title": "ЛР4: public",
+                "url": "/d/loadtest-lr4-public",
+                "type": "link",
+                "icon": "external link",
+                "targetBlank": False,
+                "keepTime": True,
+                "includeVars": False,
+                "tooltip": "Перейти к нагрузочным прогонам ЛР4 (public)",
+            },
+        ],
         "templating": {
             "list": [
                 custom_var(

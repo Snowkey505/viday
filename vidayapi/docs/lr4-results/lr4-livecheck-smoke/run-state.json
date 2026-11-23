@@ -1,0 +1,1 @@
+{"run_id":"lr4-livecheck-smoke","profile":"smoke","workload":"auth","started_at":"2026-11-19T20:27:25.566716638Z","finished_at":"2026-11-19T20:28:07.717819973Z","early_stopped":false,"termination_reason":"planned duration reached","coroutines":10,"dispatcher_threads":2}

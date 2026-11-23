@@ -1,0 +1,35 @@
+# =============================================================================
+# ЛР4 — Prometheus: сбор ресурсов контейнеров и JVM/HTTP-метрик приложения.
+# =============================================================================
+global:
+  scrape_interval: 5s
+  scrape_timeout: 4s
+  evaluation_interval: 5s
+  external_labels:
+    monitor: viday-lr4
+
+scrape_configs:
+  # Ресурсы контейнеров (CPU/RAM/block I/O/network) с метками run_id/component.
+  - job_name: viday-lr4-containers
+    static_configs:
+      - targets: ["loadtest-exporter:9101"]
+        labels:
+          source: docker-exporter
+
+  # JVM, GC, HikariCP, HTTP server metrics приложения (Spring Boot Actuator).
+  - job_name: viday-lr4-app
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["api-lt:8080"]
+        labels:
+          source: spring-actuator
+
+  # Live-метрики Kotlin-генератора: RPS, перцентили, ошибки и VU текущего прогона.
+  # Цель существует только пока идёт генератор; в остальное время target down —
+  # это ожидаемо, исторические данные остаются в Prometheus.
+  - job_name: viday-lr4-generator
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["generator-lt:9102"]
+        labels:
+          source: kotlin-generator

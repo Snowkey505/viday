@@ -4,8 +4,8 @@ spring:
     username: viday_app_user
     password: app_password_change_me
     driver-class-name: org.postgresql.Driver
-    hikari:
-      connection-init-sql: RESET ROLE; RESET app.current_user_id;
+    # См. presentation/src/main/resources/application.yml: SQL задаётся
+    # программно в RlsDataSourcePostProcessor (Spring Boot 4 + Hikari).
 
   servlet:
     multipart:

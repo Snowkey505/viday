@@ -1,0 +1,1 @@
+{"run_id":"lr4-coroutines-smoke-c1-r768-co20","profile":"smoke","started_at":"2026-11-10T17:28:41.226571763Z","finished_at":"2026-11-10T17:29:02.722933280Z","early_stopped":false,"termination_reason":"planned duration reached","coroutines":20,"dispatcher_threads":2}

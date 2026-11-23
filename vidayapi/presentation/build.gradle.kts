@@ -23,6 +23,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-jdbc")
+    // ЛР4: метрики JVM/HTTP/HikariCP для Prometheus во время нагрузочных прогонов.
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("org.springframework:spring-test")
     implementation("org.postgresql:postgresql:42.7.7")
     implementation("io.github.microutils:kotlin-logging:3.0.5")

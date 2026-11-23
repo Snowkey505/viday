@@ -1,0 +1,53 @@
+{
+  "run_id": "lr4-final-stress",
+  "title": "LR4 stress (error_rate=0)",
+  "scenario": "stress",
+  "started_at": "2026-11-05T01:06:26Z",
+  "finished_at": "2026-11-05T01:18:29Z",
+  "k6_exit_code": 0,
+  "config": {
+    "scenario": "stress",
+    "profile": "stress",
+    "error_rate": 0.0,
+    "soak_vus": 60,
+    "soak_duration": "20m",
+    "smoke_vus": 2,
+    "smoke_duration": "35s",
+    "ramp_max_vus": 450,
+    "stress_baseline_vus": 50,
+    "stress_overload_vus": 400,
+    "think_time_ms": [
+      1000,
+      2500
+    ],
+    "request_timeout": "15s",
+    "warmup": "45s",
+    "operations_per_session": 10,
+    "password_seed_users": 200,
+    "seed": "20 creators + 200 users + 1000 videos + 100 playlists"
+  },
+  "environment": {
+    "cpu_model": "AMD Ryzen 5 6600HS Creator Edition",
+    "kernel": "Linux 7.0.0-38-generic",
+    "docker_version": "29.1.3",
+    "cpusets": {
+      "api": "2,3",
+      "postgres": "4,5",
+      "redis": "6",
+      "minio": "6",
+      "k6": "8,9",
+      "prometheus": "10",
+      "grafana": "11",
+      "exporter": "10"
+    },
+    "images": {
+      "app": "viday-loadtest-app:lr4-final-stress",
+      "app_id": "sha256:ad3bef8f02953ca8953ae350f30a67354e2273c1af8af11ff700dc3cbf0cf2e9",
+      "k6": "viday-loadtest-k6:lr4-final-stress",
+      "k6_id": "sha256:94b2add0e2e55a37f4720280c927c08ecd0c0d3f795ec521e5236395dea74e16"
+    },
+    "git_commit": "0645b29",
+    "git_dirty_files": 37,
+    "host_mem_available_mb_at_start": 9900
+  }
+}

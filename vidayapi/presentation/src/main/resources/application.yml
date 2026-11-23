@@ -23,8 +23,9 @@ spring:
     username: viday_app_user
     password: app_password_change_me
     driver-class-name: org.postgresql.Driver
-    hikari:
-      connection-init-sql: RESET ROLE; RESET app.current_user_id;
+    # connection-init-sql задаётся в RlsDataSourcePostProcessor ДО старта пула:
+    # Spring Boot 4 биндит свойства HikariDataSource после инициализации, и
+    # YAML-свойство connection-init-sql падает с «pool is sealed once started».
   data:
     redis:
       host: localhost
@@ -46,6 +47,25 @@ server:
     max-swallow-size: 110MB
     connection-timeout: 5m
   max-http-header-size: 32768
+
+# ЛР4: endpoint /actuator/prometheus для Prometheus (JVM, GC, HTTP, HikariCP).
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: vidayapi
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      slo:
+        http.server.requests: 50ms,100ms,250ms,500ms,1s,2s,5s
 
 logging:
   level:

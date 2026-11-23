@@ -1,0 +1,1 @@
+{"run_id":"lr4-good-c1-r256-h64-soak","profile":"soak","workload":"auth","started_at":"2026-11-19T19:42:52.455037537Z","finished_at":"2026-11-19T19:47:54.064593615Z","early_stopped":false,"termination_reason":"planned duration reached","coroutines":10,"dispatcher_threads":1}

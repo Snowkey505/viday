@@ -9,7 +9,13 @@ import org.springframework.stereotype.Component
 class RlsDataSourcePostProcessor : BeanPostProcessor {
     override fun postProcessAfterInitialization(bean: Any, beanName: String): Any {
         if (bean is HikariDataSource) {
-            bean.connectionInitSql = "RESET ROLE; RESET app.current_user_id;"
+            // Spring Boot 3.5 инициализирует пул до BeanPostProcessor: если пул
+            // уже запущен, Hikari запрещает менять конфигурацию (sealed).
+            // connection-init-sql уже задан в application.yml; страхуемся для
+            // тестовых контекстов, где YAML может быть переопределён.
+            if (!bean.isRunning) {
+                bean.connectionInitSql = "RESET ROLE; RESET app.current_user_id;"
+            }
             return RlsAwareDataSource(bean)
         }
         return bean

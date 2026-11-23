@@ -1,0 +1,1 @@
+{"run_id":"lr4-ramp-c1-r256-co1000-t30","profile":"ramp","workload":"auth","started_at":"2026-11-20T09:34:36.555623394Z","finished_at":"2026-11-20T09:36:17.714440185Z","early_stopped":false,"termination_reason":"planned duration reached","coroutines":1000,"dispatcher_threads":4}

@@ -46,6 +46,10 @@ class SecurityConfig(
                         "/api/videos",
                         "/api/videos/*",
                         "/api/streams/live",
+                        // ЛР4: Prometheus скрейпит метрики приложения без JWT.
+                        "/actuator/health",
+                        "/actuator/health/**",
+                        "/actuator/prometheus",
                         "/swagger-ui/**",
                         "/swagger-ui.html",
                         "/v3/api-docs/**",

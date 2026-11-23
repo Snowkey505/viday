@@ -1,0 +1,1 @@
+{"run_id":"lr4-resources-v1-c2-r1024-co100","profile":"c2-r1024-co100","started_at":"2026-11-10T18:25:19.847171365Z","finished_at":"2026-11-10T18:26:58.461713794Z","early_stopped":false,"termination_reason":"planned duration reached","coroutines":100,"dispatcher_threads":2}

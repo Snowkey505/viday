@@ -1,0 +1,1 @@
+{"generator":"kotlin-coroutines","run_id":"lr4-fail-c1-r256-co100-ramp","early_stopped":true,"termination_reason":"unexpected failures >= 95.0% for 3 consecutive windows (100.0%,100.0%,100.0%)"}

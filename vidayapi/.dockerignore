@@ -3,6 +3,7 @@
 .git
 .idea
 .gradle
+.gradle-ci
 build
 **/build
 logs
@@ -15,3 +16,9 @@ docs
 .vscode
 # gradle/node НЕ исключаем: build.gradle.kts требует локальный Node.js-архив
 # для Allure-отчётов (node-v22.22.0-linux-x64.tar.gz)
+# В Docker-контекст входят исходники Gradle-модуля loadtest, но не прогоны.
+loadtest/results
+loadtest/runtime
+scripts
+docs
+docker/grafana

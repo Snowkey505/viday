@@ -1,0 +1,1 @@
+{"run_id":"lr4-resources-v1-c1-r1024-co100","profile":"c1-r1024-co100","started_at":"2026-11-10T18:13:27.777038722Z","finished_at":"2026-11-10T18:15:05.245480205Z","early_stopped":true,"termination_reason":"unexpected failures >= 80.0% for 3 consecutive windows (100.0%,100.0%,100.0%)","coroutines":100,"dispatcher_threads":2}

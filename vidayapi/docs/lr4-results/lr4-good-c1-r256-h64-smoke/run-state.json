@@ -1,0 +1,1 @@
+{"run_id":"lr4-good-c1-r256-h64-smoke","profile":"smoke","workload":"auth","started_at":"2026-11-19T19:28:20.645030277Z","finished_at":"2026-11-19T19:28:56.772460946Z","early_stopped":false,"termination_reason":"planned duration reached","coroutines":10,"dispatcher_threads":1}

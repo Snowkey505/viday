@@ -1,0 +1,1 @@
+{"run_id":"lr4-ramp-20261113-101437","profile":"ramp","workload":"public","started_at":"2026-11-13T07:20:52.581019545Z","finished_at":"2026-11-13T07:32:55.138008284Z","early_stopped":false,"termination_reason":"planned duration reached","coroutines":200,"dispatcher_threads":2}
