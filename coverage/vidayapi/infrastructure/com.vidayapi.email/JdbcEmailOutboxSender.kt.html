@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JdbcEmailOutboxSender.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">infrastructure</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.email</a> &gt; <span class="el_source">JdbcEmailOutboxSender.kt</span></div><h1>JdbcEmailOutboxSender.kt</h1><pre class="source lang-java linenums">package com.vidayapi.email
+
+import com.vidayapi.model.AuthChallengePurpose
+import com.vidayapi.model.Error
+import com.vidayapi.model.Result
+import com.vidayapi.model.left
+import com.vidayapi.model.right
+import com.vidayapi.port.EmailSenderPort
+import com.vidayapi.port.VerificationEmail
+import org.slf4j.LoggerFactory
+import org.springframework.dao.DataAccessException
+import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.stereotype.Component
+
+/**
+ * «Почтовый транспорт» тестового стенда (ЛР5).
+ *
+ * Письмо с кодом складывается в viday.auth_email_outbox. E2E-тест читает
+ * последнее письмо для своего технического пользователя и берёт оттуда код.
+ * Это детерминированная замена внешнего SMTP для CI.
+ *
+ * В production адаптер заменяется на SMTP/провайдера рассылки; контракт
+ * [EmailSenderPort] при этом не меняется. Код в лог НЕ пишется.
+ */
+<span class="nc" id="L25">@Component</span>
+<span class="nc" id="L26">class JdbcEmailOutboxSender(</span>
+<span class="nc" id="L27">    private val jdbcTemplate: JdbcTemplate,</span>
+) : EmailSenderPort {
+
+<span class="nc" id="L30">    private val logger = LoggerFactory.getLogger(JdbcEmailOutboxSender::class.java)</span>
+
+    override fun sendVerificationCode(message: VerificationEmail): Result&lt;Unit&gt; {
+<span class="nc bnc" id="L33" title="All 2 branches missed.">        val subject = when (message.purpose) {</span>
+<span class="nc" id="L34">            AuthChallengePurpose.LOGIN_2FA -&gt; &quot;Viday: код подтверждения входа&quot;</span>
+<span class="nc" id="L35">            AuthChallengePurpose.PASSWORD_RECOVERY -&gt; &quot;Viday: восстановление доступа&quot;</span>
+        }
+<span class="nc bnc" id="L37" title="All 2 branches missed.">        val action = when (message.purpose) {</span>
+<span class="nc" id="L38">            AuthChallengePurpose.LOGIN_2FA -&gt; &quot;входа в аккаунт&quot;</span>
+<span class="nc" id="L39">            AuthChallengePurpose.PASSWORD_RECOVERY -&gt; &quot;восстановления доступа&quot;</span>
+        }
+<span class="nc" id="L41">        val body = &quot;&quot;&quot;</span>
+<span class="nc" id="L42">            Здравствуйте, ${message.username}!</span>
+
+<span class="nc" id="L44">            Код для $action: ${message.code}</span>
+
+            Если вы не запрашивали код, просто проигнорируйте письмо.
+            Никому не сообщайте этот код.
+<span class="nc" id="L48">        &quot;&quot;&quot;.trimIndent()</span>
+
+<span class="nc" id="L50">        return try {</span>
+<span class="nc" id="L51">            jdbcTemplate.update(</span>
+                &quot;&quot;&quot;
+                INSERT INTO viday.auth_email_outbox (challenge_id, recipient, subject, body)
+                VALUES (?::uuid, ?, ?, ?)
+<span class="nc" id="L55">                &quot;&quot;&quot;.trimIndent(),</span>
+<span class="nc" id="L56">                message.challengeId.toString(),</span>
+<span class="nc" id="L57">                message.recipient,</span>
+<span class="nc" id="L58">                subject,</span>
+<span class="nc" id="L59">                body,</span>
+            )
+            // В лог попадают только метаданные: ни код, ни тело письма.
+<span class="nc" id="L62">            logger.info(</span>
+<span class="nc" id="L63">                &quot;Auth email queued: recipient={}, purpose={}, challenge={}&quot;,</span>
+<span class="nc" id="L64">                message.recipient,</span>
+<span class="nc" id="L65">                message.purpose,</span>
+<span class="nc" id="L66">                message.challengeId,</span>
+            )
+<span class="nc" id="L68">            Unit.right()</span>
+<span class="nc" id="L69">        } catch (e: DataAccessException) {</span>
+<span class="nc" id="L70">            logger.error(&quot;Failed to queue auth email for recipient={}&quot;, message.recipient, e)</span>
+<span class="nc" id="L71">            Error.StorageFailure.left()</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

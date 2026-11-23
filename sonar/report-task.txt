@@ -2,5 +2,5 @@ projectKey=vidayapi
 serverUrl=http://localhost:9002
 serverVersion=9.9.8.100196
 dashboardUrl=http://localhost:9002/dashboard?id=vidayapi
-ceTaskId=AaIHBVPkzbwEH1rG9YWD
-ceTaskUrl=http://localhost:9002/api/ce/task?id=AaIHBVPkzbwEH1rG9YWD
+ceTaskId=AaIH9GMnhSKgVOp12vQ1
+ceTaskUrl=http://localhost:9002/api/ce/task?id=AaIH9GMnhSKgVOp12vQ1

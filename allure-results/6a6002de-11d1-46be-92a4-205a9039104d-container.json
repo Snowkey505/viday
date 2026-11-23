@@ -1,0 +1,1 @@
+{"uuid":"6a6002de-11d1-46be-92a4-205a9039104d","name":"MvpDemoScenarioE2ETest","children":["f34c12e0-be58-4e3f-a9f5-dad63328a061"],"befores":[],"afters":[{"name":"closePool","status":"passed","stage":"finished","steps":[],"attachments":[],"parameters":[],"start":1795429579288,"stop":1795429579293}],"start":1795429565200,"stop":1795429579304}

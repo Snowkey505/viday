@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthenticationService.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">application</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.service</a> &gt; <span class="el_source">AuthenticationService.kt</span></div><h1>AuthenticationService.kt</h1><pre class="source lang-java linenums">package com.vidayapi.service
+
+import com.vidayapi.model.AccountLockState
+import com.vidayapi.model.AuthAccount
+import com.vidayapi.model.AuthChallenge
+import com.vidayapi.model.AuthChallengePurpose
+import com.vidayapi.model.Error
+import com.vidayapi.model.Result
+import com.vidayapi.model.User
+import com.vidayapi.model.flatMap
+import com.vidayapi.model.left
+import com.vidayapi.model.right
+import com.vidayapi.port.AuthRepository
+import com.vidayapi.port.EmailSenderPort
+import com.vidayapi.port.PasswordEncoder
+import com.vidayapi.port.UserRepository
+import com.vidayapi.port.VerificationEmail
+import com.vidayapi.usecase.RegisterUserUseCase
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.stereotype.Service
+import java.security.SecureRandom
+import java.time.Duration
+import java.time.OffsetDateTime
+import java.util.UUID
+
+/**
+ * Аутентификация ЛР5 поверх BDD-сценариев:
+ *  * пароль + второй фактор по email;
+ *  * ограниченное число попыток и временная блокировка;
+ *  * восстановление доступа по коду из email после блокировки;
+ *  * плановая смена пароля (ротация по password_changed_at).
+ *
+ * Старый AuthService оставлен без изменений для уже существующих сценариев
+ * ЛР2/ЛР4. Пользователи без записи user_auth входят по одному паролю.
+ */
+<span class="nc" id="L36">@Service</span>
+<span class="nc" id="L37">class AuthenticationService(</span>
+<span class="nc" id="L38">    private val authRepository: AuthRepository,</span>
+<span class="nc" id="L39">    private val userRepository: UserRepository,</span>
+<span class="nc" id="L40">    private val emailSender: EmailSenderPort,</span>
+<span class="nc" id="L41">    private val jwtService: JwtService,</span>
+<span class="nc" id="L42">    private val registerUserUseCase: RegisterUserUseCase,</span>
+<span class="nc" id="L43">    private val passwordEncoder: PasswordEncoder,</span>
+<span class="nc" id="L44">    @Value(&quot;\${viday.auth.max-login-attempts:5}&quot;) private val maxLoginAttempts: Int,</span>
+<span class="nc" id="L45">    @Value(&quot;\${viday.auth.lock-duration-minutes:15}&quot;) private val lockDurationMinutes: Long,</span>
+<span class="nc" id="L46">    @Value(&quot;\${viday.auth.password-rotation-days:90}&quot;) private val passwordRotationDays: Long,</span>
+<span class="nc" id="L47">    @Value(&quot;\${viday.auth.two-factor-code-ttl-minutes:5}&quot;) private val codeTtlMinutes: Long,</span>
+<span class="nc" id="L48">    @Value(&quot;\${viday.auth.two-factor-max-attempts:5}&quot;) private val maxCodeAttempts: Int,</span>
+) {
+<span class="nc" id="L50">    private val secureRandom = SecureRandom()</span>
+
+    /**
+     * Регистрация с необязательным email. Если email передан, создаётся
+     * запись user_auth (2FA + ротация + лимит попыток). При ошибке создания
+     * учётных данных пользователь откатывается, чтобы не оставлять сироту.
+     */
+    fun register(username: String, password: String, email: String?): Result&lt;User&gt; {
+<span class="nc bnc" id="L58" title="All 8 branches missed.">        val normalizedEmail = email?.trim()?.takeIf { it.isNotEmpty() }</span>
+<span class="nc bnc" id="L59" title="All 4 branches missed.">        if (normalizedEmail != null &amp;&amp; !EMAIL_REGEX.matches(normalizedEmail)) {</span>
+<span class="nc" id="L60">            return Error.ValidationFailed(&quot;Invalid email&quot;).left()</span>
+        }
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        if (normalizedEmail != null) {</span>
+<span class="nc" id="L63">            val taken = authRepository.isEmailTaken(normalizedEmail)</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">            if (taken.isFailure) return Error.StorageFailure.left()</span>
+<span class="nc bnc" id="L65" title="All 4 branches missed.">            if (taken.getOrNull() == true) return Error.AlreadyExists.left()</span>
+        }
+
+<span class="nc" id="L68">        return registerUserUseCase.execute(username, password).flatMap { user -&gt;</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">            if (normalizedEmail == null) {</span>
+<span class="nc" id="L70">                user.right()</span>
+            } else {
+<span class="nc bnc" id="L72" title="All 2 branches missed.">                val userId = user.id ?: return@flatMap Error.StorageFailure.left()</span>
+<span class="nc" id="L73">                val provisioned = authRepository.createAccount(userId, normalizedEmail, OffsetDateTime.now())</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">                if (provisioned.isFailure) {</span>
+                    // Регистрация идёт под ролью viday_auth, у которой есть DELETE
+                    // на viday.&quot;user&quot;: откатываем частично созданного пользователя.
+<span class="nc" id="L77">                    userRepository.deleteById(userId)</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">                    Result.failure(provisioned.exceptionOrNull() ?: Error.StorageFailure)</span>
+                } else {
+<span class="nc" id="L80">                    user.right()</span>
+                }
+<span class="nc" id="L82">            }</span>
+        }
+    }
+
+    fun login(username: String, password: String): Result&lt;LoginOutcome&gt; {
+<span class="nc" id="L87">        val now = OffsetDateTime.now()</span>
+<span class="nc" id="L88">        val accountResult = authRepository.findAccountByUsername(username)</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">        if (accountResult.isFailure) return Error.StorageFailure.left()</span>
+<span class="nc bnc" id="L90" title="All 4 branches missed.">        val account = accountResult.getOrNull() ?: return legacyLogin(username, password)</span>
+<span class="nc" id="L91">        return authenticate(account, password, now)</span>
+    }
+
+    private fun legacyLogin(username: String, password: String): Result&lt;LoginOutcome&gt; {
+<span class="nc" id="L95">        val userResult = userRepository.findByUsername(username)</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">        if (userResult.isFailure) return Error.StorageFailure.left()</span>
+<span class="nc bnc" id="L97" title="All 4 branches missed.">        val user = userResult.getOrNull() ?: return LoginOutcome.InvalidCredentials(maxLoginAttempts).right()</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">        if (!passwordEncoder.matches(password, user.passwordHash)) {</span>
+<span class="nc" id="L99">            return LoginOutcome.InvalidCredentials(maxLoginAttempts).right()</span>
+        }
+<span class="nc bnc" id="L101" title="All 2 branches missed.">        val userId = user.id ?: return Error.StorageFailure.left()</span>
+<span class="nc" id="L102">        return LoginOutcome.Authenticated(</span>
+<span class="nc" id="L103">            jwtService.generateToken(userId, user.username, user.role),</span>
+<span class="nc" id="L104">        ).right()</span>
+    }
+
+    private fun authenticate(
+        account: AuthAccount,
+        password: String,
+        now: OffsetDateTime,
+    ): Result&lt;LoginOutcome&gt; {
+<span class="nc" id="L112">        val lockedUntil = account.lockedUntil</span>
+<span class="nc bnc" id="L113" title="All 4 branches missed.">        if (lockedUntil != null &amp;&amp; lockedUntil.isAfter(now)) {</span>
+<span class="nc" id="L114">            return LoginOutcome.Locked(lockedUntil).right()</span>
+        }
+<span class="nc bnc" id="L116" title="All 2 branches missed.">        if (lockedUntil != null) {</span>
+<span class="nc" id="L117">            val reset = authRepository.resetLoginAttempts(account.userId)</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">            if (reset.isFailure) return Error.StorageFailure.left()</span>
+        }
+
+<span class="nc bnc" id="L121" title="All 2 branches missed.">        if (!passwordEncoder.matches(password, account.passwordHash)) {</span>
+<span class="nc" id="L122">            val stateResult = authRepository.recordFailedLogin(</span>
+<span class="nc" id="L123">                userId = account.userId,</span>
+<span class="nc" id="L124">                maxAttempts = maxLoginAttempts,</span>
+<span class="nc" id="L125">                lockDuration = Duration.ofMinutes(lockDurationMinutes),</span>
+<span class="nc" id="L126">                now = now,</span>
+            )
+<span class="nc bnc" id="L128" title="All 2 branches missed.">            if (stateResult.isFailure) return Error.StorageFailure.left()</span>
+<span class="nc bnc" id="L129" title="All 4 branches missed.">            val state = stateResult.getOrNull() ?: return Error.StorageFailure.left()</span>
+<span class="nc" id="L130">            return failedPasswordOutcome(state).right()</span>
+        }
+
+<span class="nc" id="L133">        val reset = authRepository.resetLoginAttempts(account.userId)</span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">        if (reset.isFailure) return Error.StorageFailure.left()</span>
+
+<span class="nc bnc" id="L136" title="All 6 branches missed.">        if (account.twoFactorEnabled &amp;&amp; account.email.isNotBlank()) {</span>
+<span class="nc" id="L137">            val challengeResult = createChallenge(account, AuthChallengePurpose.LOGIN_2FA, now)</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">            if (challengeResult.isFailure) return Error.StorageFailure.left()</span>
+<span class="nc bnc" id="L139" title="All 4 branches missed.">            val challenge = challengeResult.getOrNull() ?: return Error.StorageFailure.left()</span>
+<span class="nc" id="L140">            return LoginOutcome.TwoFactorRequired(</span>
+<span class="nc" id="L141">                challengeId = challenge.id.toString(),</span>
+<span class="nc" id="L142">                channel = &quot;EMAIL&quot;,</span>
+<span class="nc" id="L143">                emailMasked = maskEmail(account.email),</span>
+<span class="nc" id="L144">            ).right()</span>
+        }
+
+<span class="nc" id="L147">        return afterPassword(account, now).right()</span>
+    }
+
+    private fun failedPasswordOutcome(state: AccountLockState): LoginOutcome =
+<span class="nc bnc" id="L151" title="All 2 branches missed.">        if (state.isLocked) {</span>
+<span class="nc" id="L152">            LoginOutcome.Locked(state.lockedUntil!!)</span>
+        } else {
+<span class="nc" id="L154">            LoginOutcome.InvalidCredentials(</span>
+<span class="nc" id="L155">                attemptsRemaining = (maxLoginAttempts - state.failedAttempts).coerceAtLeast(0),</span>
+            )
+<span class="nc" id="L157">        }</span>
+
+    fun verifyTwoFactor(challengeId: String, code: String): Result&lt;TwoFactorOutcome&gt; {
+<span class="nc bnc" id="L160" title="All 4 branches missed.">        val id = runCatching { UUID.fromString(challengeId) }.getOrNull()</span>
+<span class="nc" id="L161">            ?: return TwoFactorOutcome.ChallengeExpired(&quot;Invalid challenge id&quot;).right()</span>
+<span class="nc" id="L162">        val now = OffsetDateTime.now()</span>
+<span class="nc" id="L163">        val challengeResult = authRepository.findChallenge(id)</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">        if (challengeResult.isFailure) return Error.StorageFailure.left()</span>
+<span class="nc bnc" id="L165" title="All 4 branches missed.">        val challenge = challengeResult.getOrNull()</span>
+<span class="nc" id="L166">            ?: return TwoFactorOutcome.ChallengeExpired(&quot;Challenge not found&quot;).right()</span>
+
+<span class="nc bnc" id="L168" title="All 2 branches missed.">        if (challenge.purpose != AuthChallengePurpose.LOGIN_2FA ||</span>
+<span class="nc bnc" id="L169" title="All 2 branches missed.">            challenge.consumedAt != null ||</span>
+<span class="nc bnc" id="L170" title="All 2 branches missed.">            !challenge.expiresAt.isAfter(now)</span>
+        ) {
+<span class="nc" id="L172">            return TwoFactorOutcome.ChallengeExpired(&quot;Challenge is expired or already used&quot;).right()</span>
+        }
+<span class="nc bnc" id="L174" title="All 2 branches missed.">        if (challenge.attempts &gt;= challenge.maxAttempts) {</span>
+<span class="nc" id="L175">            return TwoFactorOutcome.ChallengeExpired(&quot;Too many code attempts&quot;).right()</span>
+        }
+
+<span class="nc bnc" id="L178" title="All 2 branches missed.">        if (!passwordEncoder.matches(code, challenge.codeHash)) {</span>
+<span class="nc" id="L179">            val incremented = authRepository.incrementChallengeAttempts(id)</span>
+<span class="nc bnc" id="L180" title="All 2 branches missed.">            if (incremented.isFailure) return Error.StorageFailure.left()</span>
+<span class="nc bnc" id="L181" title="All 4 branches missed.">            val attempts = incremented.getOrNull() ?: (challenge.attempts + 1)</span>
+<span class="nc bnc" id="L182" title="All 2 branches missed.">            if (attempts &gt;= challenge.maxAttempts) {</span>
+<span class="nc" id="L183">                authRepository.consumeChallenge(id, now)</span>
+<span class="nc" id="L184">                return TwoFactorOutcome.ChallengeExpired(&quot;Too many code attempts&quot;).right()</span>
+            }
+<span class="nc" id="L186">            return TwoFactorOutcome.InvalidCode(</span>
+<span class="nc" id="L187">                attemptsRemaining = (challenge.maxAttempts - attempts).coerceAtLeast(0),</span>
+<span class="nc" id="L188">            ).right()</span>
+        }
+
+<span class="nc" id="L191">        val consumed = authRepository.consumeChallenge(id, now)</span>
+<span class="nc bnc" id="L192" title="All 2 branches missed.">        if (consumed.isFailure) return Error.StorageFailure.left()</span>
+<span class="nc" id="L193">        val accountResult = authRepository.findAccountByUserId(challenge.userId)</span>
+<span class="nc bnc" id="L194" title="All 2 branches missed.">        if (accountResult.isFailure) return Error.StorageFailure.left()</span>
+<span class="nc bnc" id="L195" title="All 4 branches missed.">        val account = accountResult.getOrNull() ?: return Error.NotFound.left()</span>
+<span class="nc" id="L196">        return when (val outcome = afterPassword(account, now)) {</span>
+<span class="nc bnc" id="L197" title="All 2 branches missed.">            is LoginOutcome.Authenticated -&gt; TwoFactorOutcome.Authenticated(outcome.token).right()</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">            is LoginOutcome.PasswordChangeRequired -&gt;</span>
+<span class="nc" id="L199">                TwoFactorOutcome.PasswordChangeRequired(outcome.passwordChangeToken).right()</span>
+<span class="nc" id="L200">            else -&gt; Error.StorageFailure.left()</span>
+        }
+    }
+
+    fun changePassword(passwordChangeToken: String, newPassword: String): Result&lt;Unit&gt; {
+<span class="nc bnc" id="L205" title="All 4 branches missed.">        val userId = jwtService.validatePasswordChangeToken(passwordChangeToken).getOrNull()</span>
+<span class="nc" id="L206">            ?: return Error.Unauthorized.left()</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">        validatePassword(newPassword)?.let { return it.left() }</span>
+
+<span class="nc" id="L209">        val accountResult = authRepository.findAccountByUserId(userId)</span>
+<span class="nc bnc" id="L210" title="All 2 branches missed.">        if (accountResult.isFailure) return Error.StorageFailure.left()</span>
+<span class="nc bnc" id="L211" title="All 4 branches missed.">        if (accountResult.getOrNull() == null) return Error.NotFound.left()</span>
+
+<span class="nc" id="L213">        return authRepository.updatePassword(</span>
+<span class="nc" id="L214">            userId = userId,</span>
+<span class="nc" id="L215">            passwordHash = passwordEncoder.encode(newPassword),</span>
+<span class="nc" id="L216">            passwordChangedAt = OffsetDateTime.now(),</span>
+        )
+    }
+
+    /**
+     * Запрос восстановления. Ответ всегда одинаков, чтобы не раскрывать
+     * существование аккаунта. Код создаётся только для email-аккаунта.
+     */
+    fun requestRecovery(username: String): Result&lt;Unit&gt; {
+<span class="nc" id="L225">        val accountResult = authRepository.findAccountByUsername(username)</span>
+<span class="nc bnc" id="L226" title="All 2 branches missed.">        if (accountResult.isFailure) return Error.StorageFailure.left()</span>
+<span class="nc bnc" id="L227" title="All 4 branches missed.">        val account = accountResult.getOrNull() ?: return Unit.right()</span>
+<span class="nc bnc" id="L228" title="All 4 branches missed.">        if (!account.twoFactorEnabled || account.email.isBlank()) return Unit.right()</span>
+
+<span class="nc" id="L230">        val challengeResult = createChallenge(account, AuthChallengePurpose.PASSWORD_RECOVERY, OffsetDateTime.now())</span>
+<span class="nc bnc" id="L231" title="All 2 branches missed.">        if (challengeResult.isFailure) return Error.StorageFailure.left()</span>
+<span class="nc" id="L232">        return Unit.right()</span>
+    }
+
+    /**
+     * Подтверждение восстановления: проверяет код, снимает блокировку,
+     * задаёт новый пароль и сбрасывает счётчик попыток.
+     */
+    fun confirmRecovery(username: String, code: String, newPassword: String): Result&lt;Unit&gt; {
+<span class="nc" id="L240">        val accountResult = authRepository.findAccountByUsername(username)</span>
+<span class="nc bnc" id="L241" title="All 2 branches missed.">        if (accountResult.isFailure) return Error.StorageFailure.left()</span>
+<span class="nc bnc" id="L242" title="All 4 branches missed.">        val account = accountResult.getOrNull() ?: return Error.Unauthorized.left()</span>
+
+<span class="nc" id="L244">        val challengeResult = authRepository.findLatestChallenge(account.userId, AuthChallengePurpose.PASSWORD_RECOVERY)</span>
+<span class="nc bnc" id="L245" title="All 2 branches missed.">        if (challengeResult.isFailure) return Error.StorageFailure.left()</span>
+<span class="nc bnc" id="L246" title="All 4 branches missed.">        val challenge = challengeResult.getOrNull() ?: return Error.Unauthorized.left()</span>
+
+<span class="nc" id="L248">        val now = OffsetDateTime.now()</span>
+<span class="nc bnc" id="L249" title="All 4 branches missed.">        if (!challenge.expiresAt.isAfter(now) || challenge.attempts &gt;= challenge.maxAttempts) {</span>
+<span class="nc" id="L250">            return Error.Unauthorized.left()</span>
+        }
+<span class="nc bnc" id="L252" title="All 2 branches missed.">        if (!passwordEncoder.matches(code, challenge.codeHash)) {</span>
+<span class="nc" id="L253">            val incremented = authRepository.incrementChallengeAttempts(challenge.id)</span>
+<span class="nc bnc" id="L254" title="All 2 branches missed.">            if (incremented.isFailure) return Error.StorageFailure.left()</span>
+<span class="nc bnc" id="L255" title="All 6 branches missed.">            if ((incremented.getOrNull() ?: 0) &gt;= challenge.maxAttempts) {</span>
+<span class="nc" id="L256">                authRepository.consumeChallenge(challenge.id, now)</span>
+            }
+<span class="nc" id="L258">            return Error.Unauthorized.left()</span>
+        }
+
+<span class="nc bnc" id="L261" title="All 2 branches missed.">        validatePassword(newPassword)?.let { return it.left() }</span>
+
+<span class="nc" id="L263">        val updated = authRepository.updatePassword(</span>
+<span class="nc" id="L264">            userId = account.userId,</span>
+<span class="nc" id="L265">            passwordHash = passwordEncoder.encode(newPassword),</span>
+<span class="nc" id="L266">            passwordChangedAt = now,</span>
+        )
+<span class="nc bnc" id="L268" title="All 2 branches missed.">        if (updated.isFailure) return Error.StorageFailure.left()</span>
+<span class="nc" id="L269">        authRepository.consumeChallenge(challenge.id, now)</span>
+<span class="nc" id="L270">        authRepository.resetLoginAttempts(account.userId)</span>
+<span class="nc" id="L271">        return Unit.right()</span>
+    }
+
+    private fun createChallenge(
+        account: AuthAccount,
+        purpose: AuthChallengePurpose,
+        now: OffsetDateTime,
+    ): Result&lt;AuthChallenge&gt; {
+<span class="nc" id="L279">        val code = generateCode()</span>
+<span class="nc" id="L280">        val challenge = AuthChallenge(</span>
+<span class="nc" id="L281">            id = UUID.randomUUID(),</span>
+<span class="nc" id="L282">            userId = account.userId,</span>
+<span class="nc" id="L283">            purpose = purpose,</span>
+<span class="nc" id="L284">            codeHash = passwordEncoder.encode(code),</span>
+<span class="nc" id="L285">            attempts = 0,</span>
+<span class="nc" id="L286">            maxAttempts = maxCodeAttempts,</span>
+<span class="nc" id="L287">            expiresAt = now.plusMinutes(codeTtlMinutes),</span>
+        )
+<span class="nc" id="L289">        val saved = authRepository.createChallenge(challenge)</span>
+<span class="nc bnc" id="L290" title="All 2 branches missed.">        if (saved.isFailure) return Error.StorageFailure.left()</span>
+
+<span class="nc" id="L292">        val sent = emailSender.sendVerificationCode(</span>
+<span class="nc" id="L293">            VerificationEmail(</span>
+<span class="nc" id="L294">                recipient = account.email,</span>
+<span class="nc" id="L295">                username = account.username,</span>
+<span class="nc" id="L296">                code = code,</span>
+<span class="nc" id="L297">                purpose = purpose,</span>
+<span class="nc" id="L298">                challengeId = challenge.id,</span>
+            ),
+        )
+<span class="nc bnc" id="L301" title="All 2 branches missed.">        return if (sent.isFailure) Error.StorageFailure.left() else challenge.right()</span>
+    }
+
+    private fun afterPassword(account: AuthAccount, now: OffsetDateTime): LoginOutcome =
+<span class="nc bnc" id="L305" title="All 2 branches missed.">        if (isPasswordExpired(account, now)) {</span>
+<span class="nc" id="L306">            LoginOutcome.PasswordChangeRequired(</span>
+<span class="nc" id="L307">                jwtService.generatePasswordChangeToken(account.userId, account.username),</span>
+            )
+        } else {
+<span class="nc" id="L310">            LoginOutcome.Authenticated(</span>
+<span class="nc" id="L311">                jwtService.generateToken(account.userId, account.username, account.role),</span>
+            )
+<span class="nc" id="L313">        }</span>
+
+    private fun isPasswordExpired(account: AuthAccount, now: OffsetDateTime): Boolean =
+<span class="nc" id="L316">        account.passwordChangedAt.plusDays(passwordRotationDays).isBefore(now)</span>
+
+<span class="nc" id="L318">    private fun validatePassword(password: String): Error? = when {</span>
+<span class="nc bnc" id="L319" title="All 2 branches missed.">        password.length &lt; 8 -&gt; Error.ValidationFailed(&quot;Password must be at least 8 characters&quot;)</span>
+<span class="nc bnc" id="L320" title="All 4 branches missed.">        !password.any { it.isLetter() } || !password.any { it.isDigit() } -&gt;</span>
+<span class="nc" id="L321">            Error.ValidationFailed(&quot;Password must contain at least one letter and one digit&quot;)</span>
+<span class="nc" id="L322">        else -&gt; null</span>
+<span class="nc" id="L323">    }</span>
+
+<span class="nc" id="L325">    private fun generateCode(): String = &quot;%06d&quot;.format(secureRandom.nextInt(1_000_000))</span>
+
+    private fun maskEmail(email: String): String {
+<span class="nc" id="L328">        val at = email.indexOf('@')</span>
+<span class="nc bnc" id="L329" title="All 2 branches missed.">        if (at &lt;= 0) return &quot;***&quot;</span>
+<span class="nc" id="L330">        return &quot;${email.first()}***${email.substring(at)}&quot;</span>
+    }
+
+    private companion object {
+<span class="nc" id="L334">        val EMAIL_REGEX = Regex(&quot;^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$&quot;)</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

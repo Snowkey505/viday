@@ -12,71 +12,95 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.util.Date
 
-<span class="nc" id="L15">@Service</span>
-<span class="nc" id="L16">class JwtService(</span>
-<span class="nc" id="L17">    @Value(&quot;\${jwt.secret}&quot;) private val secret: String,</span>
-<span class="nc" id="L18">    @Value(&quot;\${jwt.expiration-ms}&quot;) private val expirationMs: Long</span>
+/**
+ * JWT-сервис приложения (ЛР5).
+ *
+ * Токены делятся по назначению:
+ *  * `access` — обычный токен доступа (пускается JwtAuthenticationFilter);
+ *  * `password_change` — короткоживущий токен, который выдаётся после успешной
+ *    двухфакторной аутентификации, если пароль просрочен. Он принимается
+ *    ТОЛЬКО эндпоинтом смены пароля и не даёт доступа к остальному API.
+ */
+<span class="nc" id="L24">@Service</span>
+<span class="nc" id="L25">class JwtService(</span>
+    jwtSecretProvider: JwtSecretProvider,
+<span class="nc" id="L27">    @Value(&quot;\${jwt.expiration-ms}&quot;) private val expirationMs: Long,</span>
+    @Value(&quot;\${viday.auth.password-change-token-ttl-minutes:10}&quot;) passwordChangeTtlMinutes: Long,
 ) {
+<span class="nc" id="L30">    private val key = Keys.hmacShaKeyFor(jwtSecretProvider.secret.toByteArray())</span>
+<span class="nc" id="L31">    private val passwordChangeTtlMs = passwordChangeTtlMinutes * 60_000L</span>
 
-<span class="nc" id="L21">    private val key = Keys.hmacShaKeyFor(secret.toByteArray())</span>
+    fun generateToken(userId: Int, username: String, role: Role): String =
+<span class="nc" id="L34">        generate(userId, username, role.name, purpose = &quot;access&quot;, ttlMs = expirationMs)</span>
 
-    fun generateToken(userId: Int, username: String, role: Role): String {
-<span class="nc" id="L24">        val now = Date()</span>
-<span class="nc" id="L25">        val expiryDate = Date(now.time + expirationMs)</span>
+    fun generatePasswordChangeToken(userId: Int, username: String): String =
+<span class="nc" id="L37">        generate(userId, username, role = null, purpose = &quot;password_change&quot;, ttlMs = passwordChangeTtlMs)</span>
 
-<span class="nc" id="L27">        return Jwts.builder()</span>
-<span class="nc" id="L28">            .setSubject(userId.toString())</span>
-<span class="nc" id="L29">            .claim(&quot;username&quot;, username)</span>
-<span class="nc" id="L30">            .claim(&quot;role&quot;, role.name)</span>
-<span class="nc" id="L31">            .setIssuedAt(now)</span>
-<span class="nc" id="L32">            .setExpiration(expiryDate)</span>
-<span class="nc" id="L33">            .signWith(key)</span>
-<span class="nc" id="L34">            .compact()</span>
+    private fun generate(
+        userId: Int,
+        username: String,
+        role: String?,
+        purpose: String,
+        ttlMs: Long,
+    ): String {
+<span class="nc" id="L46">        val now = Date()</span>
+<span class="nc" id="L47">        val builder = Jwts.builder()</span>
+<span class="nc" id="L48">            .setSubject(userId.toString())</span>
+<span class="nc" id="L49">            .claim(&quot;username&quot;, username)</span>
+<span class="nc" id="L50">            .claim(&quot;purpose&quot;, purpose)</span>
+<span class="nc" id="L51">            .setIssuedAt(now)</span>
+<span class="nc" id="L52">            .setExpiration(Date(now.time + ttlMs))</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        role?.let { builder.claim(&quot;role&quot;, it) }</span>
+<span class="nc" id="L54">        return builder.signWith(key).compact()</span>
     }
 
-    fun validateAndGetUserId(token: String): Result&lt;Int&gt; {
-<span class="nc" id="L38">        return try {</span>
-<span class="nc" id="L39">            val claims = Jwts.parserBuilder()</span>
-<span class="nc" id="L40">                .setSigningKey(key)</span>
-<span class="nc" id="L41">                .build()</span>
-<span class="nc" id="L42">                .parseClaimsJws(token)</span>
-<span class="nc" id="L43">                .body</span>
+    fun validateAndGetUserId(token: String): Result&lt;Int&gt; =
+<span class="nc" id="L58">        validate(token, expectedPurpose = &quot;access&quot;)</span>
 
-<span class="nc bnc" id="L45" title="All 2 branches missed.">            if (claims.expiration.before(Date())) {</span>
-<span class="nc" id="L46">                return Error.Unauthorized.left()</span>
+    fun validatePasswordChangeToken(token: String): Result&lt;Int&gt; =
+<span class="nc" id="L61">        validate(token, expectedPurpose = &quot;password_change&quot;)</span>
+
+    private fun validate(token: String, expectedPurpose: String): Result&lt;Int&gt; {
+<span class="nc" id="L64">        return try {</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">            val claims = parseClaims(token) ?: return Error.Unauthorized.left()</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">            if (claims.get(&quot;purpose&quot;, String::class.java) != expectedPurpose) {</span>
+<span class="nc" id="L67">                return Error.Unauthorized.left()</span>
             }
-
-<span class="nc" id="L49">            claims.subject.toInt().right()</span>
-<span class="nc" id="L50">        } catch (e: Exception) {</span>
-<span class="nc" id="L51">            Error.Unauthorized.left()</span>
+<span class="nc bnc" id="L69" title="All 4 branches missed.">            if (claims.expiration == null || claims.expiration.before(Date())) {</span>
+<span class="nc" id="L70">                return Error.Unauthorized.left()</span>
+            }
+<span class="nc" id="L72">            claims.subject.toInt().right()</span>
+<span class="nc" id="L73">        } catch (e: Exception) {</span>
+<span class="nc" id="L74">            Error.Unauthorized.left()</span>
         }
     }
 
     fun getUsernameFromToken(token: String): String? {
-<span class="nc" id="L56">        return try {</span>
-<span class="nc" id="L57">            val claims = Jwts.parserBuilder()</span>
-<span class="nc" id="L58">                .setSigningKey(key)</span>
-<span class="nc" id="L59">                .build()</span>
-<span class="nc" id="L60">                .parseClaimsJws(token)</span>
-<span class="nc" id="L61">                .body</span>
-<span class="nc" id="L62">            claims.get(&quot;username&quot;, String::class.java)</span>
-<span class="nc" id="L63">        } catch (e: Exception) {</span>
-<span class="nc" id="L64">            null</span>
+<span class="nc" id="L79">        return try {</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">            val claims = parseClaims(token) ?: return null</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">            if (claims.get(&quot;purpose&quot;, String::class.java) != &quot;access&quot;) return null</span>
+<span class="nc" id="L82">            claims.get(&quot;username&quot;, String::class.java)</span>
+<span class="nc" id="L83">        } catch (e: Exception) {</span>
+<span class="nc" id="L84">            null</span>
         }
     }
 
     fun getRoleFromToken(token: String): Role? {
-<span class="nc" id="L69">        return try {</span>
-<span class="nc" id="L70">            val claims = Jwts.parserBuilder()</span>
-<span class="nc" id="L71">                .setSigningKey(key)</span>
-<span class="nc" id="L72">                .build()</span>
-<span class="nc" id="L73">                .parseClaimsJws(token)</span>
-<span class="nc" id="L74">                .body</span>
-<span class="nc" id="L75">            val roleName = claims.get(&quot;role&quot;, String::class.java)</span>
-<span class="nc" id="L76">            Role.valueOf(roleName)</span>
-<span class="nc" id="L77">        } catch (e: Exception) {</span>
-<span class="nc" id="L78">            null</span>
+<span class="nc" id="L89">        return try {</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">            val claims = parseClaims(token) ?: return null</span>
+<span class="nc bnc" id="L91" title="All 2 branches missed.">            if (claims.get(&quot;purpose&quot;, String::class.java) != &quot;access&quot;) return null</span>
+<span class="nc" id="L92">            val roleName = claims.get(&quot;role&quot;, String::class.java)</span>
+<span class="nc" id="L93">            Role.valueOf(roleName)</span>
+<span class="nc" id="L94">        } catch (e: Exception) {</span>
+<span class="nc" id="L95">            null</span>
         }
     }
+
+    private fun parseClaims(token: String): Claims? =
+<span class="nc" id="L100">        Jwts.parserBuilder()</span>
+<span class="nc" id="L101">            .setSigningKey(key)</span>
+<span class="nc" id="L102">            .build()</span>
+<span class="nc" id="L103">            .parseClaimsJws(token)</span>
+<span class="nc" id="L104">            .body</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

@@ -12,109 +12,121 @@ import org.springframework.security.core.context.SecurityContextHolder
 <span class="nc" id="L12">    CREATOR(&quot;viday_creator&quot;),</span>
 <span class="nc" id="L13">    ADMIN(&quot;viday_admin&quot;),</span>
 <span class="nc" id="L14">    ANALYST(&quot;viday_analyst&quot;),</span>
+
+    /**
+     * ЛР5: ограниченная роль для анонимных запросов /api/auth. Имеет доступ только
+     * к viday.&quot;user&quot;, user_auth, auth_challenge и auth_email_outbox, чтобы
+     * обработка логина не выполнялась с правами администратора стенда.
+     */
+<span class="nc" id="L21">    AUTH(&quot;viday_auth&quot;),</span>
     ;
 
     companion object {
-<span class="nc bnc" id="L18" title="All 5 branches missed.">        fun fromAppRole(role: Role): PgRole = when (role) {</span>
-<span class="nc" id="L19">            Role.GUEST -&gt; GUEST</span>
-<span class="nc" id="L20">            Role.USER -&gt; USER</span>
-<span class="nc" id="L21">            Role.CREATOR -&gt; CREATOR</span>
-<span class="nc" id="L22">            Role.ADMIN -&gt; ADMIN</span>
-<span class="nc" id="L23">            Role.ANALYST -&gt; ANALYST</span>
-<span class="nc" id="L24">        }</span>
+<span class="nc bnc" id="L25" title="All 5 branches missed.">        fun fromAppRole(role: Role): PgRole = when (role) {</span>
+<span class="nc" id="L26">            Role.GUEST -&gt; GUEST</span>
+<span class="nc" id="L27">            Role.USER -&gt; USER</span>
+<span class="nc" id="L28">            Role.CREATOR -&gt; CREATOR</span>
+<span class="nc" id="L29">            Role.ADMIN -&gt; ADMIN</span>
+<span class="nc" id="L30">            Role.ANALYST -&gt; ANALYST</span>
+<span class="nc" id="L31">        }</span>
     }
 }
 
-<span class="nc" id="L28">data class RlsContext(</span>
-<span class="nc" id="L29">    val pgRole: PgRole,</span>
-<span class="nc" id="L30">    val userId: Int? = null,</span>
-<span class="nc" id="L31">) {</span>
-<span class="nc" id="L32">    fun cacheViewerKey(): String = when {</span>
-<span class="nc bnc" id="L33" title="All 2 branches missed.">        pgRole == PgRole.ADMIN -&gt; &quot;admin&quot;</span>
-<span class="nc bnc" id="L34" title="All 2 branches missed.">        userId == null -&gt; pgRole.name.lowercase()</span>
-<span class="nc" id="L35">        else -&gt; &quot;${pgRole.name.lowercase()}:$userId&quot;</span>
-<span class="nc" id="L36">    }</span>
+<span class="nc" id="L35">data class RlsContext(</span>
+<span class="nc" id="L36">    val pgRole: PgRole,</span>
+<span class="nc" id="L37">    val userId: Int? = null,</span>
+<span class="nc" id="L38">) {</span>
+<span class="nc" id="L39">    fun cacheViewerKey(): String = when {</span>
+<span class="nc bnc" id="L40" title="All 2 branches missed.">        pgRole == PgRole.ADMIN -&gt; &quot;admin&quot;</span>
+<span class="nc bnc" id="L41" title="All 2 branches missed.">        userId == null -&gt; pgRole.name.lowercase()</span>
+<span class="nc" id="L42">        else -&gt; &quot;${pgRole.name.lowercase()}:$userId&quot;</span>
+<span class="nc" id="L43">    }</span>
 
     companion object {
-<span class="nc" id="L39">        val GUEST = RlsContext(PgRole.GUEST)</span>
-<span class="nc" id="L40">        val REGISTRATION = RlsContext(PgRole.USER)</span>
-<span class="nc" id="L41">        val ADMIN = RlsContext(PgRole.ADMIN)</span>
+<span class="nc" id="L46">        val GUEST = RlsContext(PgRole.GUEST)</span>
+<span class="nc" id="L47">        val REGISTRATION = RlsContext(PgRole.USER)</span>
+<span class="nc" id="L48">        val AUTH = RlsContext(PgRole.AUTH)</span>
+<span class="nc" id="L49">        val ADMIN = RlsContext(PgRole.ADMIN)</span>
     }
 }
 
 object RlsContextHolder {
-<span class="nc" id="L46">    private val holder = ThreadLocal&lt;RlsContext?&gt;()</span>
+<span class="nc" id="L54">    private val holder = ThreadLocal&lt;RlsContext?&gt;()</span>
 
-<span class="nc" id="L48">    fun get(): RlsContext? = holder.get()</span>
+<span class="nc" id="L56">    fun get(): RlsContext? = holder.get()</span>
 
     fun set(context: RlsContext?) {
-<span class="nc bnc" id="L51" title="All 2 branches missed.">        if (context == null) {</span>
-<span class="nc" id="L52">            holder.remove()</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">        if (context == null) {</span>
+<span class="nc" id="L60">            holder.remove()</span>
         } else {
-<span class="nc" id="L54">            holder.set(context)</span>
+<span class="nc" id="L62">            holder.set(context)</span>
         }
-<span class="nc" id="L56">    }</span>
+<span class="nc" id="L64">    }</span>
 
     fun clear() {
-<span class="nc" id="L59">        holder.remove()</span>
-<span class="nc" id="L60">    }</span>
+<span class="nc" id="L67">        holder.remove()</span>
+<span class="nc" id="L68">    }</span>
 
     fun &lt;T&gt; withContext(context: RlsContext, block: () -&gt; T): T {
-<span class="nc" id="L63">        set(context)</span>
-<span class="nc" id="L64">        try {</span>
-<span class="nc" id="L65">            return block()</span>
+<span class="nc" id="L71">        set(context)</span>
+<span class="nc" id="L72">        try {</span>
+<span class="nc" id="L73">            return block()</span>
         } finally {
-<span class="nc" id="L67">            clear()</span>
+<span class="nc" id="L75">            clear()</span>
         }
     }
 }
 
 object RlsContextResolver {
-<span class="nc" id="L73">    fun guestBootstrap(): RlsContext = RlsContext.GUEST</span>
+<span class="nc" id="L81">    fun guestBootstrap(): RlsContext = RlsContext.GUEST</span>
 
     fun resolve(request: HttpServletRequest): RlsContext {
-<span class="nc bnc" id="L76" title="All 2 branches missed.">        if (isRegisterRequest(request)) {</span>
-<span class="nc" id="L77">            return RlsContext.REGISTRATION</span>
+        // ЛР5: все auth-эндпоинты (login, 2FA, восстановление, смена пароля,
+        // регистрация) работают под viday_auth. Роль не имеет доступа к
+        // бизнес-таблицам и не является администратором стенда.
+<span class="nc bnc" id="L87" title="All 2 branches missed.">        if (isAuthRequest(request)) {</span>
+<span class="nc" id="L88">            return RlsContext.AUTH</span>
         }
 
-<span class="nc" id="L80">        val authentication = SecurityContextHolder.getContext().authentication</span>
-<span class="nc bnc" id="L81" title="All 4 branches missed.">        if (authentication == null || authentication is AnonymousAuthenticationToken) {</span>
-<span class="nc" id="L82">            return RlsContext.GUEST</span>
+<span class="nc" id="L91">        val authentication = SecurityContextHolder.getContext().authentication</span>
+<span class="nc bnc" id="L92" title="All 4 branches missed.">        if (authentication == null || authentication is AnonymousAuthenticationToken) {</span>
+<span class="nc" id="L93">            return RlsContext.GUEST</span>
         }
 
-<span class="nc" id="L85">        val userId = authentication.name.toIntOrNull()</span>
-<span class="nc bnc" id="L86" title="All 2 branches missed.">        val roleName = authentication.authorities</span>
-<span class="nc" id="L87">            .firstOrNull()</span>
-<span class="nc bnc" id="L88" title="All 2 branches missed.">            ?.authority</span>
-<span class="nc bnc" id="L89" title="All 2 branches missed.">            ?.removePrefix(&quot;ROLE_&quot;)</span>
-<span class="nc" id="L90">            ?: return RlsContext.GUEST</span>
+<span class="nc" id="L96">        val userId = authentication.name.toIntOrNull()</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        val roleName = authentication.authorities</span>
+<span class="nc" id="L98">            .firstOrNull()</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">            ?.authority</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">            ?.removePrefix(&quot;ROLE_&quot;)</span>
+<span class="nc" id="L101">            ?: return RlsContext.GUEST</span>
 
-<span class="nc bnc" id="L92" title="All 4 branches missed.">        val appRole = runCatching { Role.valueOf(roleName) }.getOrNull() ?: return RlsContext.GUEST</span>
-<span class="nc" id="L93">        return RlsContext(PgRole.fromAppRole(appRole), userId)</span>
+<span class="nc bnc" id="L103" title="All 4 branches missed.">        val appRole = runCatching { Role.valueOf(roleName) }.getOrNull() ?: return RlsContext.GUEST</span>
+<span class="nc" id="L104">        return RlsContext(PgRole.fromAppRole(appRole), userId)</span>
     }
 
     fun resolveCacheViewerKey(): String =
-<span class="nc bnc" id="L97" title="All 4 branches missed.">        get()?.cacheViewerKey() ?: RlsContext.GUEST.cacheViewerKey()</span>
+<span class="nc bnc" id="L108" title="All 4 branches missed.">        get()?.cacheViewerKey() ?: RlsContext.GUEST.cacheViewerKey()</span>
 
     fun resolveCacheViewerKey(authentication: Authentication?): String {
-<span class="nc bnc" id="L100" title="All 6 branches missed.">        val context = get() ?: authentication?.let { auth -&gt;</span>
-<span class="nc bnc" id="L101" title="All 2 branches missed.">            if (auth is AnonymousAuthenticationToken) {</span>
-<span class="nc" id="L102">                RlsContext.GUEST</span>
+<span class="nc bnc" id="L111" title="All 6 branches missed.">        val context = get() ?: authentication?.let { auth -&gt;</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">            if (auth is AnonymousAuthenticationToken) {</span>
+<span class="nc" id="L113">                RlsContext.GUEST</span>
             } else {
-<span class="nc" id="L104">                val userId = auth.name.toIntOrNull()</span>
-<span class="nc bnc" id="L105" title="All 4 branches missed.">                val roleName = auth.authorities.firstOrNull()?.authority?.removePrefix(&quot;ROLE_&quot;)</span>
-<span class="nc bnc" id="L106" title="All 4 branches missed.">                val appRole = roleName?.let { runCatching { Role.valueOf(it) }.getOrNull() }</span>
-<span class="nc bnc" id="L107" title="All 2 branches missed.">                if (appRole == null) RlsContext.GUEST else RlsContext(PgRole.fromAppRole(appRole), userId)</span>
-<span class="nc" id="L108">            }</span>
-<span class="nc" id="L109">        } ?: RlsContext.GUEST</span>
-<span class="nc" id="L110">        return context.cacheViewerKey()</span>
+<span class="nc" id="L115">                val userId = auth.name.toIntOrNull()</span>
+<span class="nc bnc" id="L116" title="All 4 branches missed.">                val roleName = auth.authorities.firstOrNull()?.authority?.removePrefix(&quot;ROLE_&quot;)</span>
+<span class="nc bnc" id="L117" title="All 4 branches missed.">                val appRole = roleName?.let { runCatching { Role.valueOf(it) }.getOrNull() }</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">                if (appRole == null) RlsContext.GUEST else RlsContext(PgRole.fromAppRole(appRole), userId)</span>
+<span class="nc" id="L119">            }</span>
+<span class="nc" id="L120">        } ?: RlsContext.GUEST</span>
+<span class="nc" id="L121">        return context.cacheViewerKey()</span>
     }
 
-<span class="nc" id="L113">    private fun get(): RlsContext? = RlsContextHolder.get()</span>
+<span class="nc" id="L124">    private fun get(): RlsContext? = RlsContextHolder.get()</span>
 
-    private fun isRegisterRequest(request: HttpServletRequest): Boolean {
-<span class="nc bnc" id="L116" title="All 6 branches missed.">        val path = request.servletPath.takeIf { it.isNotBlank() } ?: request.requestURI</span>
-<span class="nc" id="L117">        return path.removeSuffix(&quot;/&quot;).endsWith(&quot;/api/auth/register&quot;)</span>
+    private fun isAuthRequest(request: HttpServletRequest): Boolean {
+<span class="nc bnc" id="L127" title="All 6 branches missed.">        val path = request.servletPath.takeIf { it.isNotBlank() } ?: request.requestURI</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">        return path.removeSuffix(&quot;/&quot;).startsWith(&quot;/api/auth/&quot;) ||</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">            path.removeSuffix(&quot;/&quot;) == &quot;/api/auth&quot;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>
