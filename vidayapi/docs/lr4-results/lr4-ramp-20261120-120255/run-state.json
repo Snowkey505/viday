@@ -1,0 +1,1 @@
+{"run_id":"lr4-ramp-20261120-120255","profile":"ramp","workload":"auth","started_at":"2026-11-20T09:03:30.207782678Z","finished_at":"2026-11-20T09:04:22.193406003Z","early_stopped":true,"termination_reason":"unexpected failures >= 95.0% for 3 consecutive windows (99.8%,100.0%,100.0%)","coroutines":500,"dispatcher_threads":2}

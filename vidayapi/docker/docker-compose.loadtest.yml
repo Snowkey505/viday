@@ -1,0 +1,150 @@
+# =============================================================================
+# ЛР4 — целевой стенд нагрузочного тестирования vidayapi.
+#
+# Один прогон = отдельный compose-проект (viday-lt-<run-id>) + отдельный образ
+# приложения (LT_APP_IMAGE, уникальный тег на каждый прогон) + чистый том
+# PostgreSQL с детерминированным сидом. Сценарий/ресурсы задаются параметрами.
+#
+# CPU-изоляция (Требование 12): scripts/run-loadtest.sh автоматически выделяет
+# непересекающиеся cpuset для API, PostgreSQL, Redis/MinIO, генератора и мониторинга.
+# LT_APP_CPUS и LT_APP_RAM_MB задают фактические лимиты API; LT_APP_HEAP_MB и
+# LT_APP_XMS_MB управляют JVM внутри выбранного RAM-лимита.
+#
+# Запуск (обычно через make loadtest / scripts/run-loadtest.sh):
+#   LT_RUN_ID=... LT_APP_IMAGE=... docker compose -p viday-lt-... \
+#       -f docker/docker-compose.loadtest.yml up -d
+# =============================================================================
+services:
+  postgres-lt:
+    image: ${LT_POSTGRES_IMAGE:-viday-postgres-test:local}
+    environment:
+      POSTGRES_DB: viday
+      POSTGRES_USER: viday_admin_user
+      POSTGRES_PASSWORD: admin_password_change_me
+    command: >
+      postgres
+      -c max_connections=300
+      -c shared_buffers=128MB
+      -c effective_cache_size=384MB
+      -c work_mem=4MB
+      -c fsync=off
+      -c synchronous_commit=off
+      -c full_page_writes=off
+      -c checkpoint_timeout=30min
+      -c max_wal_size=2GB
+    volumes:
+      - postgres_lt_data:/var/lib/postgresql/data
+      - ./loadtest/db/99_loadtest_seed.sql:/docker-entrypoint-initdb.d/99_loadtest_seed.sql:ro
+    cpuset: "${LT_DB_CPUSET:-4,5}"
+    mem_limit: 768m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U viday_admin_user -d viday"]
+      interval: 3s
+      timeout: 3s
+      retries: 60
+    labels:
+      com.viday.loadtest.run_id: "${LT_RUN_ID}"
+      com.viday.loadtest.component: "postgres"
+    networks:
+      - loadtest
+
+  redis-lt:
+    image: redis:7-alpine
+    command: redis-server --appendonly no --maxmemory 96mb --maxmemory-policy allkeys-lru
+    cpuset: "${LT_REDIS_CPUSET:-6}"
+    mem_limit: 160m
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 60
+    labels:
+      com.viday.loadtest.run_id: "${LT_RUN_ID}"
+      com.viday.loadtest.component: "redis"
+    networks:
+      - loadtest
+
+  minio-lt:
+    image: bitnamilegacy/minio:2025.7.23-debian-12-r5
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    cpuset: "${LT_MINIO_CPUSET:-6}"
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 3s
+      timeout: 3s
+      retries: 60
+    labels:
+      com.viday.loadtest.run_id: "${LT_RUN_ID}"
+      com.viday.loadtest.component: "minio"
+    networks:
+      - loadtest
+
+  api-lt:
+    image: ${LT_APP_IMAGE:-viday-loadtest-app:latest}
+    depends_on:
+      postgres-lt:
+        condition: service_healthy
+      redis-lt:
+        condition: service_healthy
+      minio-lt:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-lt:5432/viday
+      SPRING_DATASOURCE_USERNAME: viday_admin_user
+      SPRING_DATASOURCE_PASSWORD: admin_password_change_me
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "40"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "10"
+      SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: "5000"
+      SPRING_DATA_REDIS_HOST: redis-lt
+      SPRING_DATA_REDIS_PORT: "6379"
+      MINIO_ENDPOINT: http://minio-lt:9000
+      MINIO_PUBLIC_ENDPOINT: http://minio-lt:9000
+      VIDAY_CONSOLE_ENABLED: "false"
+      # Логи не должны искажать дисковую нагрузку и CPU на стенде.
+      LOGGING_LEVEL_ROOT: WARN
+      LOGGING_LEVEL_COM_VIDAYAPI: WARN
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK: WARN
+      LOGGING_LEVEL_ORG_APACHE: WARN
+      LOGGING_LEVEL_ORG_HIBERNATE: WARN
+      LOGGING_FILE_NAME: /dev/null
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,prometheus
+      MANAGEMENT_METRICS_TAGS_RUN_ID: "${LT_RUN_ID}"
+      MANAGEMENT_METRICS_TAGS_WORKLOAD: "${LT_WORKLOAD:-auth}"
+      MANAGEMENT_METRICS_TAGS_API_CPUS: "${LT_APP_CPUS:-2}"
+      JAVA_TOOL_OPTIONS: >-
+        -Xms${LT_APP_XMS_MB:-128}m -Xmx${LT_APP_HEAP_MB:-768}m
+        -XX:+UseG1GC -XX:MaxGCPauseMillis=200
+        -XX:+ExitOnOutOfMemoryError -Dfile.encoding=UTF-8
+    cpuset: "${LT_APP_CPUSET:-2,3}"
+    cpus: "${LT_APP_CPUS:-2}"
+    mem_limit: "${LT_APP_RAM_MB:-1536}m"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/videos?page=0&size=1"]
+      interval: 3s
+      timeout: 3s
+      retries: 100
+      start_period: 20s
+    labels:
+      com.viday.loadtest.run_id: "${LT_RUN_ID}"
+      com.viday.loadtest.component: "api"
+      com.viday.loadtest.workload: "${LT_WORKLOAD:-auth}"
+      com.viday.loadtest.api_cpus: "${LT_APP_CPUS:-2}"
+      com.viday.loadtest.api_ram_mb: "${LT_APP_RAM_MB:-1536}"
+    networks:
+      loadtest:
+      monitoring:
+        aliases:
+          - api-lt
+
+volumes:
+  postgres_lt_data:
+
+networks:
+  loadtest:
+    driver: bridge
+  monitoring:
+    external: true
+    name: viday_loadtest_net

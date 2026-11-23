@@ -1,0 +1,1 @@
+{"run_id":"lr4-v2-matrix-c2-r1024-co100","profile":"c2-r1024-co100","workload":"auth","started_at":"2026-11-12T22:43:41.854991798Z","finished_at":"2026-11-12T22:44:32.218816117Z","early_stopped":true,"termination_reason":"unexpected failures >= 95.0% for 3 consecutive windows (96.0%,100.0%,100.0%)","coroutines":100,"dispatcher_threads":2}

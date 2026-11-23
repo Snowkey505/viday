@@ -1,0 +1,757 @@
+@startuml
+class CreatePlaylistUseCaseIntegrationTest$Companion {
++  postgresContainer
+- HikariDataSource dataSource
+- JdbcTemplate jdbcTemplate
+- JdbcPlaylistRepository playlistRepository
+- JdbcUserRepository userRepository
+- BCryptPasswordEncoder passwordEncoder
+- CreatePlaylistUseCase createPlaylistUseCase
+- RegisterUserUseCase registerUserUseCase
++ void setUpAll()
+- void initDatabase()
++ void tearDownAll()
+}
+
+
+class CreatePlaylistUseCaseIntegrationTest {
++ void setUp()
++ void should create playlist successfully for registered user()
++ void should return ValidationFailed when playlist name is blank()
++ void should return AlreadyExists when playlist with same name exists for same owner()
++ void should allow same playlist name for different owners()
++ void should return StorageFailure when owner does not exist()
++ void should create multiple playlists for same user()
++ void should create playlist with different access types()
+}
+
+class ListVideosUseCase {
++ Result<PageResponse<VideoResponse>> execute(Int?,Int?,Int,Int)
+- PageResponse<VideoResponse> readPage(String)
+}
+
+class PageResponse$Companion {
++ PageResponse<T> from(Page<T>)
+}
+
+class PageResponse {
+}
+class Stream {
+}
+enum StreamStatus {
++  SCHEDULED
++  LIVE
++  ENDED
++  ERROR
+}
+
+class StopStreamUseCase {
++ Result<StreamWithContent> execute(Int,Int)
+}
+
+class AssignAdminRoleUseCase {
++ Result<User> execute(String,Int)
+}
+
+class JwtAuthenticationFilter {
++ void doFilterInternal(HttpServletRequest,HttpServletResponse,FilterChain)
+- String? extractTokenFromRequest(HttpServletRequest)
+}
+
+class UserFollow {
+}
+class ConsoleUi {
+- String? currentToken
++ void run(String)
+- String? getCurrentUsername()
+- Role? getCurrentRole()
+- void loginFlow(Scanner)
+- void logoutFlow()
+- void registerUserFlow(Scanner)
+- void createPlaylistFlow(Scanner)
+- void deletePlaylistFlow(Scanner)
+- void addContentToPlaylistFlow(Scanner)
+- void removeContentFromPlaylistFlow(Scanner)
+- void followCreatorFlow(Scanner)
+- void unfollowCreatorFlow(Scanner)
+- Int? resolveUserIdOrNull(String)
+- Boolean ensurePlaylistOwnedByCli(Int,Int)
+- String explainPlaylistCliError(Error)
+- String followExplain(Error)
+- void uploadVideoFlow(Scanner)
+- void uploadTestVideo()
+- void activateChannelFlow()
+}
+
+
+class VideoController {
++ ResponseEntity<Any> getVideos(Int?,Int?,Int,Int)
++ ResponseEntity<Any> deleteVideo(Int,UserDetails?)
++ ResponseEntity<Any> uploadVideo(MultipartFile,MultipartFile,String,String?,AccessType,UserDetails?)
++ ResponseEntity<Any> getVideo(Int)
+}
+
+class UseCaseConfig {
++ RegisterUserUseCase registerUserUseCase(UserRepository,PasswordEncoder)
++ ActivateChannelUseCase activateChannelUseCase(UserRepository)
++ AssignAdminRoleUseCase assignAdminRoleUseCase(UserRepository)
++ AssignAnalystRoleUseCase assignAnalystRoleUseCase(UserRepository)
++ CreatePlaylistUseCase createPlaylistUseCase(PlaylistRepository)
++ FollowUserUseCase followUserUseCase(UserRepository)
++ UnfollowUserUseCase unfollowUserUseCase(UserRepository)
++ VideoProcessor videoProcessor()
++ ContentDeletionService contentDeletionService(ContentRepository,FileStoragePort,CachePort)
++ UploadVideoUseCase uploadVideoUseCase(ContentRepository,FileStoragePort,VideoProcessor,VideoBusinessConfig,CachePort)
++ DeleteVideoUseCase deleteVideoUseCase(ContentDeletionService)
++ AdminDeleteUserUseCase adminDeleteUserUseCase(UserRepository)
++ AdminDeleteContentUseCase adminDeleteContentUseCase(UserRepository,ContentDeletionService)
++ AdminDeletePlaylistUseCase adminDeletePlaylistUseCase(UserRepository,PlaylistRepository)
++ GetViewStatsUseCase getViewStatsUseCase(UserRepository,ViewStatsRepository)
++ CreateStreamUseCase createStreamUseCase(StreamRepository,CachePort)
++ StartStreamUseCase startStreamUseCase(StreamRepository,CachePort)
++ StopStreamUseCase stopStreamUseCase(StreamRepository,CachePort)
++ DeleteStreamUseCase deleteStreamUseCase(StreamRepository,CachePort)
++ VideoResponseMapper videoResponseMapper(FileStoragePort)
+}
+
+class UserController {
++ ResponseEntity<Any> getUserById(Int,UserDetails?)
++ ResponseEntity<Any> followCreator(Int,UserDetails?)
++ ResponseEntity<Any> unfollowCreator(Int,UserDetails?)
+- Int? resolveUserId(UserDetails?)
+- ResponseEntity<Any> unauthorized()
+}
+
+class UpdatePlaylistRequest {
+}
+class UploadVideoRequest {
+}
+class PlaylistController {
++ ResponseEntity<Any> createPlaylist(CreatePlaylistRequest,UserDetails?)
++ ResponseEntity<Any> getPlaylists(UserDetails?,Int,Int)
++ ResponseEntity<Any> getPlaylistById(Int)
++ ResponseEntity<Any> addContentToPlaylist(Int,AddContentToPlaylistRequest,UserDetails?)
++ ResponseEntity<Any> deletePlaylist(Int,UserDetails?)
++ ResponseEntity<Any> removeContentFromPlaylist(Int,Int,UserDetails?)
+- Either<Error, Playlist> ensurePlaylistOwner(Int,Int)
+- ResponseEntity<Any> playlistAccessErrorResponse(Error)
+- PlaylistResponse toResponse()
++ ResponseEntity<Any> getAvailablePlaylists(UserDetails?)
+}
+
+class ActivateChannelUseCase {
++ Result<User> execute(Int)
+}
+
+enum AccessType {
++  PUBLIC
++  PRIVATE
++  FOLLOWERS
+}
+
+class VideoBusinessConfig {
+}
+class TestConfig {
++ PasswordEncoder testPasswordEncoder()
+}
+
+class SignUpRequest {
+}
+class ContentViewStatsResponse$Companion {
++ void from(ContentViewStatsEntry)
+}
+
+class ContentViewStatsResponse {
+}
+class LoginResponse {
+}
+class ContentViewStats {
+}
+class NoOpCacheAdapter {
++ String? get(String)
++ void set(String,String,Long)
++ void delete(String)
++ void deleteByPrefix(String)
+}
+
+class ReferenceDataInitializer {
++ ApplicationRunner referenceDataRunner(JdbcTemplate)
+}
+
+interface PlaylistRepository {
++ Result<Playlist> findById(Int)
++ Result<List<Playlist>> findByOwnerId(Int)
++ Result<Page<Playlist>> findPlaylistsByOwnerIdPage(Int,PageRequest)
++ Result<List<Playlist>> findPublicPlaylists()
++ Result<Page<Playlist>> findPublicPlaylistsPage(PageRequest)
++ Result<Playlist> save(Playlist)
++ Result<PlaylistItem> addContentToPlaylist(Int,Int,Int?)
++ Result<Int> countItemsInPlaylist(Int)
++ Result<Boolean> existsByNameAndOwnerId(String,Int)
++ Result<Unit> deletePlaylist(Int,Int)
++ Result<Unit> removeContentFromPlaylist(Int,Int)
++ Result<List<Playlist>> findAvailablePlaylists(Int?)
++ Result<Unit> deleteByIdAsAdmin(Int)
+}
+
+interface PasswordEncoder {
++ String encode(String)
++ Boolean matches(String,String)
+}
+
+class JdbcStreamRepository {
+-  streamWithContentMapper
+-  baseSelect
++ Result<StreamWithContent> save(Stream,String,String?,Int,String)
++ Result<StreamWithContent> findByContentId(Int)
++ Result<List<StreamWithContent>> findByOwnerId(Int)
++ Result<List<StreamWithContent>> findLiveStreams()
++ Result<Page<StreamWithContent>> findLiveStreamsPage(PageRequest)
++ Result<StreamWithContent> findByStreamKey(String)
++ Result<Stream> update(Stream)
++ Result<Unit> delete(Int,Int)
++ Result<Boolean> hasActiveLiveStream(Int)
+}
+
+
+class Video {
+}
+class UploadVideoUseCase {
+-  logger
++ Result<Video> execute(UploadVideoRequest,Int)
+}
+
+
+class CreateStreamRequest {
+}
+class JdbcUserRepository {
+-  rowMapper
++ Result<User?> findById(Int)
++ Result<User?> findByUsername(String)
++ Result<User> save(User)
++ Result<Boolean> existsByUsername(String)
++ Result<User> update(User)
++ Result<Unit> follow(Int,Int)
++ Result<Unit> unfollow(Int,Int)
++ Result<Unit> deleteById(Int)
+}
+
+
+class AdminController {
++ ResponseEntity<Any> deleteUser(Int,UserDetails?)
++ ResponseEntity<Any> deleteContent(Int,UserDetails?)
++ ResponseEntity<Any> deletePlaylist(Int,UserDetails?)
++ ResponseEntity<Any> promoteToAdmin(String,UserDetails?)
++ ResponseEntity<Any> promoteToAnalyst(String,UserDetails?)
+- Int? resolveAdminId(UserDetails?)
+- ResponseEntity<Any> adminError(Error)
+}
+
+class SecurityConfig {
++ PasswordEncoder springPasswordEncoder()
++ AuthenticationManager authenticationManager(AuthenticationConfiguration)
++ SecurityFilterChain filterChain(HttpSecurity)
+}
+
+class GetViewStatsUseCase {
++ Result<List<ContentViewStatsEntry>> listAll(Int)
++ Result<ContentViewStatsEntry> getByContentId(Int,Int)
++ Result<List<ContentViewStatsEntry>> getTop(Int,Int)
+- Result<Unit> authorize(Int)
+}
+
+interface ContentRepository {
++ Result<Content> findById(Int)
++ Result<List<Content>> findPublicContent()
++ Result<Page<Video>> findPublicVideosPage(PageRequest)
++ Result<List<Content>> findByOwnerId(Int)
++ Result<Page<Video>> findVideosByOwnerIdPage(Int,PageRequest)
++ Result<List<Content>> findByPlaylistId(Int)
++ Result<Page<Video>> findVideosByPlaylistIdPage(Int,PageRequest)
++ Result<Content> save(Content)
++ Result<Video> saveVideo(Video)
++ Result<Video> findVideoByContentId(Int)
++ Result<MediaVariant> saveMediaVariant(MediaVariant)
++ Result<List<MediaVariant>> findMediaVariantsByContentId(Int)
++ Result<MediaVariant> findSourceMediaVariant(Int)
++ Result<Unit> deleteById(Int,Int)
++ Result<Unit> deleteByIdAsAdmin(Int)
+}
+
+class AssignAnalystRoleUseCase {
++ Result<User> execute(String,Int)
+}
+
+class ContentViewStatsEntry {
+}
+class UserResponse {
+}
+interface ViewStatsRepository {
++ Result<List<ContentViewStatsEntry>> findAll()
++ Result<ContentViewStatsEntry> findByContentId(Int)
++ Result<List<ContentViewStatsEntry>> findTopByViewCount(Int)
+}
+
+class AuthController {
+-  logger
++ ResponseEntity<Any> login(LoginRequest)
++ ResponseEntity<Any> register(SignUpRequest)
+}
+
+
+class PlaylistItem {
+}
+interface CachePort {
++ String? get(String)
++ void set(String,String,Long)
++ void delete(String)
++ void deleteByPrefix(String)
+}
+
+interface StreamRepository {
++ Result<StreamWithContent> save(Stream,String,String?,Int,String)
++ Result<StreamWithContent> findByContentId(Int)
++ Result<List<StreamWithContent>> findByOwnerId(Int)
++ Result<List<StreamWithContent>> findLiveStreams()
++ Result<Page<StreamWithContent>> findLiveStreamsPage(PageRequest)
++ Result<StreamWithContent> findByStreamKey(String)
++ Result<Stream> update(Stream)
++ Result<Unit> delete(Int,Int)
++ Result<Boolean> hasActiveLiveStream(Int)
+}
+
+class JdbcViewStatsRepository {
+-  rowMapper
+-  baseSelect
++ Result<List<ContentViewStatsEntry>> findAll()
++ Result<ContentViewStatsEntry> findByContentId(Int)
++ Result<List<ContentViewStatsEntry>> findTopByViewCount(Int)
+}
+
+
+class VideoResponse {
+}
+class UnfollowUserUseCase {
++ Result<Unit> execute(Int,Int)
+}
+
+class AddContentToPlaylistRequest {
+}
+class DeleteStreamUseCase {
++ Result<Unit> execute(Int,Int)
+}
+
+class VideoBusinessConfig {
++ Int maxDurationSeconds
++ List<String> allowedFormats
++ Int maxFileSizeMb
+}
+
+class StreamController {
++ ResponseEntity<Any> listLiveStreams(Int,Int)
++ ResponseEntity<Any> myStreams(UserDetails?)
++ ResponseEntity<Any> getStream(Int)
++ ResponseEntity<Any> createStream(CreateStreamRequest,UserDetails?)
++ ResponseEntity<Any> startStream(Int,UserDetails?)
++ ResponseEntity<Any> stopStream(Int,UserDetails?)
++ ResponseEntity<Any> deleteStream(Int,UserDetails?)
+- ResponseEntity<Any> streamErrorResponse(Error)
+}
+
+class JwtService {
+-  key
++ String generateToken(Int,String,Role)
++ Result<Int> validateAndGetUserId(String)
++ String? getUsernameFromToken(String)
++ Role? getRoleFromToken(String)
+}
+
+
+class StreamResponse$Companion {
++ void from(StreamWithContent)
+}
+
+class StreamResponse {
+}
+class AuthService {
++ Result<String> login(String,String,PasswordEncoder)
++ Result<Int> validateToken(String)
++ Result<Role> getCurrentUserRole(String)
++ Result<Unit> canCreatePlaylist(String)
++ Result<Unit> canUploadVideo(String)
++ Result<Role> getRoleForUserId(Int)
++ Result<String> refreshToken(String)
+}
+
+class PasswordEncoderConfig {
++ PasswordEncoder passwordEncoder()
+}
+
+class VideoResponseMapper {
++ VideoResponse toResponse(Video)
+- String toExternalUrl(String?)
+}
+
+class Error$NotFound {
+}
+class Error$Unauthorized {
+}
+class Error$Forbidden {
+}
+class Error$AlreadyExists {
+}
+class Error$InvalidInput {
+}
+class Error$StorageFailure {
+}
+class Error$ValidationFailed {
+}
+class Error$UserAlreadyFollowed {
+}
+class Error$CannotFollowSelf {
+}
+class Error$PlaylistPositionConflict {
+}
+class Error$StreamKeyInvalid {
+}
+class Error$StreamNotFound {
+}
+class Error$StreamAlreadyLive {
+}
+class Error$StreamNotLive {
+}
+class Error$NotVideoOwner {
+}
+class Error$AlreadyCreator {
+}
+class Error$InvalidRoleTransition {
+}
+class Error$CreatorRequired {
+}
+class Error {
+}
+class RedisConfig {
++ StringRedisTemplate stringRedisTemplate(RedisConnectionFactory)
+}
+
+class DeleteVideoUseCase {
++ Result<Unit> execute(Int,Int)
+}
+
+class MinioFileStorageAdapter {
+-  logger
+- MinioClient publicMinioClient
++ Result<String> uploadFile(String,String,InputStream,String,Long)
++ Result<String> getFileUrl(String,String)
++ Result<Unit> deleteFile(String,String)
+}
+
+
+class PageRequest$Companion {
++  DEFAULT_SIZE
++  MAX_SIZE
+}
+
+class PageRequest {
++ Long offset
++ PageRequest normalized(Int)
+}
+
+
+class Page {
++ Int totalPages
++ Boolean hasNext
++ Boolean hasPrevious
++ Page<R> map((T) -> R)
+}
+
+
+class RoleAuthorization {
++ Result<Unit> requireAdmin(Role)
++ Result<Unit> requireAnalyst(Role)
+}
+
+class CreatePlaylistRequest {
+}
+class VidayApplication {
+}
+class StreamWithContent {
+}
+class CustomUserDetailsService {
++ UserDetails loadUserByUsername(String)
+}
+
+class MediaVariant {
+}
+enum Codec {
++  H264
++  VP9
++  AV1
++  H265
+}
+
+class PlaylistResponse {
+}
+class ChannelController {
++ ResponseEntity<Any> activateChannel(UserDetails?)
++ ResponseEntity<Any> refreshToken(UserDetails?,String?)
+}
+
+class JwtTokenProvider {
+-  key
++ String generateToken(Long,String,Role)
++ Long? getUserIdFromToken(String)
++ Boolean validateToken(String)
+}
+
+
+class CreatePlaylistUseCase {
++ Result<Playlist> execute(String,Int,AccessType)
+}
+
+class RegisterUserUseCase {
++ Result<User> execute(String,String)
+}
+
+class User {
+}
+enum Role {
++  GUEST
++  USER
++  CREATOR
++  ADMIN
++  ANALYST
+}
+
+class AnalystController {
++ ResponseEntity<Any> listViewStats(UserDetails?)
++ ResponseEntity<Any> topViewStats(UserDetails?,Int)
++ ResponseEntity<Any> getViewStats(Int,UserDetails?)
+- Int? resolveUserId(UserDetails?)
+- ResponseEntity<Any> analystError(Error)
+}
+
+interface FileStoragePort {
++ Result<String> uploadFile(String,String,InputStream,String,Long)
++ Result<String> getFileUrl(String,String)
++ Result<Unit> deleteFile(String,String)
+}
+
+class ListLiveStreamsUseCase {
++ Result<PageResponse<StreamResponse>> execute(Int,Int)
+- PageResponse<StreamResponse> readPage(String)
+}
+
+class FollowUserUseCase {
++ Result<Unit> execute(Int,Int)
+}
+
+class ContentDeletionService {
++ Result<Unit> deleteVideoOwned(Int,Int)
++ Result<Unit> deleteContentAsAdmin(Int)
+- Result<Unit> purgeContent(Int,Int,() -> Result<Unit>)
+- void invalidateContentCache(Int,Int)
+- void deleteStoragePath(String?)
+}
+
+class CacheKeys {
++  PUBLIC_VIDEOS_PREFIX
++  VIDEO_BY_ID
++  USER_BY_ID
++  PLAYLIST_BY_ID
++  LIVE_STREAMS_PREFIX
++  IS_FOLLOWING
++ void publicVideos(Int,Int)
++ void liveStreams(Int,Int)
++ void video(Int)
++ void user(Int)
++ void playlist(Int)
++ void isFollowing(Int,Int)
+}
+
+
+class CacheTtl {
++  PUBLIC_VIDEOS_SEC
++  VIDEO_SEC
++  USER_SEC
++  PLAYLIST_SEC
++  LIVE_STREAMS_SEC
++  FOLLOW_CHECK_SEC
+}
+
+interface UserRepository {
++ Result<User?> findById(Int)
++ Result<User?> findByUsername(String)
++ Result<Boolean> existsByUsername(String)
++ Result<User> save(User)
++ Result<User> update(User)
++ Result<Unit> follow(Int,Int)
++ Result<Unit> unfollow(Int,Int)
++ Result<Unit> deleteById(Int)
+}
+
+interface VideoProcessor {
++ Result<VideoMetadata> analyze(InputStream,Long)
+}
+
+class VideoMetadata {
+}
+class Content {
+}
+enum ContentType {
++  VIDEO
++  STREAM
+}
+
+class HealthController {
++ ResponseEntity<Map<String, String>> health()
+}
+
+class FFmpegVideoProcessor {
++ Result<VideoMetadata> analyze(InputStream,Long)
+}
+
+class AdminDeleteUserUseCase {
++ Result<Unit> execute(Int,Int)
+}
+
+class AdminDeletePlaylistUseCase {
++ Result<Unit> execute(Int,Int)
+}
+
+class AdminDeleteContentUseCase {
++ Result<Unit> execute(Int,Int)
+}
+
+class Playlist {
+}
+class JdbcContentRepository {
+-  contentRowMapper
+-  videoRowMapper
+-  mediaVariantRowMapper
++ Result<Content> findById(Int)
++ Result<Content> save(Content)
++ Result<Video> saveVideo(Video)
++ Result<Video> findVideoByContentId(Int)
++ Result<MediaVariant> saveMediaVariant(MediaVariant)
++ Result<Page<Video>> findPublicVideosPage(PageRequest)
++ Result<Page<Video>> findVideosByOwnerIdPage(Int,PageRequest)
++ Result<Page<Video>> findVideosByPlaylistIdPage(Int,PageRequest)
+- Result<Page<Video>> queryVideoPage(String,Array<Any?>,String,PageRequest,Any?)
++ Result<List<Content>> findPublicContent()
++ Result<List<Content>> findByOwnerId(Int)
++ Result<List<Content>> findByPlaylistId(Int)
++ Result<List<MediaVariant>> findMediaVariantsByContentId(Int)
++ Result<Unit> deleteById(Int,Int)
++ Result<Unit> deleteByIdAsAdmin(Int)
++ Result<MediaVariant> findSourceMediaVariant(Int)
+}
+
+
+class JdbcPlaylistRepository {
+-  playlistRowMapper
++ Result<Playlist> findById(Int)
++ Result<Playlist> save(Playlist)
++ Result<PlaylistItem> addContentToPlaylist(Int,Int,Int?)
++ Result<Int> countItemsInPlaylist(Int)
++ Result<List<Playlist>> findByOwnerId(Int)
++ Result<Page<Playlist>> findPlaylistsByOwnerIdPage(Int,PageRequest)
++ Result<Page<Playlist>> findPublicPlaylistsPage(PageRequest)
+- Result<Page<Playlist>> queryPlaylistPage(String,Array<Any?>,String,PageRequest,Any?)
++ Result<List<Playlist>> findPublicPlaylists()
++ Result<Boolean> existsByNameAndOwnerId(String,Int)
++ Result<Unit> deletePlaylist(Int,Int)
++ Result<Unit> removeContentFromPlaylist(Int,Int)
++ Result<Unit> deleteByIdAsAdmin(Int)
++ Result<List<Playlist>> findAvailablePlaylists(Int?)
+}
+
+
+class PresentationUseCaseConfig {
++ ListVideosUseCase listVideosUseCase(ContentRepository,CachePort,VideoResponseMapper,ObjectMapper)
++ ListLiveStreamsUseCase listLiveStreamsUseCase(StreamRepository,CachePort,ObjectMapper)
+}
+
+class StartStreamUseCase {
++ Result<StreamWithContent> execute(Int,Int)
+}
+
+class RedisCacheAdapter {
++ String? get(String)
++ void set(String,String,Long)
++ void delete(String)
++ void deleteByPrefix(String)
+}
+
+class LoginRequest {
+}
+class MinioConfig {
+- String endpoint
+- String accessKey
+- String secretKey
+- String region
+-  logger
++ MinioClient minioClient()
+}
+
+
+class CreateStreamUseCase {
++ Result<StreamWithContent> execute(String,String?,Int,AccessType,OffsetDateTime?)
+}
+
+
+
+CreatePlaylistUseCaseIntegrationTest +.. CreatePlaylistUseCaseIntegrationTest$Companion
+PageResponse +.. PageResponse$Companion
+OncePerRequestFilter <|-- JwtAuthenticationFilter
+CommandLineRunner <|.. ConsoleUi
+ContentViewStatsResponse +.. ContentViewStatsResponse$Companion
+CachePort <|.. NoOpCacheAdapter
+StreamRepository <|.. JdbcStreamRepository
+UserRepository <|.. JdbcUserRepository
+ViewStatsRepository <|.. JdbcViewStatsRepository
+StreamResponse +.. StreamResponse$Companion
+Error +.. Error$NotFound
+Error <|-- Error$NotFound
+Error +.. Error$Unauthorized
+Error <|-- Error$Unauthorized
+Error +.. Error$Forbidden
+Error <|-- Error$Forbidden
+Error +.. Error$AlreadyExists
+Error <|-- Error$AlreadyExists
+Error +.. Error$InvalidInput
+Error <|-- Error$InvalidInput
+Error +.. Error$StorageFailure
+Error <|-- Error$StorageFailure
+Error +.. Error$ValidationFailed
+Error <|-- Error$ValidationFailed
+Error +.. Error$UserAlreadyFollowed
+Error <|-- Error$UserAlreadyFollowed
+Error +.. Error$CannotFollowSelf
+Error <|-- Error$CannotFollowSelf
+Error +.. Error$PlaylistPositionConflict
+Error <|-- Error$PlaylistPositionConflict
+Error +.. Error$StreamKeyInvalid
+Error <|-- Error$StreamKeyInvalid
+Error +.. Error$StreamNotFound
+Error <|-- Error$StreamNotFound
+Error +.. Error$StreamAlreadyLive
+Error <|-- Error$StreamAlreadyLive
+Error +.. Error$StreamNotLive
+Error <|-- Error$StreamNotLive
+Error +.. Error$NotVideoOwner
+Error <|-- Error$NotVideoOwner
+Error +.. Error$AlreadyCreator
+Error <|-- Error$AlreadyCreator
+Error +.. Error$InvalidRoleTransition
+Error <|-- Error$InvalidRoleTransition
+Error +.. Error$CreatorRequired
+Error <|-- Error$CreatorRequired
+FileStoragePort <|.. MinioFileStorageAdapter
+PageRequest +.. PageRequest$Companion
+UserDetailsService <|.. CustomUserDetailsService
+VideoProcessor <|.. FFmpegVideoProcessor
+ContentRepository <|.. JdbcContentRepository
+PlaylistRepository <|.. JdbcPlaylistRepository
+CachePort <|.. RedisCacheAdapter
+@enduml

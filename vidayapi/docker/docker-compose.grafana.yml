@@ -1,0 +1,117 @@
+# =============================================================================
+# ЛР3 — стенд визуализации микробенчмарка: Grafana + PostgreSQL с результатами.
+#
+# Отчёт и ВСЕ графики ЛР3 перенесены в Grafana (новое требование):
+#   • benchmark-db — PostgreSQL, куда скрипт scripts/import-benchmark-to-db.sh
+#     импортирует report.json каждого прогона (таблицы benchmark_*);
+#   • grafana       — дашборд «LR3 Benchmark» (провижининг в
+#     docker/grafana/provisioning): все таблицы отчёта + все графики
+#     (временные ряды, CDF, гистограммы, столбцы перцентилей) для трёх
+#     моделей x1/x4/x8.
+#
+# Запуск:   make grafana-up        -> Grafana на http://localhost:3000 (admin/admin)
+#           make benchmark         -> прогон бенчмарка + автоимпорт в БД
+#           make benchmark-import  -> импорт последнего report.json в БД
+#           make grafana-down      -> остановить стенд
+# =============================================================================
+services:
+  benchmark-db:
+    image: postgres:15-alpine
+    container_name: viday_bench_postgres
+    environment:
+      POSTGRES_DB: benchmark
+      POSTGRES_USER: benchmark_user
+      POSTGRES_PASSWORD: benchmark_password
+    ports:
+      - "5434:5432"
+    volumes:
+      - bench_postgres_data:/var/lib/postgresql/data
+      - ./grafana/init:/docker-entrypoint-initdb.d:ro
+    cpuset: "${GRAFANA_DB_CPUSET:-10}"
+    mem_limit: 384m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U benchmark_user -d benchmark"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - viday_grafana_network
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    container_name: viday_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    cpuset: "${GRAFANA_CPUSET:-11}"
+    mem_limit: 384m
+    depends_on:
+      benchmark-db:
+        condition: service_healthy
+      prometheus:
+        condition: service_started
+    networks:
+      - viday_grafana_network
+
+  # ЛР4: Prometheus собирает ресурсы контейнеров и JVM/HTTP-метрики API.
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: viday_prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=7d"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ./loadtest/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    cpuset: "${PROMETHEUS_CPUSET:-10}"
+    mem_limit: 384m
+    networks:
+      - viday_grafana_network
+      - loadtest_monitoring
+
+  # ЛР4: экспортёр Docker-ресурсов в формате Prometheus + сырой JSONL.
+  loadtest-exporter:
+    build:
+      context: ..
+      dockerfile: docker/loadtest/exporter/Dockerfile
+    image: viday-loadtest-exporter:local
+    container_name: viday_loadtest_exporter
+    ports:
+      - "9101:9101"
+    environment:
+      SAMPLE_INTERVAL: "5"
+      SAMPLES_FILE: /data/container-samples.jsonl
+      APP_SAMPLES_FILE: /data/app-samples.jsonl
+      APP_NETWORK: viday_loadtest_net
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - ../loadtest/runtime:/data
+    cpuset: "${EXPORTER_CPUSET:-10}"
+    mem_limit: 128m
+    networks:
+      - viday_grafana_network
+      - loadtest_monitoring
+
+volumes:
+  bench_postgres_data:
+  grafana_data:
+  prometheus_data:
+
+networks:
+  viday_grafana_network:
+    driver: bridge
+  loadtest_monitoring:
+    external: true
+    name: viday_loadtest_net

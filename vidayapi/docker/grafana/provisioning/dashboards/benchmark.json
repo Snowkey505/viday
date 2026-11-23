@@ -1,0 +1,4745 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "benchmark-lr3",
+    "title": "ЛР3: Jackson 3 vs kotlinx.serialization — микробенчмарк (x1/x4/x8)",
+    "tags": [
+      "lr3",
+      "benchmark"
+    ],
+    "timezone": "browser",
+    "editable": true,
+    "graphTooltip": 1,
+    "schemaVersion": 39,
+    "refresh": "",
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "timepicker": {
+      "hidden": true
+    },
+    "links": [
+      {
+        "title": "ЛР4: auth (матрикс)",
+        "url": "/d/loadtest-lr4-auth",
+        "type": "link",
+        "icon": "external link",
+        "targetBlank": false,
+        "keepTime": true,
+        "includeVars": false,
+        "tooltip": "Перейти к нагрузочным прогонам ЛР4 (auth)"
+      },
+      {
+        "title": "ЛР4: public",
+        "url": "/d/loadtest-lr4-public",
+        "type": "link",
+        "icon": "external link",
+        "targetBlank": false,
+        "keepTime": true,
+        "includeVars": false,
+        "tooltip": "Перейти к нагрузочным прогонам ЛР4 (public)"
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "type": "custom",
+          "name": "model",
+          "label": "Модель",
+          "hide": 0,
+          "includeAll": false,
+          "multi": false,
+          "skipUrlSync": false,
+          "query": "x1 : x1,x4 : x4,x8 : x8",
+          "options": [
+            {
+              "text": "x1",
+              "value": "x1",
+              "selected": true
+            },
+            {
+              "text": "x4",
+              "value": "x4",
+              "selected": false
+            },
+            {
+              "text": "x8",
+              "value": "x8",
+              "selected": false
+            }
+          ],
+          "current": {
+            "selected": true,
+            "text": "x1",
+            "value": "x1"
+          }
+        },
+        {
+          "type": "custom",
+          "name": "percentile",
+          "label": "Перцентиль",
+          "hide": 0,
+          "includeAll": false,
+          "multi": true,
+          "skipUrlSync": false,
+          "query": "p50 : p50 (медиана),p75 : p75,p90 : p90,p95 : p95,p99 : p99",
+          "options": [
+            {
+              "text": "p50 (медиана)",
+              "value": "p50",
+              "selected": true
+            },
+            {
+              "text": "p75",
+              "value": "p75",
+              "selected": false
+            },
+            {
+              "text": "p90",
+              "value": "p90",
+              "selected": false
+            },
+            {
+              "text": "p95",
+              "value": "p95",
+              "selected": true
+            },
+            {
+              "text": "p99",
+              "value": "p99",
+              "selected": false
+            }
+          ],
+          "current": {
+            "selected": true,
+            "text": [
+              "p50 (медиана)",
+              "p95"
+            ],
+            "value": [
+              "p50",
+              "p95"
+            ]
+          }
+        }
+      ]
+    },
+    "annotations": {
+      "list": []
+    },
+    "panels": [
+      {
+        "id": 1,
+        "type": "text",
+        "title": "",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "transparent": true,
+        "options": {
+          "mode": "markdown",
+          "content": "## ЛР3: микробенчмарк — Jackson 3 vs kotlinx.serialization\n\nСравниваются **две библиотеки JSON** на одной задаче:\n- **Jackson 3** (синий) — runtime-рефлексия, production vidayapi;\n- **kotlinx.serialization** (зелёный) — сериализация на этапе компиляции.\n\n**Модель** (переключатель сверху): **x1** 10 полей / **x4** 40 / **x8** 80.\nСценарии: **read** (JSON→объект), **write** (объект→JSON), **mixed** (чтение+запись).\nМетодика: warmup → settle → measure → teardown, batch=256, 1 ядро CPU.\n\nНа каждом графике **обе библиотеки наложены** (как SVG overlay в report.html):\n- **Временной ряд** — X: номер сэмпла, Y: нс/операция. Горизонтальные асимптоты — перцентили каждой библиотеки.\n- **CDF** — X: латентность нс/оп, Y: доля запросов. Чем левее кривая — тем быстрее. Вертикальные асимптоты — те же перцентили.\n- **Гистограмма** — общие бины по диапазону обеих серий, столбцы рядом.\n- **Перцентили** — мультивыбор **percentile**. На latency/CDF **p50 и p95 всегда**; p75/p90/p99 — если добавить сверху. Столбцы сравнивают выбранные значения.\n"
+        }
+      },
+      {
+        "id": 2,
+        "type": "stat",
+        "title": "Overhead single, нс/оп",
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 0,
+          "y": 8
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "SELECT generated_at AS time, overhead_single_ns AS value FROM benchmark_runs WHERE run_id = (SELECT run_id FROM benchmark_runs ORDER BY generated_at DESC LIMIT 1)",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "decimals": 2,
+            "color": {
+              "mode": "thresholds"
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "value",
+          "graphMode": "none",
+          "justifyMode": "auto"
+        }
+      },
+      {
+        "id": 3,
+        "type": "stat",
+        "title": "Overhead concurrent, нс/оп",
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 6,
+          "y": 8
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "SELECT generated_at AS time, overhead_concurrent_ns AS value FROM benchmark_runs WHERE run_id = (SELECT run_id FROM benchmark_runs ORDER BY generated_at DESC LIMIT 1)",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "decimals": 2,
+            "color": {
+              "mode": "thresholds"
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "value",
+          "graphMode": "none",
+          "justifyMode": "auto"
+        }
+      },
+      {
+        "id": 4,
+        "type": "stat",
+        "title": "Прогонов в БД",
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 12,
+          "y": 8
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "SELECT now() AS time, (SELECT count(*) FROM benchmark_runs)::double precision AS value",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "decimals": 2,
+            "color": {
+              "mode": "thresholds"
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "value",
+          "graphMode": "none",
+          "justifyMode": "auto"
+        }
+      },
+      {
+        "id": 5,
+        "type": "stat",
+        "title": "Сэмплов в последнем прогоне",
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 18,
+          "y": 8
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "SELECT now() AS time, (SELECT count(*) FROM benchmark_samples WHERE run_id = (SELECT run_id FROM benchmark_runs ORDER BY generated_at DESC LIMIT 1))::double precision AS value",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "decimals": 2,
+            "color": {
+              "mode": "thresholds"
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "value",
+          "graphMode": "none",
+          "justifyMode": "auto"
+        }
+      },
+      {
+        "id": 6,
+        "type": "table",
+        "title": "Окружение прогона",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 12
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "SELECT key, value FROM benchmark_runs, jsonb_each_text(environment) WHERE run_id = (SELECT run_id FROM benchmark_runs ORDER BY generated_at DESC LIMIT 1) ORDER BY key",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "options": {
+          "showHeader": true,
+          "cellHeight": "sm",
+          "footer": {
+            "show": false,
+            "countRows": false,
+            "reducer": [
+              "sum"
+            ]
+          }
+        }
+      },
+      {
+        "id": 7,
+        "type": "table",
+        "title": "Конфигурация прогона",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 12
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "SELECT key, value FROM benchmark_runs, jsonb_each_text(config) WHERE run_id = (SELECT run_id FROM benchmark_runs ORDER BY generated_at DESC LIMIT 1) ORDER BY key",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "options": {
+          "showHeader": true,
+          "cellHeight": "sm",
+          "footer": {
+            "show": false,
+            "countRows": false,
+            "reducer": [
+              "sum"
+            ]
+          }
+        }
+      },
+      {
+        "id": 8,
+        "type": "table",
+        "title": "Сводное сравнение: модель × сценарий (Δ = (kotlinx − Jackson)/Jackson × 100%)",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 20
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "SELECT model, direction, median_jackson_ns, median_kotlinx_ns, delta_median_pct, delta_mean_pct, delta_p99_pct, faster_library FROM benchmark_comparisons WHERE run_id = (SELECT run_id FROM benchmark_runs ORDER BY generated_at DESC LIMIT 1) ORDER BY model, direction",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "options": {
+          "showHeader": true,
+          "cellHeight": "sm",
+          "footer": {
+            "show": false,
+            "countRows": false,
+            "reducer": [
+              "sum"
+            ]
+          }
+        }
+      },
+      {
+        "id": 9,
+        "type": "row",
+        "title": "Перцентили: Jackson vs kotlinx (переключатель percentile)",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 28
+        },
+        "collapsed": false,
+        "panels": []
+      },
+      {
+        "id": 10,
+        "type": "barchart",
+        "title": "${percentile}: ns/операция — Jackson 3 vs kotlinx.serialization (3 модели × 3 сценария)",
+        "gridPos": {
+          "h": 10,
+          "w": 24,
+          "x": 0,
+          "y": 29
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "WITH selected AS (\n  SELECT DISTINCT trim(both FROM x) AS p\n  FROM unnest(string_to_array('${percentile:csv}', ',')) AS t(x)\n  WHERE trim(both FROM x) <> ''\n)\nSELECT t.model || '·' || t.direction\n         || CASE WHEN (SELECT count(*) FROM selected) > 1 THEN '·' || t.p ELSE '' END AS scenario,\n       MAX(t.pct) FILTER (WHERE t.library = 'jackson') AS jackson,\n       MAX(t.pct) FILTER (WHERE t.library = 'kotlinx') AS kotlinx\nFROM (\n  SELECT c.model, c.direction, c.library, s.p,\n         CASE s.p\n           WHEN 'p50' THEN c.p50_ns\n           WHEN 'p75' THEN c.p75_ns\n           WHEN 'p90' THEN c.p90_ns\n           WHEN 'p95' THEN c.p95_ns\n           WHEN 'p99' THEN c.p99_ns\n         END AS pct\n  FROM benchmark_cases c\n  CROSS JOIN selected s\n  WHERE c.run_id = (SELECT run_id FROM benchmark_runs ORDER BY generated_at DESC LIMIT 1)\n) t\nGROUP BY t.model, t.direction, t.p\nORDER BY t.model,\n         CASE t.direction WHEN 'read' THEN 1 WHEN 'write' THEN 2 ELSE 3 END,\n         CASE t.p WHEN 'p50' THEN 1 WHEN 'p75' THEN 2 WHEN 'p90' THEN 3 WHEN 'p95' THEN 4 ELSE 5 END",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "fillOpacity": 85,
+              "gradientMode": "none",
+              "lineWidth": 1,
+              "axisLabel": "нс/операция"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "decimals": 1
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      6,
+                      3
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "xField": "scenario",
+          "orientation": "vertical",
+          "showValue": "auto",
+          "stacking": "none",
+          "barWidth": 0.7,
+          "groupWidth": 0.7,
+          "xTickLabelRotation": 45,
+          "xTickLabelMaxLength": 40,
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 11,
+        "type": "row",
+        "title": "Временной ряд — ось X: номер сэмпла, ось Y: нс/оп; асимптоты p50/p95 (+ выбранные)",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 39
+        },
+        "collapsed": false,
+        "panels": []
+      },
+      {
+        "id": 12,
+        "type": "trend",
+        "title": "read: Jackson vs kotlinx — временной ряд",
+        "gridPos": {
+          "h": 10,
+          "w": 8,
+          "x": 0,
+          "y": 40
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "WITH wanted_pcts AS (\n  SELECT DISTINCT trim(both FROM x) AS p\n  FROM unnest(ARRAY['p50','p95'] || string_to_array('${percentile:csv}', ',')) AS t(x)\n  WHERE trim(both FROM x) <> ''\n),\nlines AS (\n  SELECT (MAX(p50_ns) FILTER (WHERE library = 'jackson')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p50' LIMIT 1) AS jackson_p50,\n         (MAX(p50_ns) FILTER (WHERE library = 'kotlinx')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p50' LIMIT 1) AS kotlinx_p50,\n         (MAX(p75_ns) FILTER (WHERE library = 'jackson')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p75' LIMIT 1) AS jackson_p75,\n         (MAX(p75_ns) FILTER (WHERE library = 'kotlinx')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p75' LIMIT 1) AS kotlinx_p75,\n         (MAX(p90_ns) FILTER (WHERE library = 'jackson')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p90' LIMIT 1) AS jackson_p90,\n         (MAX(p90_ns) FILTER (WHERE library = 'kotlinx')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p90' LIMIT 1) AS kotlinx_p90,\n         (MAX(p95_ns) FILTER (WHERE library = 'jackson')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p95' LIMIT 1) AS jackson_p95,\n         (MAX(p95_ns) FILTER (WHERE library = 'kotlinx')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p95' LIMIT 1) AS kotlinx_p95,\n         (MAX(p99_ns) FILTER (WHERE library = 'jackson')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p99' LIMIT 1) AS jackson_p99,\n         (MAX(p99_ns) FILTER (WHERE library = 'kotlinx')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p99' LIMIT 1) AS kotlinx_p99\n  FROM benchmark_cases\n  WHERE run_id = (SELECT run_id FROM benchmark_runs ORDER BY generated_at DESC LIMIT 1)\n    AND direction = 'read'\n    AND model = '${model}'\n)\nSELECT s.sample_index AS sample,\n       MAX(s.ns_per_op) FILTER (WHERE s.library = 'jackson') AS jackson,\n       MAX(s.ns_per_op) FILTER (WHERE s.library = 'kotlinx') AS kotlinx,\n       MAX(l.jackson_p50) AS jackson_p50,\n       MAX(l.kotlinx_p50) AS kotlinx_p50,\n       MAX(l.jackson_p75) AS jackson_p75,\n       MAX(l.kotlinx_p75) AS kotlinx_p75,\n       MAX(l.jackson_p90) AS jackson_p90,\n       MAX(l.kotlinx_p90) AS kotlinx_p90,\n       MAX(l.jackson_p95) AS jackson_p95,\n       MAX(l.kotlinx_p95) AS kotlinx_p95,\n       MAX(l.jackson_p99) AS jackson_p99,\n       MAX(l.kotlinx_p99) AS kotlinx_p99\nFROM benchmark_samples s\nCROSS JOIN lines l\nWHERE s.run_id = (SELECT run_id FROM benchmark_runs ORDER BY generated_at DESC LIMIT 1)\n  AND s.direction = 'read'\n  AND s.model = '${model}'\nGROUP BY s.sample_index\nORDER BY s.sample_index",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "barAlignment": 0,
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "латентность, нс/оп",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "decimals": 1
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      6,
+                      3
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p50"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p50"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dot",
+                    "dash": [
+                      2,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p75"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p75"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      4,
+                      3
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p90"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p90"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      8,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p95"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p95"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      10,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p99"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p99"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      16,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p50"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p50"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dot",
+                    "dash": [
+                      2,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p75"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p75"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      4,
+                      3
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p90"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p90"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      8,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p95"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p95"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      10,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p99"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p99"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      16,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          },
+          "xField": "sample"
+        },
+        "transformations": [
+          {
+            "id": "filterFieldsByName",
+            "options": {
+              "include": {
+                "pattern": "^(sample|jackson|kotlinx|(jackson|kotlinx)_(p50|p95|${percentile:pipe}))$"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "type": "trend",
+        "title": "write: Jackson vs kotlinx — временной ряд",
+        "gridPos": {
+          "h": 10,
+          "w": 8,
+          "x": 8,
+          "y": 40
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "WITH wanted_pcts AS (\n  SELECT DISTINCT trim(both FROM x) AS p\n  FROM unnest(ARRAY['p50','p95'] || string_to_array('${percentile:csv}', ',')) AS t(x)\n  WHERE trim(both FROM x) <> ''\n),\nlines AS (\n  SELECT (MAX(p50_ns) FILTER (WHERE library = 'jackson')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p50' LIMIT 1) AS jackson_p50,\n         (MAX(p50_ns) FILTER (WHERE library = 'kotlinx')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p50' LIMIT 1) AS kotlinx_p50,\n         (MAX(p75_ns) FILTER (WHERE library = 'jackson')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p75' LIMIT 1) AS jackson_p75,\n         (MAX(p75_ns) FILTER (WHERE library = 'kotlinx')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p75' LIMIT 1) AS kotlinx_p75,\n         (MAX(p90_ns) FILTER (WHERE library = 'jackson')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p90' LIMIT 1) AS jackson_p90,\n         (MAX(p90_ns) FILTER (WHERE library = 'kotlinx')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p90' LIMIT 1) AS kotlinx_p90,\n         (MAX(p95_ns) FILTER (WHERE library = 'jackson')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p95' LIMIT 1) AS jackson_p95,\n         (MAX(p95_ns) FILTER (WHERE library = 'kotlinx')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p95' LIMIT 1) AS kotlinx_p95,\n         (MAX(p99_ns) FILTER (WHERE library = 'jackson')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p99' LIMIT 1) AS jackson_p99,\n         (MAX(p99_ns) FILTER (WHERE library = 'kotlinx')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p99' LIMIT 1) AS kotlinx_p99\n  FROM benchmark_cases\n  WHERE run_id = (SELECT run_id FROM benchmark_runs ORDER BY generated_at DESC LIMIT 1)\n    AND direction = 'write'\n    AND model = '${model}'\n)\nSELECT s.sample_index AS sample,\n       MAX(s.ns_per_op) FILTER (WHERE s.library = 'jackson') AS jackson,\n       MAX(s.ns_per_op) FILTER (WHERE s.library = 'kotlinx') AS kotlinx,\n       MAX(l.jackson_p50) AS jackson_p50,\n       MAX(l.kotlinx_p50) AS kotlinx_p50,\n       MAX(l.jackson_p75) AS jackson_p75,\n       MAX(l.kotlinx_p75) AS kotlinx_p75,\n       MAX(l.jackson_p90) AS jackson_p90,\n       MAX(l.kotlinx_p90) AS kotlinx_p90,\n       MAX(l.jackson_p95) AS jackson_p95,\n       MAX(l.kotlinx_p95) AS kotlinx_p95,\n       MAX(l.jackson_p99) AS jackson_p99,\n       MAX(l.kotlinx_p99) AS kotlinx_p99\nFROM benchmark_samples s\nCROSS JOIN lines l\nWHERE s.run_id = (SELECT run_id FROM benchmark_runs ORDER BY generated_at DESC LIMIT 1)\n  AND s.direction = 'write'\n  AND s.model = '${model}'\nGROUP BY s.sample_index\nORDER BY s.sample_index",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "barAlignment": 0,
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "латентность, нс/оп",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "decimals": 1
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      6,
+                      3
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p50"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p50"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dot",
+                    "dash": [
+                      2,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p75"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p75"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      4,
+                      3
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p90"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p90"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      8,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p95"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p95"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      10,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p99"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p99"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      16,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p50"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p50"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dot",
+                    "dash": [
+                      2,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p75"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p75"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      4,
+                      3
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p90"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p90"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      8,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p95"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p95"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      10,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p99"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p99"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      16,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          },
+          "xField": "sample"
+        },
+        "transformations": [
+          {
+            "id": "filterFieldsByName",
+            "options": {
+              "include": {
+                "pattern": "^(sample|jackson|kotlinx|(jackson|kotlinx)_(p50|p95|${percentile:pipe}))$"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 14,
+        "type": "trend",
+        "title": "mixed: Jackson vs kotlinx — временной ряд",
+        "gridPos": {
+          "h": 10,
+          "w": 8,
+          "x": 16,
+          "y": 40
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "WITH wanted_pcts AS (\n  SELECT DISTINCT trim(both FROM x) AS p\n  FROM unnest(ARRAY['p50','p95'] || string_to_array('${percentile:csv}', ',')) AS t(x)\n  WHERE trim(both FROM x) <> ''\n),\nlines AS (\n  SELECT (MAX(p50_ns) FILTER (WHERE library = 'jackson')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p50' LIMIT 1) AS jackson_p50,\n         (MAX(p50_ns) FILTER (WHERE library = 'kotlinx')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p50' LIMIT 1) AS kotlinx_p50,\n         (MAX(p75_ns) FILTER (WHERE library = 'jackson')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p75' LIMIT 1) AS jackson_p75,\n         (MAX(p75_ns) FILTER (WHERE library = 'kotlinx')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p75' LIMIT 1) AS kotlinx_p75,\n         (MAX(p90_ns) FILTER (WHERE library = 'jackson')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p90' LIMIT 1) AS jackson_p90,\n         (MAX(p90_ns) FILTER (WHERE library = 'kotlinx')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p90' LIMIT 1) AS kotlinx_p90,\n         (MAX(p95_ns) FILTER (WHERE library = 'jackson')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p95' LIMIT 1) AS jackson_p95,\n         (MAX(p95_ns) FILTER (WHERE library = 'kotlinx')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p95' LIMIT 1) AS kotlinx_p95,\n         (MAX(p99_ns) FILTER (WHERE library = 'jackson')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p99' LIMIT 1) AS jackson_p99,\n         (MAX(p99_ns) FILTER (WHERE library = 'kotlinx')) * (SELECT 1 FROM wanted_pcts WHERE p = 'p99' LIMIT 1) AS kotlinx_p99\n  FROM benchmark_cases\n  WHERE run_id = (SELECT run_id FROM benchmark_runs ORDER BY generated_at DESC LIMIT 1)\n    AND direction = 'mixed'\n    AND model = '${model}'\n)\nSELECT s.sample_index AS sample,\n       MAX(s.ns_per_op) FILTER (WHERE s.library = 'jackson') AS jackson,\n       MAX(s.ns_per_op) FILTER (WHERE s.library = 'kotlinx') AS kotlinx,\n       MAX(l.jackson_p50) AS jackson_p50,\n       MAX(l.kotlinx_p50) AS kotlinx_p50,\n       MAX(l.jackson_p75) AS jackson_p75,\n       MAX(l.kotlinx_p75) AS kotlinx_p75,\n       MAX(l.jackson_p90) AS jackson_p90,\n       MAX(l.kotlinx_p90) AS kotlinx_p90,\n       MAX(l.jackson_p95) AS jackson_p95,\n       MAX(l.kotlinx_p95) AS kotlinx_p95,\n       MAX(l.jackson_p99) AS jackson_p99,\n       MAX(l.kotlinx_p99) AS kotlinx_p99\nFROM benchmark_samples s\nCROSS JOIN lines l\nWHERE s.run_id = (SELECT run_id FROM benchmark_runs ORDER BY generated_at DESC LIMIT 1)\n  AND s.direction = 'mixed'\n  AND s.model = '${model}'\nGROUP BY s.sample_index\nORDER BY s.sample_index",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "barAlignment": 0,
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "латентность, нс/оп",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "decimals": 1
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      6,
+                      3
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p50"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p50"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dot",
+                    "dash": [
+                      2,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p75"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p75"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      4,
+                      3
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p90"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p90"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      8,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p95"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p95"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      10,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p99"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p99"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      16,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p50"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p50"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dot",
+                    "dash": [
+                      2,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p75"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p75"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      4,
+                      3
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p90"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p90"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      8,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p95"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p95"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      10,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p99"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p99"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      16,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          },
+          "xField": "sample"
+        },
+        "transformations": [
+          {
+            "id": "filterFieldsByName",
+            "options": {
+              "include": {
+                "pattern": "^(sample|jackson|kotlinx|(jackson|kotlinx)_(p50|p95|${percentile:pipe}))$"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 15,
+        "type": "row",
+        "title": "CDF — ось X: латентность нс/оп, ось Y: доля запросов; вертикали p50/p95 (+ выбранные)",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 50
+        },
+        "collapsed": false,
+        "panels": []
+      },
+      {
+        "id": 16,
+        "type": "trend",
+        "title": "read: Jackson vs kotlinx — CDF",
+        "gridPos": {
+          "h": 10,
+          "w": 8,
+          "x": 0,
+          "y": 51
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "WITH wanted_pcts AS (\n  SELECT DISTINCT trim(both FROM x) AS p\n  FROM unnest(ARRAY['p50','p95'] || string_to_array('${percentile:csv}', ',')) AS t(x)\n  WHERE trim(both FROM x) <> ''\n),\ncases AS (\n  SELECT library, p50_ns, p75_ns, p90_ns, p95_ns, p99_ns\n  FROM benchmark_cases\n  WHERE run_id = (SELECT run_id FROM benchmark_runs ORDER BY generated_at DESC LIMIT 1)\n    AND direction = 'read'\n    AND model = '${model}'\n)\nSELECT c.latency_ns,\n       MAX(c.fraction) FILTER (WHERE c.library = 'jackson') AS jackson,\n       MAX(c.fraction) FILTER (WHERE c.library = 'kotlinx') AS kotlinx,\n       NULL::double precision AS jackson_p50,\n       NULL::double precision AS kotlinx_p50,\n       NULL::double precision AS jackson_p75,\n       NULL::double precision AS kotlinx_p75,\n       NULL::double precision AS jackson_p90,\n       NULL::double precision AS kotlinx_p90,\n       NULL::double precision AS jackson_p95,\n       NULL::double precision AS kotlinx_p95,\n       NULL::double precision AS jackson_p99,\n       NULL::double precision AS kotlinx_p99\nFROM benchmark_cdf c\nWHERE c.run_id = (SELECT run_id FROM benchmark_runs ORDER BY generated_at DESC LIMIT 1)\n  AND c.direction = 'read'\n  AND c.model = '${model}'\nGROUP BY c.latency_ns\nUNION ALL\nSELECT c.p50_ns + v.dy AS latency_ns,\n       NULL::double precision AS jackson,\n       NULL::double precision AS kotlinx,\n       CASE WHEN c.library = 'jackson' THEN v.y END AS jackson_p50,\n       CASE WHEN c.library = 'kotlinx' THEN v.y END AS kotlinx_p50,\n       NULL::double precision AS jackson_p75,\n       NULL::double precision AS kotlinx_p75,\n       NULL::double precision AS jackson_p90,\n       NULL::double precision AS kotlinx_p90,\n       NULL::double precision AS jackson_p95,\n       NULL::double precision AS kotlinx_p95,\n       NULL::double precision AS jackson_p99,\n       NULL::double precision AS kotlinx_p99\nFROM cases c\nCROSS JOIN (VALUES (0.0, 0.0), (1e-6, 1.0)) AS v(dy, y)\nWHERE EXISTS (SELECT 1 FROM wanted_pcts WHERE p = 'p50')\nUNION ALL\nSELECT c.p75_ns + v.dy AS latency_ns,\n       NULL::double precision AS jackson,\n       NULL::double precision AS kotlinx,\n       NULL::double precision AS jackson_p50,\n       NULL::double precision AS kotlinx_p50,\n       CASE WHEN c.library = 'jackson' THEN v.y END AS jackson_p75,\n       CASE WHEN c.library = 'kotlinx' THEN v.y END AS kotlinx_p75,\n       NULL::double precision AS jackson_p90,\n       NULL::double precision AS kotlinx_p90,\n       NULL::double precision AS jackson_p95,\n       NULL::double precision AS kotlinx_p95,\n       NULL::double precision AS jackson_p99,\n       NULL::double precision AS kotlinx_p99\nFROM cases c\nCROSS JOIN (VALUES (0.0, 0.0), (1e-6, 1.0)) AS v(dy, y)\nWHERE EXISTS (SELECT 1 FROM wanted_pcts WHERE p = 'p75')\nUNION ALL\nSELECT c.p90_ns + v.dy AS latency_ns,\n       NULL::double precision AS jackson,\n       NULL::double precision AS kotlinx,\n       NULL::double precision AS jackson_p50,\n       NULL::double precision AS kotlinx_p50,\n       NULL::double precision AS jackson_p75,\n       NULL::double precision AS kotlinx_p75,\n       CASE WHEN c.library = 'jackson' THEN v.y END AS jackson_p90,\n       CASE WHEN c.library = 'kotlinx' THEN v.y END AS kotlinx_p90,\n       NULL::double precision AS jackson_p95,\n       NULL::double precision AS kotlinx_p95,\n       NULL::double precision AS jackson_p99,\n       NULL::double precision AS kotlinx_p99\nFROM cases c\nCROSS JOIN (VALUES (0.0, 0.0), (1e-6, 1.0)) AS v(dy, y)\nWHERE EXISTS (SELECT 1 FROM wanted_pcts WHERE p = 'p90')\nUNION ALL\nSELECT c.p95_ns + v.dy AS latency_ns,\n       NULL::double precision AS jackson,\n       NULL::double precision AS kotlinx,\n       NULL::double precision AS jackson_p50,\n       NULL::double precision AS kotlinx_p50,\n       NULL::double precision AS jackson_p75,\n       NULL::double precision AS kotlinx_p75,\n       NULL::double precision AS jackson_p90,\n       NULL::double precision AS kotlinx_p90,\n       CASE WHEN c.library = 'jackson' THEN v.y END AS jackson_p95,\n       CASE WHEN c.library = 'kotlinx' THEN v.y END AS kotlinx_p95,\n       NULL::double precision AS jackson_p99,\n       NULL::double precision AS kotlinx_p99\nFROM cases c\nCROSS JOIN (VALUES (0.0, 0.0), (1e-6, 1.0)) AS v(dy, y)\nWHERE EXISTS (SELECT 1 FROM wanted_pcts WHERE p = 'p95')\nUNION ALL\nSELECT c.p99_ns + v.dy AS latency_ns,\n       NULL::double precision AS jackson,\n       NULL::double precision AS kotlinx,\n       NULL::double precision AS jackson_p50,\n       NULL::double precision AS kotlinx_p50,\n       NULL::double precision AS jackson_p75,\n       NULL::double precision AS kotlinx_p75,\n       NULL::double precision AS jackson_p90,\n       NULL::double precision AS kotlinx_p90,\n       NULL::double precision AS jackson_p95,\n       NULL::double precision AS kotlinx_p95,\n       CASE WHEN c.library = 'jackson' THEN v.y END AS jackson_p99,\n       CASE WHEN c.library = 'kotlinx' THEN v.y END AS kotlinx_p99\nFROM cases c\nCROSS JOIN (VALUES (0.0, 0.0), (1e-6, 1.0)) AS v(dy, y)\nWHERE EXISTS (SELECT 1 FROM wanted_pcts WHERE p = 'p99')\nORDER BY 1",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "barAlignment": 0,
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "доля запросов",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "decimals": 3
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      6,
+                      3
+                    ]
+                  }
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p50"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p50"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dot",
+                    "dash": [
+                      2,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p75"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p75"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      4,
+                      3
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p90"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p90"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      8,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p95"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p95"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      10,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p99"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p99"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      16,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p50"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p50"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dot",
+                    "dash": [
+                      2,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p75"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p75"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      4,
+                      3
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p90"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p90"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      8,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p95"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p95"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      10,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p99"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p99"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      16,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "latency_ns"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "латентность, нс/оп"
+                },
+                {
+                  "id": "decimals",
+                  "value": 1
+                },
+                {
+                  "id": "custom.axisLabel",
+                  "value": "латентность, нс/оп"
+                },
+                {
+                  "id": "custom.hideFrom",
+                  "value": {
+                    "legend": true,
+                    "tooltip": true,
+                    "viz": false
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          },
+          "xField": "latency_ns"
+        },
+        "transformations": [
+          {
+            "id": "filterFieldsByName",
+            "options": {
+              "include": {
+                "pattern": "^(latency_ns|jackson|kotlinx|(jackson|kotlinx)_(p50|p95|${percentile:pipe}))$"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 17,
+        "type": "trend",
+        "title": "write: Jackson vs kotlinx — CDF",
+        "gridPos": {
+          "h": 10,
+          "w": 8,
+          "x": 8,
+          "y": 51
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "WITH wanted_pcts AS (\n  SELECT DISTINCT trim(both FROM x) AS p\n  FROM unnest(ARRAY['p50','p95'] || string_to_array('${percentile:csv}', ',')) AS t(x)\n  WHERE trim(both FROM x) <> ''\n),\ncases AS (\n  SELECT library, p50_ns, p75_ns, p90_ns, p95_ns, p99_ns\n  FROM benchmark_cases\n  WHERE run_id = (SELECT run_id FROM benchmark_runs ORDER BY generated_at DESC LIMIT 1)\n    AND direction = 'write'\n    AND model = '${model}'\n)\nSELECT c.latency_ns,\n       MAX(c.fraction) FILTER (WHERE c.library = 'jackson') AS jackson,\n       MAX(c.fraction) FILTER (WHERE c.library = 'kotlinx') AS kotlinx,\n       NULL::double precision AS jackson_p50,\n       NULL::double precision AS kotlinx_p50,\n       NULL::double precision AS jackson_p75,\n       NULL::double precision AS kotlinx_p75,\n       NULL::double precision AS jackson_p90,\n       NULL::double precision AS kotlinx_p90,\n       NULL::double precision AS jackson_p95,\n       NULL::double precision AS kotlinx_p95,\n       NULL::double precision AS jackson_p99,\n       NULL::double precision AS kotlinx_p99\nFROM benchmark_cdf c\nWHERE c.run_id = (SELECT run_id FROM benchmark_runs ORDER BY generated_at DESC LIMIT 1)\n  AND c.direction = 'write'\n  AND c.model = '${model}'\nGROUP BY c.latency_ns\nUNION ALL\nSELECT c.p50_ns + v.dy AS latency_ns,\n       NULL::double precision AS jackson,\n       NULL::double precision AS kotlinx,\n       CASE WHEN c.library = 'jackson' THEN v.y END AS jackson_p50,\n       CASE WHEN c.library = 'kotlinx' THEN v.y END AS kotlinx_p50,\n       NULL::double precision AS jackson_p75,\n       NULL::double precision AS kotlinx_p75,\n       NULL::double precision AS jackson_p90,\n       NULL::double precision AS kotlinx_p90,\n       NULL::double precision AS jackson_p95,\n       NULL::double precision AS kotlinx_p95,\n       NULL::double precision AS jackson_p99,\n       NULL::double precision AS kotlinx_p99\nFROM cases c\nCROSS JOIN (VALUES (0.0, 0.0), (1e-6, 1.0)) AS v(dy, y)\nWHERE EXISTS (SELECT 1 FROM wanted_pcts WHERE p = 'p50')\nUNION ALL\nSELECT c.p75_ns + v.dy AS latency_ns,\n       NULL::double precision AS jackson,\n       NULL::double precision AS kotlinx,\n       NULL::double precision AS jackson_p50,\n       NULL::double precision AS kotlinx_p50,\n       CASE WHEN c.library = 'jackson' THEN v.y END AS jackson_p75,\n       CASE WHEN c.library = 'kotlinx' THEN v.y END AS kotlinx_p75,\n       NULL::double precision AS jackson_p90,\n       NULL::double precision AS kotlinx_p90,\n       NULL::double precision AS jackson_p95,\n       NULL::double precision AS kotlinx_p95,\n       NULL::double precision AS jackson_p99,\n       NULL::double precision AS kotlinx_p99\nFROM cases c\nCROSS JOIN (VALUES (0.0, 0.0), (1e-6, 1.0)) AS v(dy, y)\nWHERE EXISTS (SELECT 1 FROM wanted_pcts WHERE p = 'p75')\nUNION ALL\nSELECT c.p90_ns + v.dy AS latency_ns,\n       NULL::double precision AS jackson,\n       NULL::double precision AS kotlinx,\n       NULL::double precision AS jackson_p50,\n       NULL::double precision AS kotlinx_p50,\n       NULL::double precision AS jackson_p75,\n       NULL::double precision AS kotlinx_p75,\n       CASE WHEN c.library = 'jackson' THEN v.y END AS jackson_p90,\n       CASE WHEN c.library = 'kotlinx' THEN v.y END AS kotlinx_p90,\n       NULL::double precision AS jackson_p95,\n       NULL::double precision AS kotlinx_p95,\n       NULL::double precision AS jackson_p99,\n       NULL::double precision AS kotlinx_p99\nFROM cases c\nCROSS JOIN (VALUES (0.0, 0.0), (1e-6, 1.0)) AS v(dy, y)\nWHERE EXISTS (SELECT 1 FROM wanted_pcts WHERE p = 'p90')\nUNION ALL\nSELECT c.p95_ns + v.dy AS latency_ns,\n       NULL::double precision AS jackson,\n       NULL::double precision AS kotlinx,\n       NULL::double precision AS jackson_p50,\n       NULL::double precision AS kotlinx_p50,\n       NULL::double precision AS jackson_p75,\n       NULL::double precision AS kotlinx_p75,\n       NULL::double precision AS jackson_p90,\n       NULL::double precision AS kotlinx_p90,\n       CASE WHEN c.library = 'jackson' THEN v.y END AS jackson_p95,\n       CASE WHEN c.library = 'kotlinx' THEN v.y END AS kotlinx_p95,\n       NULL::double precision AS jackson_p99,\n       NULL::double precision AS kotlinx_p99\nFROM cases c\nCROSS JOIN (VALUES (0.0, 0.0), (1e-6, 1.0)) AS v(dy, y)\nWHERE EXISTS (SELECT 1 FROM wanted_pcts WHERE p = 'p95')\nUNION ALL\nSELECT c.p99_ns + v.dy AS latency_ns,\n       NULL::double precision AS jackson,\n       NULL::double precision AS kotlinx,\n       NULL::double precision AS jackson_p50,\n       NULL::double precision AS kotlinx_p50,\n       NULL::double precision AS jackson_p75,\n       NULL::double precision AS kotlinx_p75,\n       NULL::double precision AS jackson_p90,\n       NULL::double precision AS kotlinx_p90,\n       NULL::double precision AS jackson_p95,\n       NULL::double precision AS kotlinx_p95,\n       CASE WHEN c.library = 'jackson' THEN v.y END AS jackson_p99,\n       CASE WHEN c.library = 'kotlinx' THEN v.y END AS kotlinx_p99\nFROM cases c\nCROSS JOIN (VALUES (0.0, 0.0), (1e-6, 1.0)) AS v(dy, y)\nWHERE EXISTS (SELECT 1 FROM wanted_pcts WHERE p = 'p99')\nORDER BY 1",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "barAlignment": 0,
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "доля запросов",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "decimals": 3
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      6,
+                      3
+                    ]
+                  }
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p50"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p50"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dot",
+                    "dash": [
+                      2,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p75"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p75"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      4,
+                      3
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p90"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p90"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      8,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p95"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p95"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      10,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p99"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p99"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      16,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p50"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p50"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dot",
+                    "dash": [
+                      2,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p75"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p75"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      4,
+                      3
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p90"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p90"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      8,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p95"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p95"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      10,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p99"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p99"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      16,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "latency_ns"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "латентность, нс/оп"
+                },
+                {
+                  "id": "decimals",
+                  "value": 1
+                },
+                {
+                  "id": "custom.axisLabel",
+                  "value": "латентность, нс/оп"
+                },
+                {
+                  "id": "custom.hideFrom",
+                  "value": {
+                    "legend": true,
+                    "tooltip": true,
+                    "viz": false
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          },
+          "xField": "latency_ns"
+        },
+        "transformations": [
+          {
+            "id": "filterFieldsByName",
+            "options": {
+              "include": {
+                "pattern": "^(latency_ns|jackson|kotlinx|(jackson|kotlinx)_(p50|p95|${percentile:pipe}))$"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 18,
+        "type": "trend",
+        "title": "mixed: Jackson vs kotlinx — CDF",
+        "gridPos": {
+          "h": 10,
+          "w": 8,
+          "x": 16,
+          "y": 51
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "WITH wanted_pcts AS (\n  SELECT DISTINCT trim(both FROM x) AS p\n  FROM unnest(ARRAY['p50','p95'] || string_to_array('${percentile:csv}', ',')) AS t(x)\n  WHERE trim(both FROM x) <> ''\n),\ncases AS (\n  SELECT library, p50_ns, p75_ns, p90_ns, p95_ns, p99_ns\n  FROM benchmark_cases\n  WHERE run_id = (SELECT run_id FROM benchmark_runs ORDER BY generated_at DESC LIMIT 1)\n    AND direction = 'mixed'\n    AND model = '${model}'\n)\nSELECT c.latency_ns,\n       MAX(c.fraction) FILTER (WHERE c.library = 'jackson') AS jackson,\n       MAX(c.fraction) FILTER (WHERE c.library = 'kotlinx') AS kotlinx,\n       NULL::double precision AS jackson_p50,\n       NULL::double precision AS kotlinx_p50,\n       NULL::double precision AS jackson_p75,\n       NULL::double precision AS kotlinx_p75,\n       NULL::double precision AS jackson_p90,\n       NULL::double precision AS kotlinx_p90,\n       NULL::double precision AS jackson_p95,\n       NULL::double precision AS kotlinx_p95,\n       NULL::double precision AS jackson_p99,\n       NULL::double precision AS kotlinx_p99\nFROM benchmark_cdf c\nWHERE c.run_id = (SELECT run_id FROM benchmark_runs ORDER BY generated_at DESC LIMIT 1)\n  AND c.direction = 'mixed'\n  AND c.model = '${model}'\nGROUP BY c.latency_ns\nUNION ALL\nSELECT c.p50_ns + v.dy AS latency_ns,\n       NULL::double precision AS jackson,\n       NULL::double precision AS kotlinx,\n       CASE WHEN c.library = 'jackson' THEN v.y END AS jackson_p50,\n       CASE WHEN c.library = 'kotlinx' THEN v.y END AS kotlinx_p50,\n       NULL::double precision AS jackson_p75,\n       NULL::double precision AS kotlinx_p75,\n       NULL::double precision AS jackson_p90,\n       NULL::double precision AS kotlinx_p90,\n       NULL::double precision AS jackson_p95,\n       NULL::double precision AS kotlinx_p95,\n       NULL::double precision AS jackson_p99,\n       NULL::double precision AS kotlinx_p99\nFROM cases c\nCROSS JOIN (VALUES (0.0, 0.0), (1e-6, 1.0)) AS v(dy, y)\nWHERE EXISTS (SELECT 1 FROM wanted_pcts WHERE p = 'p50')\nUNION ALL\nSELECT c.p75_ns + v.dy AS latency_ns,\n       NULL::double precision AS jackson,\n       NULL::double precision AS kotlinx,\n       NULL::double precision AS jackson_p50,\n       NULL::double precision AS kotlinx_p50,\n       CASE WHEN c.library = 'jackson' THEN v.y END AS jackson_p75,\n       CASE WHEN c.library = 'kotlinx' THEN v.y END AS kotlinx_p75,\n       NULL::double precision AS jackson_p90,\n       NULL::double precision AS kotlinx_p90,\n       NULL::double precision AS jackson_p95,\n       NULL::double precision AS kotlinx_p95,\n       NULL::double precision AS jackson_p99,\n       NULL::double precision AS kotlinx_p99\nFROM cases c\nCROSS JOIN (VALUES (0.0, 0.0), (1e-6, 1.0)) AS v(dy, y)\nWHERE EXISTS (SELECT 1 FROM wanted_pcts WHERE p = 'p75')\nUNION ALL\nSELECT c.p90_ns + v.dy AS latency_ns,\n       NULL::double precision AS jackson,\n       NULL::double precision AS kotlinx,\n       NULL::double precision AS jackson_p50,\n       NULL::double precision AS kotlinx_p50,\n       NULL::double precision AS jackson_p75,\n       NULL::double precision AS kotlinx_p75,\n       CASE WHEN c.library = 'jackson' THEN v.y END AS jackson_p90,\n       CASE WHEN c.library = 'kotlinx' THEN v.y END AS kotlinx_p90,\n       NULL::double precision AS jackson_p95,\n       NULL::double precision AS kotlinx_p95,\n       NULL::double precision AS jackson_p99,\n       NULL::double precision AS kotlinx_p99\nFROM cases c\nCROSS JOIN (VALUES (0.0, 0.0), (1e-6, 1.0)) AS v(dy, y)\nWHERE EXISTS (SELECT 1 FROM wanted_pcts WHERE p = 'p90')\nUNION ALL\nSELECT c.p95_ns + v.dy AS latency_ns,\n       NULL::double precision AS jackson,\n       NULL::double precision AS kotlinx,\n       NULL::double precision AS jackson_p50,\n       NULL::double precision AS kotlinx_p50,\n       NULL::double precision AS jackson_p75,\n       NULL::double precision AS kotlinx_p75,\n       NULL::double precision AS jackson_p90,\n       NULL::double precision AS kotlinx_p90,\n       CASE WHEN c.library = 'jackson' THEN v.y END AS jackson_p95,\n       CASE WHEN c.library = 'kotlinx' THEN v.y END AS kotlinx_p95,\n       NULL::double precision AS jackson_p99,\n       NULL::double precision AS kotlinx_p99\nFROM cases c\nCROSS JOIN (VALUES (0.0, 0.0), (1e-6, 1.0)) AS v(dy, y)\nWHERE EXISTS (SELECT 1 FROM wanted_pcts WHERE p = 'p95')\nUNION ALL\nSELECT c.p99_ns + v.dy AS latency_ns,\n       NULL::double precision AS jackson,\n       NULL::double precision AS kotlinx,\n       NULL::double precision AS jackson_p50,\n       NULL::double precision AS kotlinx_p50,\n       NULL::double precision AS jackson_p75,\n       NULL::double precision AS kotlinx_p75,\n       NULL::double precision AS jackson_p90,\n       NULL::double precision AS kotlinx_p90,\n       NULL::double precision AS jackson_p95,\n       NULL::double precision AS kotlinx_p95,\n       CASE WHEN c.library = 'jackson' THEN v.y END AS jackson_p99,\n       CASE WHEN c.library = 'kotlinx' THEN v.y END AS kotlinx_p99\nFROM cases c\nCROSS JOIN (VALUES (0.0, 0.0), (1e-6, 1.0)) AS v(dy, y)\nWHERE EXISTS (SELECT 1 FROM wanted_pcts WHERE p = 'p99')\nORDER BY 1",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "barAlignment": 0,
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "доля запросов",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "decimals": 3
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      6,
+                      3
+                    ]
+                  }
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p50"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p50"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dot",
+                    "dash": [
+                      2,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p75"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p75"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      4,
+                      3
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p90"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p90"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      8,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p95"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p95"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      10,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson_p99"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3 p99"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      16,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p50"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p50"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dot",
+                    "dash": [
+                      2,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p75"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p75"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      4,
+                      3
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p90"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p90"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      8,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p95"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p95"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      10,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx_p99"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization p99"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      16,
+                      4
+                    ]
+                  }
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 1
+                },
+                {
+                  "id": "custom.fillOpacity",
+                  "value": 0
+                },
+                {
+                  "id": "custom.showPoints",
+                  "value": "never"
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "max",
+                  "value": 1
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "latency_ns"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "латентность, нс/оп"
+                },
+                {
+                  "id": "decimals",
+                  "value": 1
+                },
+                {
+                  "id": "custom.axisLabel",
+                  "value": "латентность, нс/оп"
+                },
+                {
+                  "id": "custom.hideFrom",
+                  "value": {
+                    "legend": true,
+                    "tooltip": true,
+                    "viz": false
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          },
+          "xField": "latency_ns"
+        },
+        "transformations": [
+          {
+            "id": "filterFieldsByName",
+            "options": {
+              "include": {
+                "pattern": "^(latency_ns|jackson|kotlinx|(jackson|kotlinx)_(p50|p95|${percentile:pipe}))$"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 19,
+        "type": "row",
+        "title": "Гистограмма — общие бины, столбцы Jackson и kotlinx рядом (как SVG overlay)",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 61
+        },
+        "collapsed": false,
+        "panels": []
+      },
+      {
+        "id": 20,
+        "type": "barchart",
+        "title": "read: Jackson vs kotlinx — гистограмма",
+        "gridPos": {
+          "h": 10,
+          "w": 8,
+          "x": 0,
+          "y": 62
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "WITH src AS (\n  SELECT library, ns_per_op\n  FROM benchmark_samples\n  WHERE run_id = (SELECT run_id FROM benchmark_runs ORDER BY generated_at DESC LIMIT 1)\n    AND direction = 'read'\n    AND model = '${model}'\n),\nb AS (\n  SELECT min(ns_per_op) AS lo, max(ns_per_op) AS hi FROM src\n),\nbinned AS (\n  SELECT library,\n         width_bucket(ns_per_op, (SELECT lo FROM b), (SELECT hi FROM b) + 1e-6, 20) AS bucket\n  FROM src\n)\nSELECT ROUND(((SELECT lo FROM b)\n              + (bucket - 0.5) * ((SELECT hi FROM b) - (SELECT lo FROM b)) / 20.0)::numeric, 1) AS latency_ns,\n       COUNT(*) FILTER (WHERE library = 'jackson') AS jackson,\n       COUNT(*) FILTER (WHERE library = 'kotlinx') AS kotlinx\nFROM binned\nGROUP BY bucket\nORDER BY bucket",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "fillOpacity": 80,
+              "gradientMode": "none",
+              "lineWidth": 1,
+              "axisLabel": "число сэмплов"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "decimals": 0
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      6,
+                      3
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "xField": "latency_ns",
+          "orientation": "vertical",
+          "showValue": "never",
+          "stacking": "none",
+          "barWidth": 0.9,
+          "groupWidth": 0.8,
+          "xTickLabelRotation": 45,
+          "xTickLabelMaxLength": 12,
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 21,
+        "type": "barchart",
+        "title": "write: Jackson vs kotlinx — гистограмма",
+        "gridPos": {
+          "h": 10,
+          "w": 8,
+          "x": 8,
+          "y": 62
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "WITH src AS (\n  SELECT library, ns_per_op\n  FROM benchmark_samples\n  WHERE run_id = (SELECT run_id FROM benchmark_runs ORDER BY generated_at DESC LIMIT 1)\n    AND direction = 'write'\n    AND model = '${model}'\n),\nb AS (\n  SELECT min(ns_per_op) AS lo, max(ns_per_op) AS hi FROM src\n),\nbinned AS (\n  SELECT library,\n         width_bucket(ns_per_op, (SELECT lo FROM b), (SELECT hi FROM b) + 1e-6, 20) AS bucket\n  FROM src\n)\nSELECT ROUND(((SELECT lo FROM b)\n              + (bucket - 0.5) * ((SELECT hi FROM b) - (SELECT lo FROM b)) / 20.0)::numeric, 1) AS latency_ns,\n       COUNT(*) FILTER (WHERE library = 'jackson') AS jackson,\n       COUNT(*) FILTER (WHERE library = 'kotlinx') AS kotlinx\nFROM binned\nGROUP BY bucket\nORDER BY bucket",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "fillOpacity": 80,
+              "gradientMode": "none",
+              "lineWidth": 1,
+              "axisLabel": "число сэмплов"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "decimals": 0
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      6,
+                      3
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "xField": "latency_ns",
+          "orientation": "vertical",
+          "showValue": "never",
+          "stacking": "none",
+          "barWidth": 0.9,
+          "groupWidth": 0.8,
+          "xTickLabelRotation": 45,
+          "xTickLabelMaxLength": 12,
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 22,
+        "type": "barchart",
+        "title": "mixed: Jackson vs kotlinx — гистограмма",
+        "gridPos": {
+          "h": 10,
+          "w": 8,
+          "x": 16,
+          "y": 62
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "WITH src AS (\n  SELECT library, ns_per_op\n  FROM benchmark_samples\n  WHERE run_id = (SELECT run_id FROM benchmark_runs ORDER BY generated_at DESC LIMIT 1)\n    AND direction = 'mixed'\n    AND model = '${model}'\n),\nb AS (\n  SELECT min(ns_per_op) AS lo, max(ns_per_op) AS hi FROM src\n),\nbinned AS (\n  SELECT library,\n         width_bucket(ns_per_op, (SELECT lo FROM b), (SELECT hi FROM b) + 1e-6, 20) AS bucket\n  FROM src\n)\nSELECT ROUND(((SELECT lo FROM b)\n              + (bucket - 0.5) * ((SELECT hi FROM b) - (SELECT lo FROM b)) / 20.0)::numeric, 1) AS latency_ns,\n       COUNT(*) FILTER (WHERE library = 'jackson') AS jackson,\n       COUNT(*) FILTER (WHERE library = 'kotlinx') AS kotlinx\nFROM binned\nGROUP BY bucket\nORDER BY bucket",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "fillOpacity": 80,
+              "gradientMode": "none",
+              "lineWidth": 1,
+              "axisLabel": "число сэмплов"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "decimals": 0
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "jackson"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Jackson 3"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#1f77b4"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "kotlinx"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "kotlinx.serialization"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "#2ca02c"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "fill": "dash",
+                    "dash": [
+                      6,
+                      3
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "xField": "latency_ns",
+          "orientation": "vertical",
+          "showValue": "never",
+          "stacking": "none",
+          "barWidth": 0.9,
+          "groupWidth": 0.8,
+          "xTickLabelRotation": 45,
+          "xTickLabelMaxLength": 12,
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        }
+      }
+    ]
+  },
+  "overwrite": true,
+  "inputs": [],
+  "folderId": 0
+}

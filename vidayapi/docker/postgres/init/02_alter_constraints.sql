@@ -1,0 +1,51 @@
+ALTER TABLE viday.access_type ADD CONSTRAINT pk_access_type PRIMARY KEY (id);
+ALTER TABLE viday.content_type ADD CONSTRAINT pk_content_type PRIMARY KEY (id);
+ALTER TABLE viday.role ADD CONSTRAINT pk_role PRIMARY KEY (id);
+ALTER TABLE viday.codec ADD CONSTRAINT pk_codec PRIMARY KEY (id);
+ALTER TABLE viday.stream_status ADD CONSTRAINT pk_stream_status PRIMARY KEY (id);
+ALTER TABLE viday."user" ADD CONSTRAINT pk_user PRIMARY KEY (id);
+ALTER TABLE viday.content ADD CONSTRAINT pk_content PRIMARY KEY (id);
+ALTER TABLE viday.media_variant ADD CONSTRAINT pk_media_variant PRIMARY KEY (id);
+ALTER TABLE viday.video ADD CONSTRAINT pk_video PRIMARY KEY (content_id);
+ALTER TABLE viday.stream ADD CONSTRAINT pk_stream PRIMARY KEY (content_id);
+ALTER TABLE viday.playlist ADD CONSTRAINT pk_playlist PRIMARY KEY (id);
+ALTER TABLE viday.user_follows ADD CONSTRAINT pk_user_follows PRIMARY KEY (following_user_id, followed_user_id);
+ALTER TABLE viday.user_to_playlist ADD CONSTRAINT pk_user_to_playlist PRIMARY KEY (user_id, playlist_id);
+ALTER TABLE viday.content_to_playlist ADD CONSTRAINT pk_content_to_playlist PRIMARY KEY (content_id, playlist_id);
+
+ALTER TABLE viday."user" ADD CONSTRAINT fk_user_role FOREIGN KEY (role_id) REFERENCES viday.role(id) ON DELETE RESTRICT;
+ALTER TABLE viday.content ADD CONSTRAINT fk_content_type FOREIGN KEY (content_type_id) REFERENCES viday.content_type(id) ON DELETE RESTRICT;
+ALTER TABLE viday.content ADD CONSTRAINT fk_content_owner FOREIGN KEY (owner_id) REFERENCES viday."user"(id) ON DELETE CASCADE;
+ALTER TABLE viday.content ADD CONSTRAINT fk_content_access FOREIGN KEY (access_type_id) REFERENCES viday.access_type(id) ON DELETE RESTRICT;
+ALTER TABLE viday.media_variant ADD CONSTRAINT fk_media_variant_content FOREIGN KEY (content_id) REFERENCES viday.content(id) ON DELETE CASCADE;
+ALTER TABLE viday.media_variant ADD CONSTRAINT fk_media_variant_codec FOREIGN KEY (codec_id) REFERENCES viday.codec(id) ON DELETE RESTRICT;
+ALTER TABLE viday.video ADD CONSTRAINT fk_video_content FOREIGN KEY (content_id) REFERENCES viday.content(id) ON DELETE CASCADE;
+ALTER TABLE viday.stream ADD CONSTRAINT fk_stream_content FOREIGN KEY (content_id) REFERENCES viday.content(id) ON DELETE CASCADE;
+ALTER TABLE viday.stream ADD CONSTRAINT fk_stream_status FOREIGN KEY (stream_status_id) REFERENCES viday.stream_status(id) ON DELETE RESTRICT;
+ALTER TABLE viday.playlist ADD CONSTRAINT fk_playlist_owner FOREIGN KEY (owner_id) REFERENCES viday."user"(id) ON DELETE CASCADE;
+ALTER TABLE viday.playlist ADD CONSTRAINT fk_playlist_access FOREIGN KEY (access_type_id) REFERENCES viday.access_type(id) ON DELETE RESTRICT;
+ALTER TABLE viday.user_follows ADD CONSTRAINT fk_follows_following FOREIGN KEY (following_user_id) REFERENCES viday."user"(id) ON DELETE CASCADE;
+ALTER TABLE viday.user_follows ADD CONSTRAINT fk_follows_followed FOREIGN KEY (followed_user_id) REFERENCES viday."user"(id) ON DELETE CASCADE;
+ALTER TABLE viday.user_to_playlist ADD CONSTRAINT fk_user_to_playlist_user FOREIGN KEY (user_id) REFERENCES viday."user"(id) ON DELETE CASCADE;
+ALTER TABLE viday.user_to_playlist ADD CONSTRAINT fk_user_to_playlist_playlist FOREIGN KEY (playlist_id) REFERENCES viday.playlist(id) ON DELETE CASCADE;
+ALTER TABLE viday.content_to_playlist ADD CONSTRAINT fk_content_to_playlist_content FOREIGN KEY (content_id) REFERENCES viday.content(id) ON DELETE CASCADE;
+ALTER TABLE viday.content_to_playlist ADD CONSTRAINT fk_content_to_playlist_playlist FOREIGN KEY (playlist_id) REFERENCES viday.playlist(id) ON DELETE CASCADE;
+ALTER TABLE viday.content_view_stats ADD CONSTRAINT fk_content_view_stats_content FOREIGN KEY (content_id) REFERENCES viday.content(id) ON DELETE CASCADE;
+
+ALTER TABLE viday.role ADD CONSTRAINT uk_role_name UNIQUE (name);
+ALTER TABLE viday.access_type ADD CONSTRAINT uk_access_type_name UNIQUE (name);
+ALTER TABLE viday.content_type ADD CONSTRAINT uk_content_type_name UNIQUE (name);
+ALTER TABLE viday.codec ADD CONSTRAINT uk_codec_name UNIQUE (name);
+ALTER TABLE viday.stream_status ADD CONSTRAINT uk_stream_status_name UNIQUE (name);
+ALTER TABLE viday."user" ADD CONSTRAINT uk_user_username UNIQUE (username);
+ALTER TABLE viday.media_variant ADD CONSTRAINT uk_media_variant_technical UNIQUE (content_id, width, height, bitrate, codec_id);
+ALTER TABLE viday.content_to_playlist ADD CONSTRAINT uk_content_to_playlist_position UNIQUE (playlist_id, position);
+
+CREATE UNIQUE INDEX idx_media_variant_source ON viday.media_variant (content_id, is_source) WHERE is_source = TRUE;
+
+ALTER TABLE viday.media_variant ADD CONSTRAINT chk_media_variant_width CHECK (width > 0);
+ALTER TABLE viday.media_variant ADD CONSTRAINT chk_media_variant_height CHECK (height > 0);
+ALTER TABLE viday.media_variant ADD CONSTRAINT chk_media_variant_bitrate CHECK (bitrate > 0);
+ALTER TABLE viday.video ADD CONSTRAINT chk_video_duration CHECK (duration_seconds > 0);
+ALTER TABLE viday.content_to_playlist ADD CONSTRAINT chk_content_to_playlist_position CHECK (position > 0);
+ALTER TABLE viday.user_follows ADD CONSTRAINT chk_user_follows_not_self CHECK (following_user_id != followed_user_id);

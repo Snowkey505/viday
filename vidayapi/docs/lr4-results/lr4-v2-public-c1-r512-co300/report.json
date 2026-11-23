@@ -1,0 +1,7889 @@
+{
+  "run_id": "lr4-v2-public-c1-r512-co300",
+  "title": "LR4 public public-c1-r512-co300 CPU=1 RAM=512MiB coroutines=300",
+  "profile": "ramp",
+  "scenario": "ramp",
+  "started_at": "2026-11-12T22:50:12Z",
+  "finished_at": "2026-11-12T22:51:19Z",
+  "duration_s": 64.36204981803894,
+  "config": {
+    "generator": "coroutines",
+    "workload": "public",
+    "scenario": "ramp",
+    "profile": "public-c1-r512-co300",
+    "api_cpus": 1,
+    "api_ram_mb": 512,
+    "api_heap_mb": 256,
+    "api_xms_mb": 128,
+    "coroutines": 300,
+    "dispatcher_threads": 2,
+    "error_rate": 0.0,
+    "soak_vus": 60,
+    "soak_duration": "20m",
+    "smoke_vus": 2,
+    "smoke_duration": "35s",
+    "ramp_max_vus": 300,
+    "ramp_step_duration": "5s",
+    "ramp_plateau_duration": "20s",
+    "stress_baseline_vus": 50,
+    "stress_overload_vus": 400,
+    "stress_baseline_duration": "3m",
+    "stress_overload_duration": "4m",
+    "stress_recovery_duration": "5m",
+    "think_time_ms": [
+      50,
+      100
+    ],
+    "request_timeout": "2s",
+    "warmup": "5s",
+    "early_stop": true,
+    "early_stop_after": "30s",
+    "failure_window": "5s",
+    "failure_threshold": 0.95,
+    "failure_windows": 3,
+    "failure_min_requests": 20,
+    "early_stopped": false,
+    "termination_reason": "planned duration reached",
+    "operations_per_session": 3,
+    "password_seed_users": 0,
+    "seed": "20 creators + 200 users + 1000 videos + 100 playlists"
+  },
+  "environment": {
+    "cpu_model": "AMD Ryzen 5 6600HS Creator Edition",
+    "kernel": "Linux 7.0.0-38-generic",
+    "docker_version": "29.1.3",
+    "cpusets": {
+      "api": "2",
+      "postgres": "4,5",
+      "redis": "6",
+      "minio": "6",
+      "generator": "7,8",
+      "prometheus": "9",
+      "grafana": "9",
+      "exporter": "9"
+    },
+    "images": {
+      "app": "viday-loadtest-app:lr4-v2-public-c1-r512-co300",
+      "app_id": "sha256:ad3bef8f02953ca8953ae350f30a67354e2273c1af8af11ff700dc3cbf0cf2e9",
+      "generator": "viday-loadtest-coroutines:lr4-v2-public-c1-r512-co300",
+      "generator_id": "sha256:e259736999ff5f28ccc1427e62f30bd61034e659c293572665c71d8e3e50a3a2"
+    },
+    "git_commit": "0645b29",
+    "git_dirty_files": 46,
+    "host_mem_available_mb_at_start": 8823
+  },
+  "early_stopped": false,
+  "termination_reason": "planned duration reached",
+  "phases": [
+    {
+      "started_at": "2026-11-12T22:50:14.456674Z",
+      "finished_at": "2026-11-12T22:51:18.818724Z",
+      "duration_s": 64.36204981803894,
+      "requests": 70146,
+      "rps": 1089.8658479385467,
+      "rps_median": 1137.3000000000002,
+      "rps_min": 6.0,
+      "rps_max": 1441.4,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "error_rate_pct": 0.0,
+      "unexpected_error_rate_pct": 0.0,
+      "business_error_rate_pct": 0.0,
+      "injected_share_pct": 0.0,
+      "vus_median": 260.0,
+      "vus_max": 300.0,
+      "mean_ms": 133.42644206917,
+      "stdev_ms": 85.69264372581675,
+      "min_ms": 1.07975,
+      "max_ms": 638.60782,
+      "p50_ms": 140.2261825,
+      "p75_ms": 190.42906725,
+      "p90_ms": 237.821779,
+      "p95_ms": 269.809444,
+      "p99_ms": 361.06348045000004,
+      "p997_ms": 421.8847192700001,
+      "scenario": "ramp",
+      "phase": "ramp"
+    }
+  ],
+  "operations": [
+    {
+      "started_at": "2026-11-12T22:50:14.456674Z",
+      "finished_at": "2026-11-12T22:51:18.716038Z",
+      "duration_s": 64.25936388969421,
+      "requests": 23382,
+      "rps": 363.8691481623888,
+      "rps_median": 380.8,
+      "rps_min": 2.0,
+      "rps_max": 481.6,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "error_rate_pct": 0.0,
+      "unexpected_error_rate_pct": 0.0,
+      "business_error_rate_pct": 0.0,
+      "injected_share_pct": 0.0,
+      "vus_median": 260.0,
+      "vus_max": 300.0,
+      "mean_ms": 134.80562536724833,
+      "stdev_ms": 85.93817780927891,
+      "min_ms": 1.233853,
+      "max_ms": 604.207918,
+      "p50_ms": 141.32351649999998,
+      "p75_ms": 192.03727425000002,
+      "p90_ms": 240.37046360000008,
+      "p95_ms": 272.22106915,
+      "p99_ms": 361.27055956999976,
+      "p997_ms": 417.5470984529999,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "feed"
+    },
+    {
+      "started_at": "2026-11-12T22:50:14.502679Z",
+      "finished_at": "2026-11-12T22:51:18.818724Z",
+      "duration_s": 64.31604480743408,
+      "requests": 23382,
+      "rps": 363.54847487912303,
+      "rps_median": 376.4,
+      "rps_min": 2.0,
+      "rps_max": 481.2,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "error_rate_pct": 0.0,
+      "unexpected_error_rate_pct": 0.0,
+      "business_error_rate_pct": 0.0,
+      "injected_share_pct": 0.0,
+      "vus_median": 260.0,
+      "vus_max": 300.0,
+      "mean_ms": 132.31146439466255,
+      "stdev_ms": 86.32047437729156,
+      "min_ms": 1.07975,
+      "max_ms": 623.077314,
+      "p50_ms": 138.595044,
+      "p75_ms": 189.1119525,
+      "p90_ms": 236.48117900000003,
+      "p95_ms": 269.75840845,
+      "p99_ms": 372.0787595699999,
+      "p997_ms": 435.230392017,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "live_streams"
+    },
+    {
+      "started_at": "2026-11-12T22:50:14.479307Z",
+      "finished_at": "2026-11-12T22:51:18.806701Z",
+      "duration_s": 64.32739400863647,
+      "requests": 23382,
+      "rps": 363.48433447903665,
+      "rps_median": 380.3,
+      "rps_min": 2.0,
+      "rps_max": 478.6,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "error_rate_pct": 0.0,
+      "unexpected_error_rate_pct": 0.0,
+      "business_error_rate_pct": 0.0,
+      "injected_share_pct": 0.0,
+      "vus_median": 260.0,
+      "vus_max": 300.0,
+      "mean_ms": 133.16223644559918,
+      "stdev_ms": 84.79314676236237,
+      "min_ms": 1.10429,
+      "max_ms": 638.60782,
+      "p50_ms": 140.822393,
+      "p75_ms": 190.32234350000002,
+      "p90_ms": 236.8428111,
+      "p95_ms": 267.5548851,
+      "p99_ms": 349.68592427999926,
+      "p997_ms": 402.50184270299997,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "video_detail"
+    }
+  ],
+  "ramp_curve": [
+    {
+      "target_vus": 0,
+      "requests": 165,
+      "rps": 55.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 11.808277018181819,
+      "p95_ms": 22.073261000000002,
+      "p99_ms": 24.61377264,
+      "stable": true
+    },
+    {
+      "target_vus": 10,
+      "requests": 1067,
+      "rps": 213.4,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 9.489235076850985,
+      "p95_ms": 19.860694199999998,
+      "p99_ms": 31.205128559999977,
+      "stable": true
+    },
+    {
+      "target_vus": 20,
+      "requests": 2437,
+      "rps": 487.4,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 8.491528188756668,
+      "p95_ms": 19.595448399999995,
+      "p99_ms": 31.95681403999998,
+      "stable": true
+    },
+    {
+      "target_vus": 30,
+      "requests": 791,
+      "rps": 395.5,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 12.560868208596712,
+      "p95_ms": 31.326051,
+      "p99_ms": 44.878973300000006,
+      "stable": true
+    },
+    {
+      "target_vus": 40,
+      "requests": 2834,
+      "rps": 708.5,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 17.363013634438953,
+      "p95_ms": 35.06169654999999,
+      "p99_ms": 49.517425360000004,
+      "stable": true
+    },
+    {
+      "target_vus": 50,
+      "requests": 1004,
+      "rps": 502.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 23.74184208167331,
+      "p95_ms": 48.9506069,
+      "p99_ms": 87.88293643000002,
+      "stable": true
+    },
+    {
+      "target_vus": 60,
+      "requests": 3068,
+      "rps": 767.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 33.51791910756193,
+      "p95_ms": 67.78453455,
+      "p99_ms": 124.0707951799999,
+      "stable": true
+    },
+    {
+      "target_vus": 70,
+      "requests": 1206,
+      "rps": 603.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 32.70230676036484,
+      "p95_ms": 57.287926999999996,
+      "p99_ms": 72.4760044,
+      "stable": true
+    },
+    {
+      "target_vus": 80,
+      "requests": 3336,
+      "rps": 834.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 46.94997805695444,
+      "p95_ms": 94.71920500000002,
+      "p99_ms": 157.3436074,
+      "stable": true
+    },
+    {
+      "target_vus": 90,
+      "requests": 1194,
+      "rps": 597.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 50.33305284170854,
+      "p95_ms": 83.36220844999997,
+      "p99_ms": 110.67215116999989,
+      "stable": true
+    },
+    {
+      "target_vus": 100,
+      "requests": 2201,
+      "rps": 733.6666666666666,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 63.31566677464788,
+      "p95_ms": 134.232173,
+      "p99_ms": 178.216245,
+      "stable": true
+    },
+    {
+      "target_vus": 110,
+      "requests": 1057,
+      "rps": 528.5,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 78.89202063670766,
+      "p95_ms": 137.628581,
+      "p99_ms": 189.65891052,
+      "stable": true
+    },
+    {
+      "target_vus": 120,
+      "requests": 1178,
+      "rps": 589.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 75.9670890950764,
+      "p95_ms": 123.09323424999997,
+      "p99_ms": 156.06003848,
+      "stable": true
+    },
+    {
+      "target_vus": 130,
+      "requests": 1124,
+      "rps": 562.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 92.71260900533808,
+      "p95_ms": 162.4660735999999,
+      "p99_ms": 224.82094423999996,
+      "stable": true
+    },
+    {
+      "target_vus": 140,
+      "requests": 1047,
+      "rps": 523.5,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 104.88347681375359,
+      "p95_ms": 209.5802469,
+      "p99_ms": 268.1383912599999,
+      "stable": true
+    },
+    {
+      "target_vus": 150,
+      "requests": 1223,
+      "rps": 611.5,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 100.30052962551105,
+      "p95_ms": 154.5302225,
+      "p99_ms": 181.98539824,
+      "stable": true
+    },
+    {
+      "target_vus": 160,
+      "requests": 1078,
+      "rps": 539.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 117.97283674211502,
+      "p95_ms": 189.44200709999998,
+      "p99_ms": 222.74688981000003,
+      "stable": true
+    },
+    {
+      "target_vus": 170,
+      "requests": 1138,
+      "rps": 569.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 123.26763922759226,
+      "p95_ms": 225.11285129999996,
+      "p99_ms": 300.1563792499998,
+      "stable": true
+    },
+    {
+      "target_vus": 180,
+      "requests": 1208,
+      "rps": 604.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 125.60958838990067,
+      "p95_ms": 179.11771424999998,
+      "p99_ms": 202.30453890000007,
+      "stable": true
+    },
+    {
+      "target_vus": 190,
+      "requests": 1091,
+      "rps": 545.5,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 145.4139682740605,
+      "p95_ms": 333.941426,
+      "p99_ms": 380.6287271999998,
+      "stable": true
+    },
+    {
+      "target_vus": 200,
+      "requests": 1150,
+      "rps": 575.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 148.95722182608696,
+      "p95_ms": 196.30741899999998,
+      "p99_ms": 213.20286827999996,
+      "stable": true
+    },
+    {
+      "target_vus": 220,
+      "requests": 1235,
+      "rps": 617.5,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 147.66197734979755,
+      "p95_ms": 222.862662,
+      "p99_ms": 247.23818828000003,
+      "stable": true
+    },
+    {
+      "target_vus": 230,
+      "requests": 1128,
+      "rps": 564.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 173.84672543617023,
+      "p95_ms": 270.54694789999985,
+      "p99_ms": 343.78806704,
+      "stable": true
+    },
+    {
+      "target_vus": 240,
+      "requests": 1289,
+      "rps": 644.5,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 165.61374668347554,
+      "p95_ms": 246.08206819999998,
+      "p99_ms": 271.5804676799994,
+      "stable": true
+    },
+    {
+      "target_vus": 260,
+      "requests": 1182,
+      "rps": 591.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 197.2100823646362,
+      "p95_ms": 294.33403215000004,
+      "p99_ms": 357.92397043000005,
+      "stable": true
+    },
+    {
+      "target_vus": 280,
+      "requests": 3672,
+      "rps": 918.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 202.01773997875816,
+      "p95_ms": 281.95819925,
+      "p99_ms": 325.67189497,
+      "stable": true
+    },
+    {
+      "target_vus": 290,
+      "requests": 1230,
+      "rps": 615.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 193.97504604796748,
+      "p95_ms": 335.01154424999993,
+      "p99_ms": 363.74779060000003,
+      "stable": true
+    },
+    {
+      "target_vus": 300,
+      "requests": 29813,
+      "rps": 1355.1363636363637,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "unexpected_error_rate_pct": 0.0,
+      "mean_ms": 190.5574391583202,
+      "p95_ms": 301.2469425999999,
+      "p99_ms": 399.3456122000011,
+      "stable": true
+    }
+  ],
+  "recovery": null,
+  "resources": {
+    "components": {
+      "api": {
+        "samples": 10,
+        "cpu_percent": {
+          "min": 0.3173,
+          "max": 100.0,
+          "median": 100.0,
+          "mean": 80.02693000000001
+        },
+        "ram_bytes": {
+          "min": 286253056.0,
+          "max": 469823488.0,
+          "median": 378925056.0,
+          "mean": 382069555.2
+        },
+        "ram_mib": {
+          "min": 272.9921875,
+          "max": 448.05859375,
+          "median": 361.37109375,
+          "mean": 364.369921875
+        },
+        "ram_limit_bytes": 536870912.0,
+        "disk_read_bps": {
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "mean": 0.0
+        },
+        "disk_write_bps": {
+          "min": 0.0,
+          "max": 4134.575111322869,
+          "median": 0.0,
+          "mean": 1189.8349665006526
+        },
+        "net_rx_bps": {
+          "min": 0.0,
+          "max": 3180444.0454804064,
+          "median": 2347581.8865684974,
+          "mean": 1708053.4342889388
+        },
+        "net_tx_bps": {
+          "min": 0.0,
+          "max": 3400395.7661593272,
+          "median": 2495483.013089646,
+          "mean": 1840787.6779089496
+        },
+        "pids_max": 231
+      },
+      "generator": {
+        "samples": 7,
+        "cpu_percent": {
+          "min": 18.9802,
+          "max": 40.2328,
+          "median": 23.6468,
+          "mean": 26.191514285714284
+        },
+        "ram_bytes": {
+          "min": 75661312.0,
+          "max": 211570688.0,
+          "median": 133992448.0,
+          "mean": 146903625.14285713
+        },
+        "ram_mib": {
+          "min": 72.15625,
+          "max": 201.76953125,
+          "median": 127.78515625,
+          "mean": 140.09821428571428
+        },
+        "ram_limit_bytes": 1073741824.0,
+        "disk_read_bps": {
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "mean": 0.0
+        },
+        "disk_write_bps": {
+          "min": 0.0,
+          "max": 469373.772677851,
+          "median": 0.0,
+          "mean": 67053.39609683586
+        },
+        "net_rx_bps": {
+          "min": 0.0,
+          "max": 3131917.7941522268,
+          "median": 2597091.2014029888,
+          "mean": 1893520.6138796879
+        },
+        "net_tx_bps": {
+          "min": 0.0,
+          "max": 517428.81414018554,
+          "median": 432795.9686011896,
+          "mean": 315467.0833065352
+        },
+        "pids_max": 18
+      },
+      "minio": {
+        "samples": 9,
+        "cpu_percent": {
+          "min": 0.0141,
+          "max": 2.9714,
+          "median": 0.0254,
+          "mean": 0.6349888888888889
+        },
+        "ram_bytes": {
+          "min": 59858944.0,
+          "max": 60485632.0,
+          "median": 60014592.0,
+          "mean": 60169329.777777776
+        },
+        "ram_mib": {
+          "min": 57.0859375,
+          "max": 57.68359375,
+          "median": 57.234375,
+          "mean": 57.38194444444444
+        },
+        "ram_limit_bytes": 268435456.0,
+        "disk_read_bps": {
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "mean": 0.0
+        },
+        "disk_write_bps": {
+          "min": 0.0,
+          "max": 2553.0843758903543,
+          "median": 408.67855219834223,
+          "mean": 601.6439231145463
+        },
+        "net_rx_bps": {
+          "min": 0.0,
+          "max": 58.80487171766959,
+          "median": 0.0,
+          "mean": 15.87553007717336
+        },
+        "net_tx_bps": {
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "mean": 0.0
+        },
+        "pids_max": 7
+      },
+      "postgres": {
+        "samples": 10,
+        "cpu_percent": {
+          "min": 0.0063,
+          "max": 2.1919,
+          "median": 0.17805,
+          "mean": 0.64464
+        },
+        "ram_bytes": {
+          "min": 48349184.0,
+          "max": 65126400.0,
+          "median": 58394624.0,
+          "mean": 57713459.2
+        },
+        "ram_mib": {
+          "min": 46.109375,
+          "max": 62.109375,
+          "median": 55.689453125,
+          "mean": 55.03984375
+        },
+        "ram_limit_bytes": 805306368.0,
+        "disk_read_bps": {
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "mean": 0.0
+        },
+        "disk_write_bps": {
+          "min": 0.0,
+          "max": 1777762.888341902,
+          "median": 9608.51481261999,
+          "mean": 186333.56906730862
+        },
+        "net_rx_bps": {
+          "min": 0.0,
+          "max": 8631.70930762941,
+          "median": 429.90836513559606,
+          "mean": 2122.089636956181
+        },
+        "net_tx_bps": {
+          "min": 0.0,
+          "max": 9495.774067905326,
+          "median": 432.7589937110596,
+          "mean": 2212.55780014617
+        },
+        "pids_max": 19
+      },
+      "redis": {
+        "samples": 10,
+        "cpu_percent": {
+          "min": 0.4722,
+          "max": 4.1345,
+          "median": 2.8869,
+          "mean": 2.62592
+        },
+        "ram_bytes": {
+          "min": 3592192.0,
+          "max": 4050944.0,
+          "median": 3792896.0,
+          "mean": 3824435.2
+        },
+        "ram_mib": {
+          "min": 3.42578125,
+          "max": 3.86328125,
+          "median": 3.6171875,
+          "mean": 3.647265625
+        },
+        "ram_limit_bytes": 167772160.0,
+        "disk_read_bps": {
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "mean": 0.0
+        },
+        "disk_write_bps": {
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "mean": 0.0
+        },
+        "net_rx_bps": {
+          "min": 0.0,
+          "max": 159834.8045424812,
+          "median": 91460.21988148641,
+          "mean": 82331.9635634915
+        },
+        "net_tx_bps": {
+          "min": 0.0,
+          "max": 2734772.522497764,
+          "median": 1541135.1498502349,
+          "mean": 1388453.2136727984
+        },
+        "pids_max": 6
+      }
+    },
+    "all": [
+      {
+        "phase": "all",
+        "component": "api",
+        "samples": 10,
+        "cpu_percent": {
+          "min": 0.3173,
+          "max": 100.0,
+          "median": 100.0,
+          "mean": 80.02693000000001
+        },
+        "ram_bytes": {
+          "min": 286253056.0,
+          "max": 469823488.0,
+          "median": 378925056.0,
+          "mean": 382069555.2
+        },
+        "ram_mib": {
+          "min": 272.9921875,
+          "max": 448.05859375,
+          "median": 361.37109375,
+          "mean": 364.369921875
+        },
+        "ram_limit_bytes": 536870912.0,
+        "disk_read_bps": {
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "mean": 0.0
+        },
+        "disk_write_bps": {
+          "min": 0.0,
+          "max": 4134.575111322869,
+          "median": 0.0,
+          "mean": 1189.8349665006526
+        },
+        "net_rx_bps": {
+          "min": 0.0,
+          "max": 3180444.0454804064,
+          "median": 2347581.8865684974,
+          "mean": 1708053.4342889388
+        },
+        "net_tx_bps": {
+          "min": 0.0,
+          "max": 3400395.7661593272,
+          "median": 2495483.013089646,
+          "mean": 1840787.6779089496
+        },
+        "pids_max": 231
+      },
+      {
+        "phase": "all",
+        "component": "generator",
+        "samples": 7,
+        "cpu_percent": {
+          "min": 18.9802,
+          "max": 40.2328,
+          "median": 23.6468,
+          "mean": 26.191514285714284
+        },
+        "ram_bytes": {
+          "min": 75661312.0,
+          "max": 211570688.0,
+          "median": 133992448.0,
+          "mean": 146903625.14285713
+        },
+        "ram_mib": {
+          "min": 72.15625,
+          "max": 201.76953125,
+          "median": 127.78515625,
+          "mean": 140.09821428571428
+        },
+        "ram_limit_bytes": 1073741824.0,
+        "disk_read_bps": {
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "mean": 0.0
+        },
+        "disk_write_bps": {
+          "min": 0.0,
+          "max": 469373.772677851,
+          "median": 0.0,
+          "mean": 67053.39609683586
+        },
+        "net_rx_bps": {
+          "min": 0.0,
+          "max": 3131917.7941522268,
+          "median": 2597091.2014029888,
+          "mean": 1893520.6138796879
+        },
+        "net_tx_bps": {
+          "min": 0.0,
+          "max": 517428.81414018554,
+          "median": 432795.9686011896,
+          "mean": 315467.0833065352
+        },
+        "pids_max": 18
+      },
+      {
+        "phase": "all",
+        "component": "minio",
+        "samples": 9,
+        "cpu_percent": {
+          "min": 0.0141,
+          "max": 2.9714,
+          "median": 0.0254,
+          "mean": 0.6349888888888889
+        },
+        "ram_bytes": {
+          "min": 59858944.0,
+          "max": 60485632.0,
+          "median": 60014592.0,
+          "mean": 60169329.777777776
+        },
+        "ram_mib": {
+          "min": 57.0859375,
+          "max": 57.68359375,
+          "median": 57.234375,
+          "mean": 57.38194444444444
+        },
+        "ram_limit_bytes": 268435456.0,
+        "disk_read_bps": {
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "mean": 0.0
+        },
+        "disk_write_bps": {
+          "min": 0.0,
+          "max": 2553.0843758903543,
+          "median": 408.67855219834223,
+          "mean": 601.6439231145463
+        },
+        "net_rx_bps": {
+          "min": 0.0,
+          "max": 58.80487171766959,
+          "median": 0.0,
+          "mean": 15.87553007717336
+        },
+        "net_tx_bps": {
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "mean": 0.0
+        },
+        "pids_max": 7
+      },
+      {
+        "phase": "all",
+        "component": "postgres",
+        "samples": 10,
+        "cpu_percent": {
+          "min": 0.0063,
+          "max": 2.1919,
+          "median": 0.17805,
+          "mean": 0.64464
+        },
+        "ram_bytes": {
+          "min": 48349184.0,
+          "max": 65126400.0,
+          "median": 58394624.0,
+          "mean": 57713459.2
+        },
+        "ram_mib": {
+          "min": 46.109375,
+          "max": 62.109375,
+          "median": 55.689453125,
+          "mean": 55.03984375
+        },
+        "ram_limit_bytes": 805306368.0,
+        "disk_read_bps": {
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "mean": 0.0
+        },
+        "disk_write_bps": {
+          "min": 0.0,
+          "max": 1777762.888341902,
+          "median": 9608.51481261999,
+          "mean": 186333.56906730862
+        },
+        "net_rx_bps": {
+          "min": 0.0,
+          "max": 8631.70930762941,
+          "median": 429.90836513559606,
+          "mean": 2122.089636956181
+        },
+        "net_tx_bps": {
+          "min": 0.0,
+          "max": 9495.774067905326,
+          "median": 432.7589937110596,
+          "mean": 2212.55780014617
+        },
+        "pids_max": 19
+      },
+      {
+        "phase": "all",
+        "component": "redis",
+        "samples": 10,
+        "cpu_percent": {
+          "min": 0.4722,
+          "max": 4.1345,
+          "median": 2.8869,
+          "mean": 2.62592
+        },
+        "ram_bytes": {
+          "min": 3592192.0,
+          "max": 4050944.0,
+          "median": 3792896.0,
+          "mean": 3824435.2
+        },
+        "ram_mib": {
+          "min": 3.42578125,
+          "max": 3.86328125,
+          "median": 3.6171875,
+          "mean": 3.647265625
+        },
+        "ram_limit_bytes": 167772160.0,
+        "disk_read_bps": {
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "mean": 0.0
+        },
+        "disk_write_bps": {
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "mean": 0.0
+        },
+        "net_rx_bps": {
+          "min": 0.0,
+          "max": 159834.8045424812,
+          "median": 91460.21988148641,
+          "mean": 82331.9635634915
+        },
+        "net_tx_bps": {
+          "min": 0.0,
+          "max": 2734772.522497764,
+          "median": 1541135.1498502349,
+          "mean": 1388453.2136727984
+        },
+        "pids_max": 6
+      }
+    ],
+    "phases": [
+      {
+        "scenario": "ramp",
+        "phase": "ramp",
+        "component": "api",
+        "samples": 7,
+        "cpu_percent": {
+          "min": 100.0,
+          "max": 100.0,
+          "median": 100.0,
+          "mean": 100.0
+        },
+        "ram_bytes": {
+          "min": 328339456.0,
+          "max": 449290240.0,
+          "median": 385495040.0,
+          "mean": 392015286.85714287
+        },
+        "ram_mib": {
+          "min": 313.12890625,
+          "max": 428.4765625,
+          "median": 367.63671875,
+          "mean": 373.8549107142857
+        },
+        "ram_limit_bytes": 536870912.0,
+        "disk_read_bps": {
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "mean": 0.0
+        },
+        "disk_write_bps": {
+          "min": 0.0,
+          "max": 4084.9331074032675,
+          "median": 0.0,
+          "mean": 1109.110650526237
+        },
+        "net_rx_bps": {
+          "min": 101179.08582324345,
+          "max": 3180444.0454804064,
+          "median": 2610732.0347101423,
+          "mean": 2004048.010725289
+        },
+        "net_tx_bps": {
+          "min": 149323.55292934258,
+          "max": 3400395.7661593272,
+          "median": 2795307.4481894705,
+          "mean": 2149255.9146919185
+        },
+        "pids_max": 231
+      },
+      {
+        "scenario": "ramp",
+        "phase": "ramp",
+        "component": "generator",
+        "samples": 7,
+        "cpu_percent": {
+          "min": 18.9802,
+          "max": 40.2328,
+          "median": 23.6468,
+          "mean": 26.191514285714284
+        },
+        "ram_bytes": {
+          "min": 75661312.0,
+          "max": 211570688.0,
+          "median": 133992448.0,
+          "mean": 146903625.14285713
+        },
+        "ram_mib": {
+          "min": 72.15625,
+          "max": 201.76953125,
+          "median": 127.78515625,
+          "mean": 140.09821428571428
+        },
+        "ram_limit_bytes": 1073741824.0,
+        "disk_read_bps": {
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "mean": 0.0
+        },
+        "disk_write_bps": {
+          "min": 0.0,
+          "max": 469373.772677851,
+          "median": 0.0,
+          "mean": 67053.39609683586
+        },
+        "net_rx_bps": {
+          "min": 0.0,
+          "max": 3131917.7941522268,
+          "median": 2597091.2014029888,
+          "mean": 1893520.6138796879
+        },
+        "net_tx_bps": {
+          "min": 0.0,
+          "max": 517428.81414018554,
+          "median": 432795.9686011896,
+          "mean": 315467.0833065352
+        },
+        "pids_max": 18
+      },
+      {
+        "scenario": "ramp",
+        "phase": "ramp",
+        "component": "minio",
+        "samples": 7,
+        "cpu_percent": {
+          "min": 0.0141,
+          "max": 2.9714,
+          "median": 0.0254,
+          "mean": 0.8082428571428572
+        },
+        "ram_bytes": {
+          "min": 59928576.0,
+          "max": 60485632.0,
+          "median": 60411904.0,
+          "mean": 60251574.85714286
+        },
+        "ram_mib": {
+          "min": 57.15234375,
+          "max": 57.68359375,
+          "median": 57.61328125,
+          "mean": 57.460379464285715
+        },
+        "ram_limit_bytes": 268435456.0,
+        "disk_read_bps": {
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "mean": 0.0
+        },
+        "disk_write_bps": {
+          "min": 0.0,
+          "max": 1226.8153882287334,
+          "median": 408.67855219834223,
+          "mean": 408.81584744865177
+        },
+        "net_rx_bps": {
+          "min": 0.0,
+          "max": 58.80487171766959,
+          "median": 0.0,
+          "mean": 12.290535912518084
+        },
+        "net_tx_bps": {
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "mean": 0.0
+        },
+        "pids_max": 7
+      },
+      {
+        "scenario": "ramp",
+        "phase": "ramp",
+        "component": "postgres",
+        "samples": 7,
+        "cpu_percent": {
+          "min": 0.0063,
+          "max": 1.2596,
+          "median": 0.0175,
+          "mean": 0.39672857142857143
+        },
+        "ram_bytes": {
+          "min": 53231616.0,
+          "max": 64806912.0,
+          "median": 61349888.0,
+          "mean": 59013412.571428575
+        },
+        "ram_mib": {
+          "min": 50.765625,
+          "max": 61.8046875,
+          "median": 58.5078125,
+          "mean": 56.279575892857146
+        },
+        "ram_limit_bytes": 805306368.0,
+        "disk_read_bps": {
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "mean": 0.0
+        },
+        "disk_write_bps": {
+          "min": 0.0,
+          "max": 1777762.888341902,
+          "median": 16354.4603860396,
+          "mean": 261908.57444514218
+        },
+        "net_rx_bps": {
+          "min": 0.0,
+          "max": 8631.70930762941,
+          "median": 3188.21153734029,
+          "mean": 3001.423959853651
+        },
+        "net_tx_bps": {
+          "min": 0.0,
+          "max": 9495.774067905326,
+          "median": 2550.07475961412,
+          "mean": 3136.1493351960335
+        },
+        "pids_max": 19
+      },
+      {
+        "scenario": "ramp",
+        "phase": "ramp",
+        "component": "redis",
+        "samples": 7,
+        "cpu_percent": {
+          "min": 2.556,
+          "max": 4.1345,
+          "median": 3.2989,
+          "mean": 3.2032571428571432
+        },
+        "ram_bytes": {
+          "min": 3723264.0,
+          "max": 4050944.0,
+          "median": 3956736.0,
+          "mean": 3898221.714285714
+        },
+        "ram_mib": {
+          "min": 3.55078125,
+          "max": 3.86328125,
+          "median": 3.7734375,
+          "mean": 3.7176339285714284
+        },
+        "ram_limit_bytes": 167772160.0,
+        "disk_read_bps": {
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "mean": 0.0
+        },
+        "disk_write_bps": {
+          "min": 0.0,
+          "max": 0.0,
+          "median": 0.0,
+          "mean": 0.0
+        },
+        "net_rx_bps": {
+          "min": 13579.41068775009,
+          "max": 159834.8045424812,
+          "median": 128411.07019491684,
+          "mean": 108279.1510798974
+        },
+        "net_tx_bps": {
+          "min": 100854.86420380576,
+          "max": 2734772.522497764,
+          "median": 2218080.2251477125,
+          "mean": 1829957.3799123405
+        },
+        "pids_max": 6
+      }
+    ]
+  },
+  "findings": [
+    {
+      "kind": "ramp",
+      "key": "max_stable_vus",
+      "value": "300",
+      "detail": "RPS=1355.1, p95=301.2 ms, unexpected=0.00%"
+    },
+    {
+      "kind": "ramp",
+      "key": "peak_rps",
+      "value": "1355.14",
+      "detail": "observed at ~300 VUs, p95=301.2 ms"
+    },
+    {
+      "kind": "resource_trend",
+      "key": "api.ram_mib_per_min",
+      "value": "118.9773",
+      "detail": "CPU slope -5.8690 %/min over 10 samples"
+    },
+    {
+      "kind": "resource_trend",
+      "key": "postgres.ram_mib_per_min",
+      "value": "11.2036",
+      "detail": "CPU slope 0.4772 %/min over 10 samples"
+    },
+    {
+      "kind": "resource_trend",
+      "key": "redis.ram_mib_per_min",
+      "value": "0.0952",
+      "detail": "CPU slope 0.1896 %/min over 10 samples"
+    }
+  ],
+  "percentiles": [
+    0.5,
+    0.75,
+    0.9,
+    0.95,
+    0.99,
+    0.997
+  ],
+  "raw_points": 70146,
+  "vus_points": 65,
+  "app_samples": [
+    {
+      "run_id": "lr4-v2-public-c1-r512-co300",
+      "threads_live": 27.0,
+      "threads_daemon": 23.0,
+      "threads_runnable": 8.0,
+      "threads_waiting": 11.0,
+      "requests_in_flight": 2.0,
+      "executor_active": 0.0,
+      "executor_pool": 0.0,
+      "heap_bytes": 72056408.0,
+      "gc_pause_rate": 0.0,
+      "hikari_active": 1.0,
+      "hikari_idle": 10.0,
+      "http_rps": 0.23584914890719338,
+      "http_5xx_rps": 0.0,
+      "tomcat_active": 0.0,
+      "tomcat_rejected_rate": 0.0,
+      "ts": "2026-11-12T22:50:06.141695Z"
+    },
+    {
+      "run_id": "lr4-v2-public-c1-r512-co300",
+      "threads_live": 27.0,
+      "threads_daemon": 23.0,
+      "threads_runnable": 8.0,
+      "threads_waiting": 11.0,
+      "requests_in_flight": 1.0,
+      "executor_active": 0.0,
+      "executor_pool": 0.0,
+      "heap_bytes": 67862104.0,
+      "gc_pause_rate": 0.0,
+      "hikari_active": 1.0,
+      "hikari_idle": 10.0,
+      "http_rps": 0.0,
+      "http_5xx_rps": 0.0,
+      "tomcat_active": 0.0,
+      "tomcat_rejected_rate": 0.0,
+      "ts": "2026-11-12T22:50:07.827211Z"
+    },
+    {
+      "run_id": "lr4-v2-public-c1-r512-co300",
+      "threads_live": 27.0,
+      "threads_daemon": 23.0,
+      "threads_runnable": 9.0,
+      "threads_waiting": 7.0,
+      "requests_in_flight": 3.0,
+      "executor_active": 0.0,
+      "executor_pool": 0.0,
+      "heap_bytes": 106346496.0,
+      "gc_pause_rate": 0.009857465877526223,
+      "hikari_active": 1.0,
+      "hikari_idle": 10.0,
+      "http_rps": 70.21282712764291,
+      "http_5xx_rps": 0.0,
+      "tomcat_active": 0.0,
+      "tomcat_rejected_rate": 0.0,
+      "ts": "2026-11-12T22:50:17.854321Z"
+    },
+    {
+      "run_id": "lr4-v2-public-c1-r512-co300",
+      "threads_live": 30.0,
+      "threads_daemon": 26.0,
+      "threads_runnable": 8.0,
+      "threads_waiting": 3.0,
+      "requests_in_flight": 3.0,
+      "executor_active": 0.0,
+      "executor_pool": 0.0,
+      "heap_bytes": 94533624.0,
+      "gc_pause_rate": 0.005798041194826823,
+      "hikari_active": 1.0,
+      "hikari_idle": 10.0,
+      "http_rps": 202.5315769089508,
+      "http_5xx_rps": 0.0,
+      "tomcat_active": 0.0,
+      "tomcat_rejected_rate": 0.0,
+      "ts": "2026-11-12T22:50:27.876886Z"
+    },
+    {
+      "run_id": "lr4-v2-public-c1-r512-co300",
+      "threads_live": 68.0,
+      "threads_daemon": 64.0,
+      "threads_runnable": 9.0,
+      "threads_waiting": 14.0,
+      "requests_in_flight": 32.0,
+      "executor_active": 0.0,
+      "executor_pool": 0.0,
+      "heap_bytes": 53582336.0,
+      "gc_pause_rate": 0.016642144765554548,
+      "hikari_active": 1.0,
+      "hikari_idle": 10.0,
+      "http_rps": 890.7035324223145,
+      "http_5xx_rps": 0.0,
+      "tomcat_active": 0.0,
+      "tomcat_rejected_rate": 0.0,
+      "ts": "2026-11-12T22:50:37.900137Z"
+    },
+    {
+      "run_id": "lr4-v2-public-c1-r512-co300",
+      "threads_live": 134.0,
+      "threads_daemon": 130.0,
+      "threads_runnable": 7.0,
+      "threads_waiting": 43.0,
+      "requests_in_flight": 104.0,
+      "executor_active": 0.0,
+      "executor_pool": 0.0,
+      "heap_bytes": 86464080.0,
+      "gc_pause_rate": 0.027540917031858528,
+      "hikari_active": 1.0,
+      "hikari_idle": 11.0,
+      "http_rps": 1114.856321449633,
+      "http_5xx_rps": 0.0,
+      "tomcat_active": 0.0,
+      "tomcat_rejected_rate": 0.0,
+      "ts": "2026-11-12T22:50:47.916341Z"
+    },
+    {
+      "run_id": "lr4-v2-public-c1-r512-co300",
+      "threads_live": 217.0,
+      "threads_daemon": 213.0,
+      "threads_runnable": 8.0,
+      "threads_waiting": 44.0,
+      "requests_in_flight": 200.0,
+      "executor_active": 0.0,
+      "executor_pool": 0.0,
+      "heap_bytes": 87210496.0,
+      "gc_pause_rate": 0.06354490005020458,
+      "hikari_active": 1.0,
+      "hikari_idle": 11.0,
+      "http_rps": 1152.062076810047,
+      "http_5xx_rps": 0.0,
+      "tomcat_active": 0.0,
+      "tomcat_rejected_rate": 0.0,
+      "ts": "2026-11-12T22:50:57.934348Z"
+    },
+    {
+      "run_id": "lr4-v2-public-c1-r512-co300",
+      "threads_live": 217.0,
+      "threads_daemon": 213.0,
+      "threads_runnable": 10.0,
+      "threads_waiting": 2.0,
+      "requests_in_flight": 200.0,
+      "executor_active": 0.0,
+      "executor_pool": 0.0,
+      "heap_bytes": 105220592.0,
+      "gc_pause_rate": 0.07149846237206484,
+      "hikari_active": 1.0,
+      "hikari_idle": 11.0,
+      "http_rps": 1209.6872906681042,
+      "http_5xx_rps": 0.0,
+      "tomcat_active": 0.0,
+      "tomcat_rejected_rate": 0.0,
+      "ts": "2026-11-12T22:51:07.949844Z"
+    },
+    {
+      "run_id": "lr4-v2-public-c1-r512-co300",
+      "threads_live": 218.0,
+      "threads_daemon": 214.0,
+      "threads_runnable": 7.0,
+      "threads_waiting": 49.0,
+      "requests_in_flight": 200.0,
+      "executor_active": 0.0,
+      "executor_pool": 0.0,
+      "heap_bytes": 130951640.0,
+      "gc_pause_rate": 0.06490270032089139,
+      "hikari_active": 1.0,
+      "hikari_idle": 12.0,
+      "http_rps": 1370.1456173826864,
+      "http_5xx_rps": 0.0,
+      "tomcat_active": 0.0,
+      "tomcat_rejected_rate": 0.0,
+      "ts": "2026-11-12T22:51:17.967890Z"
+    },
+    {
+      "run_id": "lr4-v2-public-c1-r512-co300",
+      "threads_live": 217.0,
+      "threads_daemon": 213.0,
+      "threads_runnable": 8.0,
+      "threads_waiting": 2.0,
+      "requests_in_flight": 1.0,
+      "executor_active": 0.0,
+      "executor_pool": 0.0,
+      "heap_bytes": 140318192.0,
+      "gc_pause_rate": 0.0699558710789809,
+      "hikari_active": 1.0,
+      "hikari_idle": 12.0,
+      "http_rps": 1395.836189352649,
+      "http_5xx_rps": 0.0,
+      "tomcat_active": 0.0,
+      "tomcat_rejected_rate": 0.0,
+      "ts": "2026-11-12T22:51:19.694775Z"
+    },
+    {
+      "run_id": "lr4-v2-public-c1-r512-co300",
+      "threads_live": 217.0,
+      "threads_daemon": 213.0,
+      "threads_runnable": 8.0,
+      "threads_waiting": 2.0,
+      "requests_in_flight": 1.0,
+      "executor_active": 0.0,
+      "executor_pool": 0.0,
+      "heap_bytes": 142415336.0,
+      "gc_pause_rate": 0.0,
+      "hikari_active": 1.0,
+      "hikari_idle": 12.0,
+      "http_rps": 0.0,
+      "http_5xx_rps": 0.0,
+      "tomcat_active": 0.0,
+      "tomcat_rejected_rate": 0.0,
+      "ts": "2026-11-12T22:51:25.893460Z"
+    }
+  ],
+  "k6_started_at": "2026-11-12T22:50:14.456674Z",
+  "cdf": [
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.0,
+      "latency_ms": 1.07975
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.01,
+      "latency_ms": 3.4156440000000003
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.02,
+      "latency_ms": 4.929177
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.03,
+      "latency_ms": 6.561022400000001
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.04,
+      "latency_ms": 7.8903304
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.05,
+      "latency_ms": 9.385413250000001
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.06,
+      "latency_ms": 10.6707253
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.07,
+      "latency_ms": 12.279588050000001
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.08,
+      "latency_ms": 13.976479400000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.09,
+      "latency_ms": 15.627212750000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.1,
+      "latency_ms": 17.407919999999997
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.11,
+      "latency_ms": 19.264962399999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.12,
+      "latency_ms": 21.3078102
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.13,
+      "latency_ms": 23.3641808
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.14,
+      "latency_ms": 25.4434199
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.15,
+      "latency_ms": 27.69072475
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.16,
+      "latency_ms": 30.0409298
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.17,
+      "latency_ms": 32.3886053
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.18,
+      "latency_ms": 34.953380300000006
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.19,
+      "latency_ms": 37.476349549999995
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.2,
+      "latency_ms": 40.196492
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.21,
+      "latency_ms": 43.0478394
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.22,
+      "latency_ms": 45.8317824
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.23,
+      "latency_ms": 48.70026755000001
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.24,
+      "latency_ms": 52.173448
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.25,
+      "latency_ms": 55.62665225
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.26,
+      "latency_ms": 59.3502847
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.27,
+      "latency_ms": 63.237396950000004
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.28,
+      "latency_ms": 66.77933200000001
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.29,
+      "latency_ms": 70.189707
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.3,
+      "latency_ms": 74.2380855
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.31,
+      "latency_ms": 77.89198025
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.32,
+      "latency_ms": 81.74007399999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.33,
+      "latency_ms": 86.01253505
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.34,
+      "latency_ms": 89.7609143
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.35,
+      "latency_ms": 94.0685645
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.36,
+      "latency_ms": 97.78669100000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.37,
+      "latency_ms": 101.87457025
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.38,
+      "latency_ms": 105.8231049
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.39,
+      "latency_ms": 109.29562625
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.4,
+      "latency_ms": 112.867205
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.41,
+      "latency_ms": 116.23459374999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.42,
+      "latency_ms": 119.40725699999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.43,
+      "latency_ms": 122.71305724999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.44,
+      "latency_ms": 125.51353999999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.45,
+      "latency_ms": 128.15308525
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.46,
+      "latency_ms": 130.8079233
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.47,
+      "latency_ms": 133.389075
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.48,
+      "latency_ms": 135.8860578
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.49,
+      "latency_ms": 138.10991589999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.5,
+      "latency_ms": 140.2261825
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.51,
+      "latency_ms": 142.59048674999997
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.52,
+      "latency_ms": 144.9010692
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.53,
+      "latency_ms": 147.0780603
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.54,
+      "latency_ms": 149.148667
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.55,
+      "latency_ms": 151.320014
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.56,
+      "latency_ms": 153.3652138
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.57,
+      "latency_ms": 155.2519251
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.58,
+      "latency_ms": 157.04778800000003
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.59,
+      "latency_ms": 159.0478771
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.6,
+      "latency_ms": 161.056437
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.61,
+      "latency_ms": 163.13790655
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.62,
+      "latency_ms": 164.9758592
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.63,
+      "latency_ms": 166.79293359999997
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.64,
+      "latency_ms": 168.60734300000001
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.65,
+      "latency_ms": 170.50521875
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.66,
+      "latency_ms": 172.593841
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.67,
+      "latency_ms": 174.50165510000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.68,
+      "latency_ms": 176.38497980000005
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.69,
+      "latency_ms": 178.37336754999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.7,
+      "latency_ms": 180.4644765
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.71,
+      "latency_ms": 182.4375408
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.72,
+      "latency_ms": 184.4338402
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.73,
+      "latency_ms": 186.42440125000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.74,
+      "latency_ms": 188.4068303
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.75,
+      "latency_ms": 190.42906725
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.76,
+      "latency_ms": 192.84384299999996
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.77,
+      "latency_ms": 195.27749365
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.78,
+      "latency_ms": 197.7388628
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.79,
+      "latency_ms": 200.40731665000004
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.8,
+      "latency_ms": 203.167682
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.81,
+      "latency_ms": 205.90427185000007
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.82,
+      "latency_ms": 208.78192019999997
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.83,
+      "latency_ms": 211.8676353
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.84,
+      "latency_ms": 214.77454559999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.85,
+      "latency_ms": 217.68160525
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.86,
+      "latency_ms": 221.2433823
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.87,
+      "latency_ms": 224.75909870000004
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.88,
+      "latency_ms": 228.7394054
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.89,
+      "latency_ms": 233.39236810000003
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.9,
+      "latency_ms": 237.821779
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.91,
+      "latency_ms": 242.73355890000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.92,
+      "latency_ms": 248.384394
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.93,
+      "latency_ms": 254.33609585000005
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.94,
+      "latency_ms": 261.30072870000004
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.95,
+      "latency_ms": 269.809444
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.96,
+      "latency_ms": 280.1027046
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.97,
+      "latency_ms": 293.72296734999986
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.98,
+      "latency_ms": 319.85638610000063
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.99,
+      "latency_ms": 361.06348045000004
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 1.0,
+      "latency_ms": 638.60782
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "fraction": 0.999,
+      "latency_ms": 465.73190867999995
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.0,
+      "latency_ms": 1.233853
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.01,
+      "latency_ms": 3.51055712
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.02,
+      "latency_ms": 5.0016279400000005
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.03,
+      "latency_ms": 6.58266439
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.04,
+      "latency_ms": 7.91021608
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.05,
+      "latency_ms": 9.343078049999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.06,
+      "latency_ms": 10.62848484
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.07,
+      "latency_ms": 12.123025819999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.08,
+      "latency_ms": 13.9081786
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.09,
+      "latency_ms": 15.74957226
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.1,
+      "latency_ms": 17.490043699999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.11,
+      "latency_ms": 19.258792339999996
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.12,
+      "latency_ms": 21.36616836
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.13,
+      "latency_ms": 23.28181636
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.14,
+      "latency_ms": 25.24623008
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.15,
+      "latency_ms": 27.85355215
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.16,
+      "latency_ms": 30.25637584
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.17,
+      "latency_ms": 32.88947559000001
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.18,
+      "latency_ms": 35.555183039999996
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.19,
+      "latency_ms": 38.135926180000006
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.2,
+      "latency_ms": 40.974155399999994
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.21,
+      "latency_ms": 44.107961790000004
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.22,
+      "latency_ms": 47.045585419999995
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.23,
+      "latency_ms": 50.23711162
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.24,
+      "latency_ms": 54.16050699999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.25,
+      "latency_ms": 57.732271
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.26,
+      "latency_ms": 61.752515720000005
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.27,
+      "latency_ms": 65.52779381000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.28,
+      "latency_ms": 68.67630788
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.29,
+      "latency_ms": 72.24133475
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.3,
+      "latency_ms": 76.1731436
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.31,
+      "latency_ms": 80.13330604999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.32,
+      "latency_ms": 84.50310616
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.33,
+      "latency_ms": 88.42556642000001
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.34,
+      "latency_ms": 92.44833636000001
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.35,
+      "latency_ms": 96.37129469999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.36,
+      "latency_ms": 100.88343836
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.37,
+      "latency_ms": 105.05848431999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.38,
+      "latency_ms": 108.61529116000001
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.39,
+      "latency_ms": 112.05737579000001
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.4,
+      "latency_ms": 115.2802608
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.41,
+      "latency_ms": 118.57646307
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.42,
+      "latency_ms": 121.63076408
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.43,
+      "latency_ms": 124.4522322
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.44,
+      "latency_ms": 126.81119903999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.45,
+      "latency_ms": 129.62300234999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.46,
+      "latency_ms": 132.31459324
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.47,
+      "latency_ms": 134.56942691999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.48,
+      "latency_ms": 137.09682804000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.49,
+      "latency_ms": 139.25295147000003
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.5,
+      "latency_ms": 141.32351649999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.51,
+      "latency_ms": 143.83701882
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.52,
+      "latency_ms": 146.11573884
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.53,
+      "latency_ms": 148.42865614000004
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.54,
+      "latency_ms": 150.70024692
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.55,
+      "latency_ms": 152.76724639999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.56,
+      "latency_ms": 154.56600344
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.57,
+      "latency_ms": 156.37066878
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.58,
+      "latency_ms": 158.08474116
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.59,
+      "latency_ms": 159.91910067999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.6,
+      "latency_ms": 161.9070492
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.61,
+      "latency_ms": 163.83964244999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.62,
+      "latency_ms": 165.7390901
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.63,
+      "latency_ms": 167.69104611000003
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.64,
+      "latency_ms": 169.69026312
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.65,
+      "latency_ms": 172.0148797
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.66,
+      "latency_ms": 173.79664004
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.67,
+      "latency_ms": 175.89527623
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.68,
+      "latency_ms": 177.93692708000003
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.69,
+      "latency_ms": 179.97240229
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.7,
+      "latency_ms": 181.8282256
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.71,
+      "latency_ms": 183.71876350999997
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.72,
+      "latency_ms": 185.84768528
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.73,
+      "latency_ms": 187.95431978000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.74,
+      "latency_ms": 189.81789399999997
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.75,
+      "latency_ms": 192.03727425000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.76,
+      "latency_ms": 194.48653756
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.77,
+      "latency_ms": 197.17280571999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.78,
+      "latency_ms": 199.52625976000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.79,
+      "latency_ms": 202.36876912000005
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.8,
+      "latency_ms": 204.98722679999997
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.81,
+      "latency_ms": 208.01658145000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.82,
+      "latency_ms": 211.03033687999996
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.83,
+      "latency_ms": 213.61629395999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.84,
+      "latency_ms": 216.55905288
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.85,
+      "latency_ms": 220.0203157
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.86,
+      "latency_ms": 223.5301938
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.87,
+      "latency_ms": 226.96621219000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.88,
+      "latency_ms": 231.44889207999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.89,
+      "latency_ms": 235.8889125
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.9,
+      "latency_ms": 240.37046360000008
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.91,
+      "latency_ms": 244.96651808000001
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.92,
+      "latency_ms": 250.56116468
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.93,
+      "latency_ms": 256.26002809
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.94,
+      "latency_ms": 263.22134761999996
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.95,
+      "latency_ms": 272.22106915
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.96,
+      "latency_ms": 282.54800472
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.97,
+      "latency_ms": 294.90537539999997
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.98,
+      "latency_ms": 320.25592728000015
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.99,
+      "latency_ms": 361.27055956999976
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 1.0,
+      "latency_ms": 604.207918
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "fraction": 0.999,
+      "latency_ms": 462.39483288799676
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.0,
+      "latency_ms": 1.10429
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.01,
+      "latency_ms": 3.3891847399999997
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.02,
+      "latency_ms": 4.87811202
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.03,
+      "latency_ms": 6.59464726
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.04,
+      "latency_ms": 7.91635696
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.05,
+      "latency_ms": 9.571961400000001
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.06,
+      "latency_ms": 10.842197259999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.07,
+      "latency_ms": 12.541406
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.08,
+      "latency_ms": 14.22678544
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.09,
+      "latency_ms": 15.84405653
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.1,
+      "latency_ms": 17.659064700000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.11,
+      "latency_ms": 19.686624629999997
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.12,
+      "latency_ms": 21.45568824
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.13,
+      "latency_ms": 23.53596012
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.14,
+      "latency_ms": 25.8035461
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.15,
+      "latency_ms": 27.92174855
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.16,
+      "latency_ms": 30.186860799999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.17,
+      "latency_ms": 32.441432590000005
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.18,
+      "latency_ms": 34.99414798
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.19,
+      "latency_ms": 37.43381456
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.2,
+      "latency_ms": 40.2607266
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.21,
+      "latency_ms": 42.94412959
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.22,
+      "latency_ms": 45.72473949999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.23,
+      "latency_ms": 48.497767350000004
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.24,
+      "latency_ms": 51.96872112
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.25,
+      "latency_ms": 55.12117975
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.26,
+      "latency_ms": 58.60794002000001
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.27,
+      "latency_ms": 62.48944716000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.28,
+      "latency_ms": 66.10019476
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.29,
+      "latency_ms": 69.86676311
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.3,
+      "latency_ms": 74.0803113
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.31,
+      "latency_ms": 77.71177058999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.32,
+      "latency_ms": 81.51416044
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.33,
+      "latency_ms": 86.17866381000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.34,
+      "latency_ms": 90.25407912000003
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.35,
+      "latency_ms": 94.69936584999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.36,
+      "latency_ms": 98.66826411999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.37,
+      "latency_ms": 102.63541482
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.38,
+      "latency_ms": 106.41525018
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.39,
+      "latency_ms": 109.90113306
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.4,
+      "latency_ms": 113.7703146
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.41,
+      "latency_ms": 117.06901963
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.42,
+      "latency_ms": 120.39927318000001
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.43,
+      "latency_ms": 123.41788208
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.44,
+      "latency_ms": 126.41804219999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.45,
+      "latency_ms": 129.10957995
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.46,
+      "latency_ms": 131.7185784
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.47,
+      "latency_ms": 134.32957223
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.48,
+      "latency_ms": 136.57628591999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.49,
+      "latency_ms": 138.76326767
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.5,
+      "latency_ms": 140.822393
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.51,
+      "latency_ms": 142.99256566999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.52,
+      "latency_ms": 145.12316912
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.53,
+      "latency_ms": 147.18947118
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.54,
+      "latency_ms": 149.44807906
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.55,
+      "latency_ms": 151.56898345000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.56,
+      "latency_ms": 153.58428496
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.57,
+      "latency_ms": 155.47577394
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.58,
+      "latency_ms": 157.20063928000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.59,
+      "latency_ms": 159.22645579
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.6,
+      "latency_ms": 161.3000524
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.61,
+      "latency_ms": 163.38061706000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.62,
+      "latency_ms": 165.2967203
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.63,
+      "latency_ms": 167.17425724
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.64,
+      "latency_ms": 168.95234868
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.65,
+      "latency_ms": 170.89614095000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.66,
+      "latency_ms": 172.96225846000004
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.67,
+      "latency_ms": 174.77665832000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.68,
+      "latency_ms": 176.50117968000004
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.69,
+      "latency_ms": 178.46983995
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.7,
+      "latency_ms": 180.5398607
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.71,
+      "latency_ms": 182.65013939999997
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.72,
+      "latency_ms": 184.60899916
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.73,
+      "latency_ms": 186.43388254000004
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.74,
+      "latency_ms": 188.28034242
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.75,
+      "latency_ms": 190.32234350000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.76,
+      "latency_ms": 192.89512528000003
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.77,
+      "latency_ms": 195.20792045
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.78,
+      "latency_ms": 197.56743269999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.79,
+      "latency_ms": 200.10415182000003
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.8,
+      "latency_ms": 202.900463
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.81,
+      "latency_ms": 205.52644700000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.82,
+      "latency_ms": 208.40440384
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.83,
+      "latency_ms": 211.82885966999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.84,
+      "latency_ms": 214.94145536000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.85,
+      "latency_ms": 217.75896699999993
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.86,
+      "latency_ms": 221.15245253999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.87,
+      "latency_ms": 224.34888424
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.88,
+      "latency_ms": 228.25610772
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.89,
+      "latency_ms": 232.41632962
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.9,
+      "latency_ms": 236.8428111
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.91,
+      "latency_ms": 241.42688637999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.92,
+      "latency_ms": 246.48739404000003
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.93,
+      "latency_ms": 253.01509828000007
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.94,
+      "latency_ms": 259.43826645999997
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.95,
+      "latency_ms": 267.5548851
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.96,
+      "latency_ms": 276.8611901199997
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.97,
+      "latency_ms": 288.90357807
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.98,
+      "latency_ms": 312.66022996000004
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.99,
+      "latency_ms": 349.68592427999926
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 1.0,
+      "latency_ms": 638.60782
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "fraction": 0.999,
+      "latency_ms": 467.02690568299766
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.0,
+      "latency_ms": 1.07975
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.01,
+      "latency_ms": 3.31008073
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.02,
+      "latency_ms": 4.930551
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.03,
+      "latency_ms": 6.4714507999999995
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.04,
+      "latency_ms": 7.8636060400000005
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.05,
+      "latency_ms": 9.276301250000001
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.06,
+      "latency_ms": 10.559228059999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.07,
+      "latency_ms": 12.210610209999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.08,
+      "latency_ms": 13.797340599999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.09,
+      "latency_ms": 15.360482619999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.1,
+      "latency_ms": 17.1282841
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.11,
+      "latency_ms": 18.972404589999996
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.12,
+      "latency_ms": 21.094809639999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.13,
+      "latency_ms": 23.2859155
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.14,
+      "latency_ms": 25.264924040000004
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.15,
+      "latency_ms": 27.3988348
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.16,
+      "latency_ms": 29.57815864
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.17,
+      "latency_ms": 31.97882358
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.18,
+      "latency_ms": 34.3507632
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.19,
+      "latency_ms": 36.74633702
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.2,
+      "latency_ms": 39.2893846
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.21,
+      "latency_ms": 42.0160994
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.22,
+      "latency_ms": 44.92687823999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.23,
+      "latency_ms": 47.7473935
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.24,
+      "latency_ms": 50.75744267999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.25,
+      "latency_ms": 54.15610749999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.26,
+      "latency_ms": 57.92659936000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.27,
+      "latency_ms": 61.54699795000003
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.28,
+      "latency_ms": 65.04762964
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.29,
+      "latency_ms": 68.61843110999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.3,
+      "latency_ms": 72.4506502
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.31,
+      "latency_ms": 76.11565313
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.32,
+      "latency_ms": 79.59375908000001
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.33,
+      "latency_ms": 83.25237176
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.34,
+      "latency_ms": 86.96036850000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.35,
+      "latency_ms": 90.8626005
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.36,
+      "latency_ms": 94.73972244000001
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.37,
+      "latency_ms": 98.20357018
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.38,
+      "latency_ms": 101.87768335999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.39,
+      "latency_ms": 105.91769486000001
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.4,
+      "latency_ms": 109.43339039999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.41,
+      "latency_ms": 113.25378215999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.42,
+      "latency_ms": 116.25058976000001
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.43,
+      "latency_ms": 119.4854698
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.44,
+      "latency_ms": 122.9374382
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.45,
+      "latency_ms": 125.75765684999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.46,
+      "latency_ms": 128.62542406
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.47,
+      "latency_ms": 131.20569653999996
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.48,
+      "latency_ms": 133.686083
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.49,
+      "latency_ms": 136.44388817
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.5,
+      "latency_ms": 138.595044
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.51,
+      "latency_ms": 140.96138112
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.52,
+      "latency_ms": 143.43952692000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.53,
+      "latency_ms": 145.70567375999997
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.54,
+      "latency_ms": 147.69224309999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.55,
+      "latency_ms": 149.66956040000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.56,
+      "latency_ms": 151.86562984
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.57,
+      "latency_ms": 154.01274961999997
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.58,
+      "latency_ms": 155.75527652
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.59,
+      "latency_ms": 157.78647229999999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.6,
+      "latency_ms": 159.78471280000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.61,
+      "latency_ms": 162.02291359999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.62,
+      "latency_ms": 164.04154179999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.63,
+      "latency_ms": 165.70003723000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.64,
+      "latency_ms": 167.47520972
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.65,
+      "latency_ms": 168.97388635
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.66,
+      "latency_ms": 170.82870904
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.67,
+      "latency_ms": 172.96619586
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.68,
+      "latency_ms": 174.80913264000003
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.69,
+      "latency_ms": 176.71610859999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.7,
+      "latency_ms": 178.84596979999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.71,
+      "latency_ms": 180.94559103
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.72,
+      "latency_ms": 182.97620483999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.73,
+      "latency_ms": 184.96413627
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.74,
+      "latency_ms": 187.0022243
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.75,
+      "latency_ms": 189.1119525
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.76,
+      "latency_ms": 191.20181380000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.77,
+      "latency_ms": 193.62816966999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.78,
+      "latency_ms": 196.13482940000003
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.79,
+      "latency_ms": 198.55567869000004
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.8,
+      "latency_ms": 201.3366276
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.81,
+      "latency_ms": 204.43766037
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.82,
+      "latency_ms": 207.2179382
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.83,
+      "latency_ms": 209.96060506
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.84,
+      "latency_ms": 212.84946499999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.85,
+      "latency_ms": 215.71435279999997
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.86,
+      "latency_ms": 218.63252286
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.87,
+      "latency_ms": 222.63826421000005
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.88,
+      "latency_ms": 226.67139456
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.89,
+      "latency_ms": 231.37563983
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.9,
+      "latency_ms": 236.48117900000003
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.91,
+      "latency_ms": 241.46112878999998
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.92,
+      "latency_ms": 247.53093524000002
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.93,
+      "latency_ms": 253.82253656000017
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.94,
+      "latency_ms": 261.78980518
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.95,
+      "latency_ms": 269.75840845
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.96,
+      "latency_ms": 280.95249079999996
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.97,
+      "latency_ms": 298.05887227999995
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.98,
+      "latency_ms": 329.6266696200005
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.99,
+      "latency_ms": 372.0787595699999
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 1.0,
+      "latency_ms": 623.077314
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "fraction": 0.999,
+      "latency_ms": 471.6339372419991
+    }
+  ],
+  "histogram": [
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 0,
+      "from_ms": 0.0,
+      "to_ms": 15.5244,
+      "count": 6262
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 1,
+      "from_ms": 15.5244,
+      "to_ms": 31.0488,
+      "count": 5268
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 2,
+      "from_ms": 31.0488,
+      "to_ms": 46.5732,
+      "count": 4077
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 3,
+      "from_ms": 46.5732,
+      "to_ms": 62.0976,
+      "count": 3120
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 4,
+      "from_ms": 62.0976,
+      "to_ms": 77.622,
+      "count": 2959
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 5,
+      "from_ms": 77.622,
+      "to_ms": 93.1464,
+      "count": 2718
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 6,
+      "from_ms": 93.1464,
+      "to_ms": 108.6708,
+      "count": 2828
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 7,
+      "from_ms": 108.6708,
+      "to_ms": 124.1952,
+      "count": 3320
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 8,
+      "from_ms": 124.1952,
+      "to_ms": 139.7196,
+      "count": 4346
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 9,
+      "from_ms": 139.7196,
+      "to_ms": 155.244,
+      "count": 5084
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 10,
+      "from_ms": 155.244,
+      "to_ms": 170.7684,
+      "count": 5711
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 11,
+      "from_ms": 170.7684,
+      "to_ms": 186.2928,
+      "count": 5469
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 12,
+      "from_ms": 186.2928,
+      "to_ms": 201.8172,
+      "count": 4614
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 13,
+      "from_ms": 201.8172,
+      "to_ms": 217.3416,
+      "count": 3764
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 14,
+      "from_ms": 217.3416,
+      "to_ms": 232.866,
+      "count": 2810
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 15,
+      "from_ms": 232.866,
+      "to_ms": 248.3904,
+      "count": 2188
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 16,
+      "from_ms": 248.3904,
+      "to_ms": 263.9147,
+      "count": 1642
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 17,
+      "from_ms": 263.9147,
+      "to_ms": 279.4391,
+      "count": 1119
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 18,
+      "from_ms": 279.4391,
+      "to_ms": 294.9635,
+      "count": 790
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 19,
+      "from_ms": 294.9635,
+      "to_ms": 310.4879,
+      "count": 432
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 20,
+      "from_ms": 310.4879,
+      "to_ms": 326.0123,
+      "count": 334
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 21,
+      "from_ms": 326.0123,
+      "to_ms": 341.5367,
+      "count": 302
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 22,
+      "from_ms": 341.5367,
+      "to_ms": 357.0611,
+      "count": 234
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 23,
+      "from_ms": 357.0611,
+      "to_ms": 372.5855,
+      "count": 191
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 24,
+      "from_ms": 372.5855,
+      "to_ms": 388.1099,
+      "count": 187
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 25,
+      "from_ms": 388.1099,
+      "to_ms": 403.6343,
+      "count": 105
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 26,
+      "from_ms": 403.6343,
+      "to_ms": 419.1587,
+      "count": 52
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 27,
+      "from_ms": 419.1587,
+      "to_ms": 434.6831,
+      "count": 55
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 28,
+      "from_ms": 434.6831,
+      "to_ms": 450.2075,
+      "count": 55
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "overall",
+      "operation": "all",
+      "bucket_index": 29,
+      "from_ms": 450.2075,
+      "to_ms": 465.7319,
+      "count": 110
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 0,
+      "from_ms": 0.0,
+      "to_ms": 15.4132,
+      "count": 2068
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 1,
+      "from_ms": 15.4132,
+      "to_ms": 30.8263,
+      "count": 1734
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 2,
+      "from_ms": 30.8263,
+      "to_ms": 46.2395,
+      "count": 1268
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 3,
+      "from_ms": 46.2395,
+      "to_ms": 61.6526,
+      "count": 1004
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 4,
+      "from_ms": 61.6526,
+      "to_ms": 77.0658,
+      "count": 994
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 5,
+      "from_ms": 77.0658,
+      "to_ms": 92.479,
+      "count": 886
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 6,
+      "from_ms": 92.479,
+      "to_ms": 107.8921,
+      "count": 882
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 7,
+      "from_ms": 107.8921,
+      "to_ms": 123.3053,
+      "count": 1111
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 8,
+      "from_ms": 123.3053,
+      "to_ms": 138.7184,
+      "count": 1451
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 9,
+      "from_ms": 138.7184,
+      "to_ms": 154.1316,
+      "count": 1652
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 10,
+      "from_ms": 154.1316,
+      "to_ms": 169.5448,
+      "count": 1899
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 11,
+      "from_ms": 169.5448,
+      "to_ms": 184.9579,
+      "count": 1796
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 12,
+      "from_ms": 184.9579,
+      "to_ms": 200.3711,
+      "count": 1547
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 13,
+      "from_ms": 200.3711,
+      "to_ms": 215.7843,
+      "count": 1283
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 14,
+      "from_ms": 215.7843,
+      "to_ms": 231.1974,
+      "count": 987
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 15,
+      "from_ms": 231.1974,
+      "to_ms": 246.6106,
+      "count": 787
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 16,
+      "from_ms": 246.6106,
+      "to_ms": 262.0237,
+      "count": 601
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 17,
+      "from_ms": 262.0237,
+      "to_ms": 277.4369,
+      "count": 379
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 18,
+      "from_ms": 277.4369,
+      "to_ms": 292.8501,
+      "count": 320
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 19,
+      "from_ms": 292.8501,
+      "to_ms": 308.2632,
+      "count": 170
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 20,
+      "from_ms": 308.2632,
+      "to_ms": 323.6764,
+      "count": 123
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 21,
+      "from_ms": 323.6764,
+      "to_ms": 339.0895,
+      "count": 98
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 22,
+      "from_ms": 339.0895,
+      "to_ms": 354.5027,
+      "count": 79
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 23,
+      "from_ms": 354.5027,
+      "to_ms": 369.9159,
+      "count": 68
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 24,
+      "from_ms": 369.9159,
+      "to_ms": 385.329,
+      "count": 59
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 25,
+      "from_ms": 385.329,
+      "to_ms": 400.7422,
+      "count": 42
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 26,
+      "from_ms": 400.7422,
+      "to_ms": 416.1553,
+      "count": 23
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 27,
+      "from_ms": 416.1553,
+      "to_ms": 431.5685,
+      "count": 15
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 28,
+      "from_ms": 431.5685,
+      "to_ms": 446.9817,
+      "count": 18
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "feed",
+      "bucket_index": 29,
+      "from_ms": 446.9817,
+      "to_ms": 462.3948,
+      "count": 38
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 0,
+      "from_ms": 0.0,
+      "to_ms": 15.5676,
+      "count": 2067
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 1,
+      "from_ms": 15.5676,
+      "to_ms": 31.1351,
+      "count": 1771
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 2,
+      "from_ms": 31.1351,
+      "to_ms": 46.7027,
+      "count": 1391
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 3,
+      "from_ms": 46.7027,
+      "to_ms": 62.2703,
+      "count": 1067
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 4,
+      "from_ms": 62.2703,
+      "to_ms": 77.8378,
+      "count": 959
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 5,
+      "from_ms": 77.8378,
+      "to_ms": 93.4054,
+      "count": 855
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 6,
+      "from_ms": 93.4054,
+      "to_ms": 108.9729,
+      "count": 950
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 7,
+      "from_ms": 108.9729,
+      "to_ms": 124.5405,
+      "count": 1070
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 8,
+      "from_ms": 124.5405,
+      "to_ms": 140.1081,
+      "count": 1488
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 9,
+      "from_ms": 140.1081,
+      "to_ms": 155.6756,
+      "count": 1736
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 10,
+      "from_ms": 155.6756,
+      "to_ms": 171.2432,
+      "count": 1891
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 11,
+      "from_ms": 171.2432,
+      "to_ms": 186.8108,
+      "count": 1869
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 12,
+      "from_ms": 186.8108,
+      "to_ms": 202.3783,
+      "count": 1543
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 13,
+      "from_ms": 202.3783,
+      "to_ms": 217.9459,
+      "count": 1234
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 14,
+      "from_ms": 217.9459,
+      "to_ms": 233.5135,
+      "count": 973
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 15,
+      "from_ms": 233.5135,
+      "to_ms": 249.081,
+      "count": 741
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 16,
+      "from_ms": 249.081,
+      "to_ms": 264.6486,
+      "count": 540
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 17,
+      "from_ms": 264.6486,
+      "to_ms": 280.2161,
+      "count": 378
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 18,
+      "from_ms": 280.2161,
+      "to_ms": 295.7837,
+      "count": 238
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 19,
+      "from_ms": 295.7837,
+      "to_ms": 311.3513,
+      "count": 142
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 20,
+      "from_ms": 311.3513,
+      "to_ms": 326.9188,
+      "count": 106
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 21,
+      "from_ms": 326.9188,
+      "to_ms": 342.4864,
+      "count": 96
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 22,
+      "from_ms": 342.4864,
+      "to_ms": 358.054,
+      "count": 74
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 23,
+      "from_ms": 358.054,
+      "to_ms": 373.6215,
+      "count": 61
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 24,
+      "from_ms": 373.6215,
+      "to_ms": 389.1891,
+      "count": 55
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 25,
+      "from_ms": 389.1891,
+      "to_ms": 404.7567,
+      "count": 22
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 26,
+      "from_ms": 404.7567,
+      "to_ms": 420.3242,
+      "count": 8
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 27,
+      "from_ms": 420.3242,
+      "to_ms": 435.8918,
+      "count": 16
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 28,
+      "from_ms": 435.8918,
+      "to_ms": 451.4593,
+      "count": 12
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "video_detail",
+      "bucket_index": 29,
+      "from_ms": 451.4593,
+      "to_ms": 467.0269,
+      "count": 29
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 0,
+      "from_ms": 0.0,
+      "to_ms": 15.7211,
+      "count": 2154
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 1,
+      "from_ms": 15.7211,
+      "to_ms": 31.4423,
+      "count": 1762
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 2,
+      "from_ms": 31.4423,
+      "to_ms": 47.1634,
+      "count": 1413
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 3,
+      "from_ms": 47.1634,
+      "to_ms": 62.8845,
+      "count": 1062
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 4,
+      "from_ms": 62.8845,
+      "to_ms": 78.6057,
+      "count": 1030
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 5,
+      "from_ms": 78.6057,
+      "to_ms": 94.3268,
+      "count": 968
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 6,
+      "from_ms": 94.3268,
+      "to_ms": 110.0479,
+      "count": 987
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 7,
+      "from_ms": 110.0479,
+      "to_ms": 125.769,
+      "count": 1148
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 8,
+      "from_ms": 125.769,
+      "to_ms": 141.4902,
+      "count": 1445
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 9,
+      "from_ms": 141.4902,
+      "to_ms": 157.2113,
+      "count": 1771
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 10,
+      "from_ms": 157.2113,
+      "to_ms": 172.9324,
+      "count": 1923
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 11,
+      "from_ms": 172.9324,
+      "to_ms": 188.6536,
+      "count": 1834
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 12,
+      "from_ms": 188.6536,
+      "to_ms": 204.3747,
+      "count": 1438
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 13,
+      "from_ms": 204.3747,
+      "to_ms": 220.0958,
+      "count": 1266
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 14,
+      "from_ms": 220.0958,
+      "to_ms": 235.817,
+      "count": 815
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 15,
+      "from_ms": 235.817,
+      "to_ms": 251.5381,
+      "count": 642
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 16,
+      "from_ms": 251.5381,
+      "to_ms": 267.2592,
+      "count": 474
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 17,
+      "from_ms": 267.2592,
+      "to_ms": 282.9804,
+      "count": 351
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 18,
+      "from_ms": 282.9804,
+      "to_ms": 298.7015,
+      "count": 208
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 19,
+      "from_ms": 298.7015,
+      "to_ms": 314.4226,
+      "count": 137
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 20,
+      "from_ms": 314.4226,
+      "to_ms": 330.1438,
+      "count": 88
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 21,
+      "from_ms": 330.1438,
+      "to_ms": 345.8649,
+      "count": 116
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 22,
+      "from_ms": 345.8649,
+      "to_ms": 361.586,
+      "count": 74
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 23,
+      "from_ms": 361.586,
+      "to_ms": 377.3071,
+      "count": 67
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 24,
+      "from_ms": 377.3071,
+      "to_ms": 393.0283,
+      "count": 67
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 25,
+      "from_ms": 393.0283,
+      "to_ms": 408.7494,
+      "count": 35
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 26,
+      "from_ms": 408.7494,
+      "to_ms": 424.4705,
+      "count": 24
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 27,
+      "from_ms": 424.4705,
+      "to_ms": 440.1917,
+      "count": 17
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 28,
+      "from_ms": 440.1917,
+      "to_ms": 455.9128,
+      "count": 29
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "scope": "operation",
+      "operation": "live_streams",
+      "bucket_index": 29,
+      "from_ms": 455.9128,
+      "to_ms": 471.6339,
+      "count": 37
+    }
+  ],
+  "timeseries": [
+    {
+      "bucket_ts": "2026-11-12T22:50:10Z",
+      "requests": 30,
+      "rps": 6.0,
+      "vus": 0.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 14.31593,
+      "p50_ms": 13.4758825,
+      "p75_ms": 19.457763500000002,
+      "p90_ms": 22.3373901,
+      "p95_ms": 23.684034299999993,
+      "p99_ms": 24.642743539999998,
+      "p997_ms": 24.659546662,
+      "max_ms": 24.666748,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "all"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:15Z",
+      "requests": 1045,
+      "rps": 209.0,
+      "vus": 8.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 10.104436266028708,
+      "p50_ms": 8.849943,
+      "p75_ms": 12.608436,
+      "p90_ms": 16.910675400000002,
+      "p95_ms": 20.621087199999995,
+      "p99_ms": 31.76375375999996,
+      "p997_ms": 42.71597206399983,
+      "max_ms": 50.020512,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "all"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:20Z",
+      "requests": 3057,
+      "rps": 611.4,
+      "vus": 22.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 8.955215206738632,
+      "p50_ms": 7.395903,
+      "p75_ms": 11.607854,
+      "p90_ms": 17.0220068,
+      "p95_ms": 21.345670799999965,
+      "p99_ms": 34.34543592000001,
+      "p997_ms": 39.756408103999945,
+      "max_ms": 55.131422,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "all"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:25Z",
+      "requests": 4721,
+      "rps": 944.2,
+      "vus": 45.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 20.254155754289346,
+      "p50_ms": 17.122154,
+      "p75_ms": 25.56066,
+      "p90_ms": 36.752658,
+      "p95_ms": 46.946128,
+      "p99_ms": 69.51671620000005,
+      "p997_ms": 89.50249144000009,
+      "max_ms": 115.510541,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "all"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:30Z",
+      "requests": 5380,
+      "rps": 1076.0,
+      "vus": 70.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 37.46786424758365,
+      "p50_ms": 31.748933,
+      "p75_ms": 44.690599000000006,
+      "p90_ms": 63.11653890000001,
+      "p95_ms": 80.64618565000002,
+      "p99_ms": 149.77811936000003,
+      "p997_ms": 194.18061072800097,
+      "max_ms": 281.019816,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "all"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:35Z",
+      "requests": 5672,
+      "rps": 1134.4,
+      "vus": 95.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 56.9611937462976,
+      "p50_ms": 51.22578,
+      "p75_ms": 68.02873224999999,
+      "p90_ms": 88.96150170000003,
+      "p95_ms": 109.56373944999999,
+      "p99_ms": 159.23539743999999,
+      "p997_ms": 188.59911493900003,
+      "max_ms": 280.812913,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "all"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:40Z",
+      "requests": 5645,
+      "rps": 1129.0,
+      "vus": 140.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 94.65034643861824,
+      "p50_ms": 87.663663,
+      "p75_ms": 111.822987,
+      "p90_ms": 142.76182100000008,
+      "p95_ms": 167.52921460000002,
+      "p99_ms": 220.97156668000122,
+      "p997_ms": 266.35056429200085,
+      "max_ms": 320.385636,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "all"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:45Z",
+      "requests": 5701,
+      "rps": 1140.2,
+      "vus": 190.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 137.42219451201544,
+      "p50_ms": 134.092929,
+      "p75_ms": 163.508106,
+      "p90_ms": 192.873153,
+      "p95_ms": 210.84342,
+      "p99_ms": 335.500735,
+      "p997_ms": 375.7214152999998,
+      "max_ms": 421.240282,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "all"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:50Z",
+      "requests": 6164,
+      "rps": 1232.8,
+      "vus": 260.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 178.26294744451656,
+      "p50_ms": 171.6641055,
+      "p75_ms": 213.04885825,
+      "p90_ms": 250.06354569999996,
+      "p95_ms": 271.76635975,
+      "p99_ms": 338.8244199399999,
+      "p997_ms": 365.67707428600124,
+      "max_ms": 412.561208,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "all"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:55Z",
+      "requests": 5881,
+      "rps": 1176.2,
+      "vus": 295.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 217.0965877917021,
+      "p50_ms": 210.737992,
+      "p75_ms": 243.98247,
+      "p90_ms": 281.488343,
+      "p95_ms": 323.9963,
+      "p99_ms": 384.608836,
+      "p997_ms": 420.23855139999887,
+      "max_ms": 477.537951,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "all"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:51:00Z",
+      "requests": 6562,
+      "rps": 1312.4,
+      "vus": 300.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 208.23108078725997,
+      "p50_ms": 195.573872,
+      "p75_ms": 233.8319715,
+      "p90_ms": 286.2336754000001,
+      "p95_ms": 337.83691499999986,
+      "p99_ms": 414.78512398000225,
+      "p997_ms": 517.986822636,
+      "max_ms": 593.902341,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "all"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:51:05Z",
+      "requests": 6781,
+      "rps": 1356.2,
+      "vus": 300.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 196.80210549373248,
+      "p50_ms": 187.057602,
+      "p75_ms": 228.257133,
+      "p90_ms": 276.836285,
+      "p95_ms": 306.094033,
+      "p99_ms": 407.5875027999999,
+      "p997_ms": 452.0384195999998,
+      "max_ms": 535.782183,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "all"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:51:10Z",
+      "requests": 7207,
+      "rps": 1441.4,
+      "vus": 300.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 181.376265670043,
+      "p50_ms": 173.150088,
+      "p75_ms": 204.1670825,
+      "p90_ms": 239.337931,
+      "p95_ms": 267.2635686,
+      "p99_ms": 378.06888701999986,
+      "p997_ms": 449.16109049999983,
+      "max_ms": 623.077314,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "all"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:51:15Z",
+      "requests": 6300,
+      "rps": 1260.0,
+      "vus": 300.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 158.61531352841268,
+      "p50_ms": 153.40817049999998,
+      "p75_ms": 182.48212625,
+      "p90_ms": 217.4281898,
+      "p95_ms": 251.28721089999988,
+      "p99_ms": 348.5470283,
+      "p997_ms": 447.1606865210015,
+      "max_ms": 638.60782,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "all"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:10Z",
+      "requests": 10,
+      "rps": 2.0,
+      "vus": 0.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 16.9026912,
+      "p50_ms": 18.003512,
+      "p75_ms": 21.7210765,
+      "p90_ms": 22.792372,
+      "p95_ms": 23.72956,
+      "p99_ms": 24.4793104,
+      "p997_ms": 24.61051672,
+      "max_ms": 24.666748,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "feed"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:15Z",
+      "requests": 349,
+      "rps": 69.8,
+      "vus": 8.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 10.15395358739255,
+      "p50_ms": 9.052782,
+      "p75_ms": 12.431553,
+      "p90_ms": 17.075158000000002,
+      "p95_ms": 20.587312399999995,
+      "p99_ms": 29.686411039999946,
+      "p997_ms": 33.780708756000024,
+      "max_ms": 40.397459,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "feed"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:20Z",
+      "requests": 1023,
+      "rps": 204.6,
+      "vus": 22.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 8.875923785923753,
+      "p50_ms": 7.369114,
+      "p75_ms": 11.5842445,
+      "p90_ms": 16.821344000000007,
+      "p95_ms": 20.9066628,
+      "p99_ms": 33.77543189999997,
+      "p997_ms": 38.190356545999975,
+      "max_ms": 44.868644,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "feed"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:25Z",
+      "requests": 1580,
+      "rps": 316.0,
+      "vus": 45.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 20.618622123417722,
+      "p50_ms": 17.284135,
+      "p75_ms": 25.281778749999997,
+      "p90_ms": 38.3234796,
+      "p95_ms": 48.45373844999999,
+      "p99_ms": 77.50644788000002,
+      "p997_ms": 99.03619843299964,
+      "max_ms": 115.510541,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "feed"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:30Z",
+      "requests": 1805,
+      "rps": 361.0,
+      "vus": 70.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 38.51868674127424,
+      "p50_ms": 32.337449,
+      "p75_ms": 46.343296,
+      "p90_ms": 66.59917280000003,
+      "p95_ms": 84.9183648,
+      "p99_ms": 152.48473420000002,
+      "p997_ms": 174.67659320799993,
+      "max_ms": 227.801917,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "feed"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:35Z",
+      "requests": 1898,
+      "rps": 379.6,
+      "vus": 95.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 58.169720885142254,
+      "p50_ms": 52.968371000000005,
+      "p75_ms": 70.2063835,
+      "p90_ms": 92.91189259999999,
+      "p95_ms": 112.62729465,
+      "p99_ms": 154.64854726999997,
+      "p997_ms": 166.824381819,
+      "max_ms": 204.700566,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "feed"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:40Z",
+      "requests": 1886,
+      "rps": 377.2,
+      "vus": 140.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 95.76588959862143,
+      "p50_ms": 88.92449300000001,
+      "p75_ms": 113.015963,
+      "p90_ms": 144.79340000000002,
+      "p95_ms": 169.35572875,
+      "p99_ms": 216.56198195000007,
+      "p997_ms": 262.16912483500016,
+      "max_ms": 287.88868,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "feed"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:45Z",
+      "requests": 1910,
+      "rps": 382.0,
+      "vus": 190.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 141.07429230575914,
+      "p50_ms": 135.10148550000002,
+      "p75_ms": 166.07412324999999,
+      "p90_ms": 199.04144950000003,
+      "p95_ms": 213.6441353,
+      "p99_ms": 343.7263505800005,
+      "p997_ms": 381.0247729859998,
+      "max_ms": 421.240282,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "feed"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:50Z",
+      "requests": 2083,
+      "rps": 416.6,
+      "vus": 260.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 181.79127534229477,
+      "p50_ms": 176.561081,
+      "p75_ms": 217.57022949999998,
+      "p90_ms": 253.4970574,
+      "p95_ms": 275.9306887999999,
+      "p99_ms": 306.19925887999926,
+      "p997_ms": 352.9079478159997,
+      "max_ms": 412.561208,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "feed"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:55Z",
+      "requests": 1987,
+      "rps": 397.4,
+      "vus": 295.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 218.4188242521389,
+      "p50_ms": 210.370043,
+      "p75_ms": 244.24269099999998,
+      "p90_ms": 282.4887762000001,
+      "p95_ms": 326.90502669999995,
+      "p99_ms": 387.67186186,
+      "p997_ms": 405.7702365759998,
+      "max_ms": 445.502831,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "feed"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:51:00Z",
+      "requests": 2184,
+      "rps": 436.8,
+      "vus": 300.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 211.8714057815934,
+      "p50_ms": 199.14042949999998,
+      "p75_ms": 237.484758,
+      "p90_ms": 291.8488079,
+      "p95_ms": 343.78174149999995,
+      "p99_ms": 442.6184286100002,
+      "p997_ms": 531.8545825250002,
+      "max_ms": 593.902341,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "feed"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:51:05Z",
+      "requests": 2242,
+      "rps": 448.4,
+      "vus": 300.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 195.8194258001784,
+      "p50_ms": 186.932369,
+      "p75_ms": 232.55292574999999,
+      "p90_ms": 279.1866622,
+      "p95_ms": 303.64314325,
+      "p99_ms": 364.67693124000004,
+      "p997_ms": 403.19859755300024,
+      "max_ms": 512.939228,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "feed"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:51:10Z",
+      "requests": 2408,
+      "rps": 481.6,
+      "vus": 300.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 181.11472039493356,
+      "p50_ms": 173.40051649999998,
+      "p75_ms": 204.7662755,
+      "p90_ms": 239.24524209999998,
+      "p95_ms": 261.06323465,
+      "p99_ms": 402.97446159999794,
+      "p997_ms": 458.40877532,
+      "max_ms": 581.169619,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "feed"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:51:15Z",
+      "requests": 2017,
+      "rps": 403.4,
+      "vus": 300.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 161.67981003024295,
+      "p50_ms": 155.938186,
+      "p75_ms": 183.966164,
+      "p90_ms": 219.5345152,
+      "p95_ms": 251.45321439999998,
+      "p99_ms": 341.1380488,
+      "p997_ms": 421.293232056,
+      "max_ms": 604.207918,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "feed"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:10Z",
+      "requests": 10,
+      "rps": 2.0,
+      "vus": 0.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 12.9978823,
+      "p50_ms": 12.451096499999998,
+      "p75_ms": 16.384336750000003,
+      "p90_ms": 17.876429899999998,
+      "p95_ms": 18.410093449999998,
+      "p99_ms": 18.837024290000002,
+      "p997_ms": 18.911737187,
+      "max_ms": 18.943757,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "video_detail"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:15Z",
+      "requests": 348,
+      "rps": 69.6,
+      "vus": 8.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 10.181636721264367,
+      "p50_ms": 8.7944625,
+      "p75_ms": 13.026999749999998,
+      "p90_ms": 16.949278400000004,
+      "p95_ms": 21.860133299999994,
+      "p99_ms": 31.105631129999985,
+      "p997_ms": 42.84878285500002,
+      "max_ms": 50.020512,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "video_detail"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:20Z",
+      "requests": 1021,
+      "rps": 204.2,
+      "vus": 22.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 9.407418650342802,
+      "p50_ms": 7.540666,
+      "p75_ms": 12.369469,
+      "p90_ms": 17.964724,
+      "p95_ms": 23.619297,
+      "p99_ms": 34.48836939999999,
+      "p997_ms": 42.53818529999983,
+      "max_ms": 55.131422,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "video_detail"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:25Z",
+      "requests": 1574,
+      "rps": 314.8,
+      "vus": 45.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 19.80784023761118,
+      "p50_ms": 16.913228,
+      "p75_ms": 25.4959045,
+      "p90_ms": 35.3586711,
+      "p95_ms": 45.321582749999976,
+      "p99_ms": 63.01349843999999,
+      "p997_ms": 78.88229870099963,
+      "max_ms": 94.293975,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "video_detail"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:30Z",
+      "requests": 1792,
+      "rps": 358.4,
+      "vus": 70.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 37.25230300613839,
+      "p50_ms": 32.185719,
+      "p75_ms": 44.09763725,
+      "p90_ms": 61.716108999999996,
+      "p95_ms": 76.24049419999993,
+      "p99_ms": 135.76215867999986,
+      "p997_ms": 203.22596458699934,
+      "max_ms": 281.019816,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "video_detail"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:35Z",
+      "requests": 1894,
+      "rps": 378.8,
+      "vus": 95.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 56.140859101372754,
+      "p50_ms": 50.8819335,
+      "p75_ms": 66.5623855,
+      "p90_ms": 86.78364599999999,
+      "p95_ms": 106.34746119999997,
+      "p99_ms": 154.72398404999998,
+      "p997_ms": 171.23284912699972,
+      "max_ms": 200.105262,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "video_detail"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:40Z",
+      "requests": 1877,
+      "rps": 375.4,
+      "vus": 140.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 94.72700416355886,
+      "p50_ms": 87.509501,
+      "p75_ms": 111.712323,
+      "p90_ms": 143.8770448,
+      "p95_ms": 164.81903499999993,
+      "p99_ms": 223.05651704000002,
+      "p997_ms": 267.6332563440005,
+      "max_ms": 320.385636,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "video_detail"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:45Z",
+      "requests": 1909,
+      "rps": 381.8,
+      "vus": 190.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 137.74683906443164,
+      "p50_ms": 135.670222,
+      "p75_ms": 163.706349,
+      "p90_ms": 193.3505264,
+      "p95_ms": 210.35957039999997,
+      "p99_ms": 329.7861148800001,
+      "p997_ms": 366.70466727600075,
+      "max_ms": 388.260489,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "video_detail"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:50Z",
+      "requests": 2051,
+      "rps": 410.2,
+      "vus": 260.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 178.2867199132131,
+      "p50_ms": 172.190663,
+      "p75_ms": 215.1860005,
+      "p90_ms": 248.333165,
+      "p95_ms": 267.635498,
+      "p99_ms": 335.584627,
+      "p997_ms": 358.6603964499999,
+      "max_ms": 401.282067,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "video_detail"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:55Z",
+      "requests": 1955,
+      "rps": 391.0,
+      "vus": 295.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 216.3621463826087,
+      "p50_ms": 210.62989,
+      "p75_ms": 243.019541,
+      "p90_ms": 281.1123272,
+      "p95_ms": 322.04337019999997,
+      "p99_ms": 380.10947476,
+      "p997_ms": 412.21232706399934,
+      "max_ms": 446.286165,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "video_detail"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:51:00Z",
+      "requests": 2184,
+      "rps": 436.8,
+      "vus": 300.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 206.62668621794873,
+      "p50_ms": 195.2554455,
+      "p75_ms": 231.29996925,
+      "p90_ms": 282.41346530000004,
+      "p95_ms": 334.1159053999998,
+      "p99_ms": 411.5656266000008,
+      "p997_ms": 504.7415244350001,
+      "max_ms": 568.034071,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "video_detail"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:51:05Z",
+      "requests": 2281,
+      "rps": 456.2,
+      "vus": 300.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 196.0446181775537,
+      "p50_ms": 188.236622,
+      "p75_ms": 227.834815,
+      "p90_ms": 272.752344,
+      "p95_ms": 293.704846,
+      "p99_ms": 362.9836585999999,
+      "p997_ms": 407.3531789999979,
+      "max_ms": 454.177613,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "video_detail"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:51:10Z",
+      "requests": 2393,
+      "rps": 478.6,
+      "vus": 300.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 180.8271135332219,
+      "p50_ms": 172.970633,
+      "p75_ms": 203.570816,
+      "p90_ms": 238.84310340000007,
+      "p95_ms": 265.00365400000004,
+      "p99_ms": 360.03320024000004,
+      "p997_ms": 441.3886502480014,
+      "max_ms": 575.444389,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "video_detail"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:51:15Z",
+      "requests": 2093,
+      "rps": 418.6,
+      "vus": 300.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 160.2827015341615,
+      "p50_ms": 154.000984,
+      "p75_ms": 182.679412,
+      "p90_ms": 217.41673600000001,
+      "p95_ms": 252.01867359999997,
+      "p99_ms": 353.32052963999985,
+      "p997_ms": 537.6065639200009,
+      "max_ms": 638.60782,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "video_detail"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:10Z",
+      "requests": 10,
+      "rps": 2.0,
+      "vus": 0.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 13.0472165,
+      "p50_ms": 10.402823999999999,
+      "p75_ms": 20.55971375,
+      "p90_ms": 22.2753759,
+      "p95_ms": 23.42967495,
+      "p99_ms": 24.35311419,
+      "p997_ms": 24.514716057,
+      "max_ms": 24.583974,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "live_streams"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:15Z",
+      "requests": 348,
+      "rps": 69.6,
+      "vus": 8.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 9.977576198275862,
+      "p50_ms": 8.6814585,
+      "p75_ms": 12.363685,
+      "p90_ms": 16.6573024,
+      "p95_ms": 19.736924699999996,
+      "p99_ms": 34.92205775999985,
+      "p997_ms": 42.85703252200002,
+      "max_ms": 49.075436,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "live_streams"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:20Z",
+      "requests": 1013,
+      "rps": 202.6,
+      "vus": 22.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 8.579514720631787,
+      "p50_ms": 7.207712,
+      "p75_ms": 10.881327,
+      "p90_ms": 15.932730800000005,
+      "p95_ms": 19.694613599999997,
+      "p99_ms": 33.845735919999996,
+      "p997_ms": 36.625467232,
+      "max_ms": 49.284038,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "live_streams"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:25Z",
+      "requests": 1567,
+      "rps": 313.4,
+      "vus": 45.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 20.334975001276323,
+      "p50_ms": 17.236646,
+      "p75_ms": 25.803784999999998,
+      "p90_ms": 36.700293800000004,
+      "p95_ms": 47.172258499999984,
+      "p99_ms": 69.60469948,
+      "p997_ms": 76.73134445999993,
+      "max_ms": 105.343846,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "live_streams"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:30Z",
+      "requests": 1783,
+      "rps": 356.6,
+      "vus": 70.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 36.62072523667975,
+      "p50_ms": 30.727083,
+      "p75_ms": 42.5219885,
+      "p90_ms": 61.10123739999999,
+      "p95_ms": 78.6055944999998,
+      "p99_ms": 151.80821570000015,
+      "p997_ms": 204.10895230399993,
+      "max_ms": 234.078819,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "live_streams"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:35Z",
+      "requests": 1880,
+      "rps": 376.0,
+      "vus": 95.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 56.56753912287234,
+      "p50_ms": 50.2778965,
+      "p75_ms": 66.68857,
+      "p90_ms": 87.01995640000004,
+      "p95_ms": 107.56888944999997,
+      "p99_ms": 168.36454199000013,
+      "p997_ms": 213.95179191400052,
+      "max_ms": 280.812913,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "live_streams"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:40Z",
+      "requests": 1882,
+      "rps": 376.4,
+      "vus": 140.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 93.45597824017003,
+      "p50_ms": 86.7020265,
+      "p75_ms": 110.65851675,
+      "p90_ms": 140.46264779999998,
+      "p95_ms": 167.43138639999995,
+      "p99_ms": 216.89877656000002,
+      "p997_ms": 267.2800127549995,
+      "max_ms": 297.044955,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "live_streams"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:45Z",
+      "requests": 1882,
+      "rps": 376.4,
+      "vus": 190.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 133.38645952975557,
+      "p50_ms": 130.701327,
+      "p75_ms": 160.991079,
+      "p90_ms": 186.117181,
+      "p95_ms": 205.37977994999997,
+      "p99_ms": 327.9791800900003,
+      "p997_ms": 372.1805156599999,
+      "max_ms": 396.56473,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "live_streams"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:50Z",
+      "requests": 2030,
+      "rps": 406.0,
+      "vus": 260.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 174.6184822502463,
+      "p50_ms": 167.090315,
+      "p75_ms": 206.2902485,
+      "p90_ms": 244.7017583,
+      "p95_ms": 269.8679799,
+      "p99_ms": 347.5850556100001,
+      "p997_ms": 385.05326706100004,
+      "max_ms": 404.481401,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "live_streams"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:50:55Z",
+      "requests": 1939,
+      "rps": 387.8,
+      "vus": 295.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 216.48212111191336,
+      "p50_ms": 211.016971,
+      "p75_ms": 245.109117,
+      "p90_ms": 280.946266,
+      "p95_ms": 319.57921429999976,
+      "p99_ms": 384.39094191999993,
+      "p997_ms": 424.8594616119997,
+      "max_ms": 477.537951,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "live_streams"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:51:00Z",
+      "requests": 2194,
+      "rps": 438.8,
+      "vus": 300.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 206.20442989927074,
+      "p50_ms": 193.297502,
+      "p75_ms": 233.28900000000002,
+      "p90_ms": 284.9904355,
+      "p95_ms": 334.09375309999996,
+      "p99_ms": 392.9742599300004,
+      "p997_ms": 515.7931721299973,
+      "max_ms": 589.249339,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "live_streams"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:51:05Z",
+      "requests": 2258,
+      "rps": 451.6,
+      "vus": 300.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 198.5430250868025,
+      "p50_ms": 185.08874,
+      "p75_ms": 223.80175075,
+      "p90_ms": 284.9384411,
+      "p95_ms": 336.30629805000007,
+      "p99_ms": 448.69077014999993,
+      "p997_ms": 463.354581029,
+      "max_ms": 535.782183,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "live_streams"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:51:10Z",
+      "requests": 2406,
+      "rps": 481.2,
+      "vus": 300.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 182.18421333665836,
+      "p50_ms": 172.988125,
+      "p75_ms": 204.0521595,
+      "p90_ms": 240.621194,
+      "p95_ms": 275.411513,
+      "p99_ms": 392.29168859999936,
+      "p997_ms": 450.4219230999996,
+      "max_ms": 623.077314,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "live_streams"
+    },
+    {
+      "bucket_ts": "2026-11-12T22:51:15Z",
+      "requests": 2190,
+      "rps": 438.0,
+      "vus": 300.0,
+      "errors_unexpected": 0,
+      "errors_business": 0,
+      "errors_injected": 0,
+      "mean_ms": 154.19936259680367,
+      "p50_ms": 150.22456799999998,
+      "p75_ms": 180.6504595,
+      "p90_ms": 215.9375338,
+      "p95_ms": 250.5377274,
+      "p99_ms": 340.15205646000146,
+      "p997_ms": 432.8165724049999,
+      "max_ms": 571.509525,
+      "scenario": "ramp",
+      "phase": "ramp",
+      "operation": "live_streams"
+    }
+  ],
+  "resource_phases": [
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "component": "api",
+      "samples": 7,
+      "cpu_percent": {
+        "min": 100.0,
+        "max": 100.0,
+        "median": 100.0,
+        "mean": 100.0
+      },
+      "ram_bytes": {
+        "min": 328339456.0,
+        "max": 449290240.0,
+        "median": 385495040.0,
+        "mean": 392015286.85714287
+      },
+      "ram_mib": {
+        "min": 313.12890625,
+        "max": 428.4765625,
+        "median": 367.63671875,
+        "mean": 373.8549107142857
+      },
+      "ram_limit_bytes": 536870912.0,
+      "disk_read_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "disk_write_bps": {
+        "min": 0.0,
+        "max": 4084.9331074032675,
+        "median": 0.0,
+        "mean": 1109.110650526237
+      },
+      "net_rx_bps": {
+        "min": 101179.08582324345,
+        "max": 3180444.0454804064,
+        "median": 2610732.0347101423,
+        "mean": 2004048.010725289
+      },
+      "net_tx_bps": {
+        "min": 149323.55292934258,
+        "max": 3400395.7661593272,
+        "median": 2795307.4481894705,
+        "mean": 2149255.9146919185
+      },
+      "pids_max": 231
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "component": "generator",
+      "samples": 7,
+      "cpu_percent": {
+        "min": 18.9802,
+        "max": 40.2328,
+        "median": 23.6468,
+        "mean": 26.191514285714284
+      },
+      "ram_bytes": {
+        "min": 75661312.0,
+        "max": 211570688.0,
+        "median": 133992448.0,
+        "mean": 146903625.14285713
+      },
+      "ram_mib": {
+        "min": 72.15625,
+        "max": 201.76953125,
+        "median": 127.78515625,
+        "mean": 140.09821428571428
+      },
+      "ram_limit_bytes": 1073741824.0,
+      "disk_read_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "disk_write_bps": {
+        "min": 0.0,
+        "max": 469373.772677851,
+        "median": 0.0,
+        "mean": 67053.39609683586
+      },
+      "net_rx_bps": {
+        "min": 0.0,
+        "max": 3131917.7941522268,
+        "median": 2597091.2014029888,
+        "mean": 1893520.6138796879
+      },
+      "net_tx_bps": {
+        "min": 0.0,
+        "max": 517428.81414018554,
+        "median": 432795.9686011896,
+        "mean": 315467.0833065352
+      },
+      "pids_max": 18
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "component": "minio",
+      "samples": 7,
+      "cpu_percent": {
+        "min": 0.0141,
+        "max": 2.9714,
+        "median": 0.0254,
+        "mean": 0.8082428571428572
+      },
+      "ram_bytes": {
+        "min": 59928576.0,
+        "max": 60485632.0,
+        "median": 60411904.0,
+        "mean": 60251574.85714286
+      },
+      "ram_mib": {
+        "min": 57.15234375,
+        "max": 57.68359375,
+        "median": 57.61328125,
+        "mean": 57.460379464285715
+      },
+      "ram_limit_bytes": 268435456.0,
+      "disk_read_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "disk_write_bps": {
+        "min": 0.0,
+        "max": 1226.8153882287334,
+        "median": 408.67855219834223,
+        "mean": 408.81584744865177
+      },
+      "net_rx_bps": {
+        "min": 0.0,
+        "max": 58.80487171766959,
+        "median": 0.0,
+        "mean": 12.290535912518084
+      },
+      "net_tx_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "pids_max": 7
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "component": "postgres",
+      "samples": 7,
+      "cpu_percent": {
+        "min": 0.0063,
+        "max": 1.2596,
+        "median": 0.0175,
+        "mean": 0.39672857142857143
+      },
+      "ram_bytes": {
+        "min": 53231616.0,
+        "max": 64806912.0,
+        "median": 61349888.0,
+        "mean": 59013412.571428575
+      },
+      "ram_mib": {
+        "min": 50.765625,
+        "max": 61.8046875,
+        "median": 58.5078125,
+        "mean": 56.279575892857146
+      },
+      "ram_limit_bytes": 805306368.0,
+      "disk_read_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "disk_write_bps": {
+        "min": 0.0,
+        "max": 1777762.888341902,
+        "median": 16354.4603860396,
+        "mean": 261908.57444514218
+      },
+      "net_rx_bps": {
+        "min": 0.0,
+        "max": 8631.70930762941,
+        "median": 3188.21153734029,
+        "mean": 3001.423959853651
+      },
+      "net_tx_bps": {
+        "min": 0.0,
+        "max": 9495.774067905326,
+        "median": 2550.07475961412,
+        "mean": 3136.1493351960335
+      },
+      "pids_max": 19
+    },
+    {
+      "scenario": "ramp",
+      "phase": "ramp",
+      "component": "redis",
+      "samples": 7,
+      "cpu_percent": {
+        "min": 2.556,
+        "max": 4.1345,
+        "median": 3.2989,
+        "mean": 3.2032571428571432
+      },
+      "ram_bytes": {
+        "min": 3723264.0,
+        "max": 4050944.0,
+        "median": 3956736.0,
+        "mean": 3898221.714285714
+      },
+      "ram_mib": {
+        "min": 3.55078125,
+        "max": 3.86328125,
+        "median": 3.7734375,
+        "mean": 3.7176339285714284
+      },
+      "ram_limit_bytes": 167772160.0,
+      "disk_read_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "disk_write_bps": {
+        "min": 0.0,
+        "max": 0.0,
+        "median": 0.0,
+        "mean": 0.0
+      },
+      "net_rx_bps": {
+        "min": 13579.41068775009,
+        "max": 159834.8045424812,
+        "median": 128411.07019491684,
+        "mean": 108279.1510798974
+      },
+      "net_tx_bps": {
+        "min": 100854.86420380576,
+        "max": 2734772.522497764,
+        "median": 2218080.2251477125,
+        "mean": 1829957.3799123405
+      },
+      "pids_max": 6
+    }
+  ],
+  "resource_samples": [
+    {
+      "ts": "2026-11-12T22:49:59.805355Z",
+      "component": "api",
+      "cpu_pct": 99.5886,
+      "ram_bytes": 286253056.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 0.0,
+      "net_tx_bps": 0.0,
+      "pids": 28
+    },
+    {
+      "ts": "2026-11-12T22:50:07.827025Z",
+      "component": "api",
+      "cpu_pct": 0.3634,
+      "ram_bytes": 320512000.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 780.1368175938396,
+      "net_tx_bps": 16255.966924614364,
+      "pids": 40
+    },
+    {
+      "ts": "2026-11-12T22:50:17.854117Z",
+      "component": "api",
+      "cpu_pct": 100.0,
+      "ram_bytes": 328339456.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 4084.9331074032675,
+      "net_rx_bps": 101179.08582324345,
+      "net_tx_bps": 149323.55292934258,
+      "pids": 40
+    },
+    {
+      "ts": "2026-11-12T22:50:27.876664Z",
+      "component": "api",
+      "cpu_pct": 100.0,
+      "ram_bytes": 347537408.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 2043.392760991711,
+      "net_rx_bps": 473063.98232649243,
+      "net_tx_bps": 529958.4024398724,
+      "pids": 49
+    },
+    {
+      "ts": "2026-11-12T22:50:37.899964Z",
+      "component": "api",
+      "cpu_pct": 100.0,
+      "ram_bytes": 372355072.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 2084431.7384268527,
+      "net_tx_bps": 2195658.577989822,
+      "pids": 81
+    },
+    {
+      "ts": "2026-11-12T22:50:47.916141Z",
+      "component": "api",
+      "cpu_pct": 100.0,
+      "ram_bytes": 385495040.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 2610732.0347101423,
+      "net_tx_bps": 2795307.4481894705,
+      "pids": 147
+    },
+    {
+      "ts": "2026-11-12T22:50:57.934187Z",
+      "component": "api",
+      "cpu_pct": 100.0,
+      "ram_bytes": 412512256.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 1635.4486852886796,
+      "net_rx_bps": 2730461.336162421,
+      "net_tx_bps": 2905384.67122181,
+      "pids": 230
+    },
+    {
+      "ts": "2026-11-12T22:51:07.949679Z",
+      "component": "api",
+      "cpu_pct": 100.0,
+      "ram_bytes": 448577536.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 2848023.8521474637,
+      "net_tx_bps": 3068762.9839137853,
+      "pids": 230
+    },
+    {
+      "ts": "2026-11-12T22:51:17.967741Z",
+      "component": "api",
+      "cpu_pct": 100.0,
+      "ram_bytes": 449290240.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 3180444.0454804064,
+      "net_tx_bps": 3400395.7661593272,
+      "pids": 231
+    },
+    {
+      "ts": "2026-11-12T22:51:25.893102Z",
+      "component": "api",
+      "cpu_pct": 0.3173,
+      "ram_bytes": 469823488.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 4134.575111322869,
+      "net_rx_bps": 3051418.1309947697,
+      "net_tx_bps": 3346829.40932145,
+      "pids": 230
+    },
+    {
+      "ts": "2026-11-12T22:50:17.854117Z",
+      "component": "generator",
+      "cpu_pct": 18.9802,
+      "ram_bytes": 75661312.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 0.0,
+      "net_tx_bps": 0.0,
+      "pids": 18
+    },
+    {
+      "ts": "2026-11-12T22:50:27.876664Z",
+      "component": "generator",
+      "cpu_pct": 40.2328,
+      "ram_bytes": 98033664.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 186467.17234331762,
+      "net_tx_bps": 31746.221772793975,
+      "pids": 18
+    },
+    {
+      "ts": "2026-11-12T22:50:37.899964Z",
+      "component": "generator",
+      "cpu_pct": 26.5262,
+      "ram_bytes": 130215936.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 1780376.4923464765,
+      "net_tx_bps": 302782.9106436876,
+      "pids": 18
+    },
+    {
+      "ts": "2026-11-12T22:50:47.916141Z",
+      "component": "generator",
+      "cpu_pct": 22.4466,
+      "ram_bytes": 133992448.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 2597091.2014029888,
+      "net_tx_bps": 432795.9686011896,
+      "pids": 18
+    },
+    {
+      "ts": "2026-11-12T22:50:57.934187Z",
+      "component": "generator",
+      "cpu_pct": 22.9357,
+      "ram_bytes": 167305216.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 469373.772677851,
+      "net_rx_bps": 2684495.385867017,
+      "net_tx_bps": 447250.19666686736,
+      "pids": 18
+    },
+    {
+      "ts": "2026-11-12T22:51:07.949679Z",
+      "component": "generator",
+      "cpu_pct": 23.6468,
+      "ram_bytes": 211546112.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 2874296.2510457886,
+      "net_tx_bps": 476265.47132102255,
+      "pids": 18
+    },
+    {
+      "ts": "2026-11-12T22:51:17.967741Z",
+      "component": "generator",
+      "cpu_pct": 28.5723,
+      "ram_bytes": 211570688.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 3131917.7941522268,
+      "net_tx_bps": 517428.81414018554,
+      "pids": 18
+    },
+    {
+      "ts": "2026-11-12T22:49:59.805355Z",
+      "component": "minio",
+      "cpu_pct": 0.0341,
+      "ram_bytes": 59858944.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 0.0,
+      "net_tx_bps": 0.0,
+      "pids": 6
+    },
+    {
+      "ts": "2026-11-12T22:50:07.827025Z",
+      "component": "minio",
+      "cpu_pct": 0.0231,
+      "ram_bytes": 59904000.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 2553.0843758903543,
+      "net_rx_bps": 56.84601930693366,
+      "net_tx_bps": 0.0,
+      "pids": 6
+    },
+    {
+      "ts": "2026-11-12T22:50:17.854117Z",
+      "component": "minio",
+      "cpu_pct": 0.0164,
+      "ram_bytes": 59928576.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 408.49331074032676,
+      "net_rx_bps": 20.245151875069904,
+      "net_tx_bps": 0.0,
+      "pids": 6
+    },
+    {
+      "ts": "2026-11-12T22:50:27.876664Z",
+      "component": "minio",
+      "cpu_pct": 2.9714,
+      "ram_bytes": 60014592.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 408.67855219834223,
+      "net_rx_bps": 0.0,
+      "net_tx_bps": 0.0,
+      "pids": 6
+    },
+    {
+      "ts": "2026-11-12T22:50:37.899964Z",
+      "component": "minio",
+      "cpu_pct": 0.0254,
+      "ram_bytes": 59990016.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 6.983727794887097,
+      "net_tx_bps": 0.0,
+      "pids": 6
+    },
+    {
+      "ts": "2026-11-12T22:50:47.916141Z",
+      "component": "minio",
+      "cpu_pct": 0.0141,
+      "ram_bytes": 60411904.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 1226.8153882287334,
+      "net_rx_bps": 58.80487171766959,
+      "net_tx_bps": 0.0,
+      "pids": 7
+    },
+    {
+      "ts": "2026-11-12T22:50:57.934187Z",
+      "component": "minio",
+      "cpu_pct": 0.0493,
+      "ram_bytes": 60456960.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 408.8621713221699,
+      "net_rx_bps": 0.0,
+      "net_tx_bps": 0.0,
+      "pids": 7
+    },
+    {
+      "ts": "2026-11-12T22:51:07.949679Z",
+      "component": "minio",
+      "cpu_pct": 2.5653,
+      "ram_bytes": 60473344.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 0.0,
+      "net_tx_bps": 0.0,
+      "pids": 7
+    },
+    {
+      "ts": "2026-11-12T22:51:17.967741Z",
+      "component": "minio",
+      "cpu_pct": 0.0158,
+      "ram_bytes": 60485632.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 408.86150965099,
+      "net_rx_bps": 0.0,
+      "net_tx_bps": 0.0,
+      "pids": 7
+    },
+    {
+      "ts": "2026-11-12T22:49:59.805355Z",
+      "component": "postgres",
+      "cpu_pct": 0.0173,
+      "ram_bytes": 48349184.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 0.0,
+      "net_tx_bps": 0.0,
+      "pids": 17
+    },
+    {
+      "ts": "2026-11-12T22:50:07.827025Z",
+      "component": "postgres",
+      "cpu_pct": 1.4601,
+      "ram_bytes": 50565120.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 210.92865058625387,
+      "net_tx_bps": 172.53265508946532,
+      "pids": 17
+    },
+    {
+      "ts": "2026-11-12T22:50:17.854117Z",
+      "component": "postgres",
+      "cpu_pct": 0.0175,
+      "ram_bytes": 53231616.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 1777762.888341902,
+      "net_rx_bps": 4601.832723996801,
+      "net_tx_bps": 9495.774067905326,
+      "pids": 17
+    },
+    {
+      "ts": "2026-11-12T22:50:27.876664Z",
+      "component": "postgres",
+      "cpu_pct": 0.3386,
+      "ram_bytes": 55320576.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 19207.891953322083,
+      "net_rx_bps": 3188.21153734029,
+      "net_tx_bps": 3447.1277587647764,
+      "pids": 17
+    },
+    {
+      "ts": "2026-11-12T22:50:37.899964Z",
+      "component": "postgres",
+      "cpu_pct": 1.1415,
+      "ram_bytes": 55439360.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 648.8880796849382,
+      "net_tx_bps": 692.9853323326539,
+      "pids": 17
+    },
+    {
+      "ts": "2026-11-12T22:50:47.916141Z",
+      "component": "postgres",
+      "cpu_pct": 0.0066,
+      "ram_bytes": 61366272.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 2862.569239200378,
+      "net_rx_bps": 3932.3386797009375,
+      "net_tx_bps": 2550.07475961412,
+      "pids": 18
+    },
+    {
+      "ts": "2026-11-12T22:50:57.934187Z",
+      "component": "postgres",
+      "cpu_pct": 0.007,
+      "ram_bytes": 61349888.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 17172.211195531137,
+      "net_rx_bps": 6.987390623181614,
+      "net_tx_bps": 0.0,
+      "pids": 18
+    },
+    {
+      "ts": "2026-11-12T22:51:07.949679Z",
+      "component": "postgres",
+      "cpu_pct": 1.2596,
+      "ram_bytes": 61579264.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 0.0,
+      "net_tx_bps": 0.0,
+      "pids": 18
+    },
+    {
+      "ts": "2026-11-12T22:51:17.967741Z",
+      "component": "postgres",
+      "cpu_pct": 0.0063,
+      "ram_bytes": 64806912.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 16354.4603860396,
+      "net_rx_bps": 8631.70930762941,
+      "net_tx_bps": 5767.083427755359,
+      "pids": 19
+    },
+    {
+      "ts": "2026-11-12T22:51:25.893102Z",
+      "component": "postgres",
+      "cpu_pct": 2.1919,
+      "ram_bytes": 65126400.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 29975.669557090798,
+      "net_rx_bps": 0.0,
+      "net_tx_bps": 0.0,
+      "pids": 19
+    },
+    {
+      "ts": "2026-11-12T22:49:59.805355Z",
+      "component": "redis",
+      "cpu_pct": 2.6984,
+      "ram_bytes": 3592192.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 0.0,
+      "net_tx_bps": 0.0,
+      "pids": 6
+    },
+    {
+      "ts": "2026-11-12T22:50:07.827025Z",
+      "component": "redis",
+      "cpu_pct": 0.4722,
+      "ram_bytes": 3596288.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 43.631813064532416,
+      "net_tx_bps": 109.45351963045562,
+      "pids": 6
+    },
+    {
+      "ts": "2026-11-12T22:50:17.854117Z",
+      "component": "redis",
+      "cpu_pct": 3.4352,
+      "ram_bytes": 3973120.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 13579.41068775009,
+      "net_tx_bps": 100854.86420380576,
+      "pids": 6
+    },
+    {
+      "ts": "2026-11-12T22:50:27.876664Z",
+      "component": "redis",
+      "cpu_pct": 3.0754,
+      "ram_bytes": 3723264.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 62255.8317350542,
+      "net_tx_bps": 930368.1982087991,
+      "pids": 6
+    },
+    {
+      "ts": "2026-11-12T22:50:37.899964Z",
+      "component": "redis",
+      "cpu_pct": 2.5961,
+      "ram_bytes": 4050944.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 117598.49350040418,
+      "net_tx_bps": 2007549.2758784997,
+      "pids": 6
+    },
+    {
+      "ts": "2026-11-12T22:50:47.916141Z",
+      "component": "redis",
+      "cpu_pct": 2.556,
+      "ram_bytes": 3997696.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 128411.07019491684,
+      "net_tx_bps": 2218080.2251477125,
+      "pids": 6
+    },
+    {
+      "ts": "2026-11-12T22:50:57.934187Z",
+      "component": "redis",
+      "cpu_pct": 4.1345,
+      "ram_bytes": 3956736.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 133322.50750615261,
+      "net_tx_bps": 2343361.492756016,
+      "pids": 6
+    },
+    {
+      "ts": "2026-11-12T22:51:07.949679Z",
+      "component": "redis",
+      "cpu_pct": 3.2989,
+      "ram_bytes": 3796992.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 142951.93939252265,
+      "net_tx_bps": 2474715.0806937856,
+      "pids": 6
+    },
+    {
+      "ts": "2026-11-12T22:51:17.967741Z",
+      "component": "redis",
+      "cpu_pct": 3.3267,
+      "ram_bytes": 3788800.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 159834.8045424812,
+      "net_tx_bps": 2734772.522497764,
+      "pids": 6
+    },
+    {
+      "ts": "2026-11-12T22:51:25.893102Z",
+      "component": "redis",
+      "cpu_pct": 0.6658,
+      "ram_bytes": 3768320.0,
+      "disk_read_bps": 0.0,
+      "disk_write_bps": 0.0,
+      "net_rx_bps": 65321.946262568636,
+      "net_tx_bps": 1074721.0238219702,
+      "pids": 6
+    }
+  ]
+}

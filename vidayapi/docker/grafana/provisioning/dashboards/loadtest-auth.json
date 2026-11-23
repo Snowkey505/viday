@@ -1,0 +1,4239 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "loadtest-lr4-auth",
+    "title": "ЛР4: auth — нагрузочное тестирование vidayapi (ramp/stress/soak)",
+    "tags": [
+      "lr4",
+      "loadtest",
+      "coroutines",
+      "auth"
+    ],
+    "timezone": "browser",
+    "editable": true,
+    "graphTooltip": 1,
+    "schemaVersion": 39,
+    "refresh": "10s",
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "timepicker": {
+      "hidden": false
+    },
+    "templating": {
+      "list": [
+        {
+          "type": "query",
+          "name": "scenario",
+          "label": "Тип прогона",
+          "description": "Фильтрует список прогонов и адаптивную таблицу деталей. Графики общие для всех сценариев: VU/RPS, задержки, отказы, ресурсы.",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "benchmark_pg"
+          },
+          "query": "SELECT r.scenario AS \"__value\",\n       CASE r.scenario\n         WHEN 'ramp' THEN 'Ramp (ступени)'\n         WHEN 'stress' THEN 'Stress (baseline → overload → recovery)'\n         WHEN 'soak' THEN 'Soak 10%'\n         WHEN 'soak-errors' THEN 'Soak + ошибки'\n         WHEN 'smoke' THEN 'Smoke'\n         ELSE r.scenario\n       END AS \"__text\"\nFROM lt_runs r\nWHERE COALESCE(r.config->>'workload', 'auth') = 'auth'\nGROUP BY r.scenario\nORDER BY CASE r.scenario\n           WHEN 'ramp' THEN 1 WHEN 'stress' THEN 2 WHEN 'soak' THEN 3\n           WHEN 'soak-errors' THEN 4 ELSE 5\n         END",
+          "definition": "SELECT r.scenario AS \"__value\",\n       CASE r.scenario\n         WHEN 'ramp' THEN 'Ramp (ступени)'\n         WHEN 'stress' THEN 'Stress (baseline → overload → recovery)'\n         WHEN 'soak' THEN 'Soak 10%'\n         WHEN 'soak-errors' THEN 'Soak + ошибки'\n         WHEN 'smoke' THEN 'Smoke'\n         ELSE r.scenario\n       END AS \"__text\"\nFROM lt_runs r\nWHERE COALESCE(r.config->>'workload', 'auth') = 'auth'\nGROUP BY r.scenario\nORDER BY CASE r.scenario\n           WHEN 'ramp' THEN 1 WHEN 'stress' THEN 2 WHEN 'soak' THEN 3\n           WHEN 'soak-errors' THEN 4 ELSE 5\n         END",
+          "refresh": 2,
+          "sort": 0,
+          "multi": false,
+          "includeAll": false,
+          "current": {},
+          "options": [],
+          "skipUrlSync": false,
+          "hide": 0
+        },
+        {
+          "type": "query",
+          "name": "run",
+          "label": "Прогон",
+          "description": "Прогоны только выбранного типа и workload=auth. Список отсортирован от новых к старым; при открытии выбирается самый свежий. Обновляется при сдвиге таймпикера.",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "benchmark_pg"
+          },
+          "query": "SELECT r.run_id AS \"__value\", r.run_id || ' · CPU=' || COALESCE(r.config->>'api_cpus', '?') || ' · RAM=' || COALESCE(r.config->>'api_ram_mb', '?') || 'MiB' || ' · co=' || COALESCE(r.config->>'coroutines', '-') || CASE WHEN COALESCE(r.config->>'early_stopped', 'false')::boolean         THEN ' · досрочно' ELSE '' END AS \"__text\" FROM lt_runs r WHERE COALESCE(r.config->>'workload', 'auth') = 'auth' AND r.scenario = '$scenario' ORDER BY r.started_at DESC",
+          "definition": "SELECT r.run_id AS \"__value\", r.run_id || ' · CPU=' || COALESCE(r.config->>'api_cpus', '?') || ' · RAM=' || COALESCE(r.config->>'api_ram_mb', '?') || 'MiB' || ' · co=' || COALESCE(r.config->>'coroutines', '-') || CASE WHEN COALESCE(r.config->>'early_stopped', 'false')::boolean         THEN ' · досрочно' ELSE '' END AS \"__text\" FROM lt_runs r WHERE COALESCE(r.config->>'workload', 'auth') = 'auth' AND r.scenario = '$scenario' ORDER BY r.started_at DESC",
+          "refresh": 2,
+          "sort": 0,
+          "multi": false,
+          "includeAll": false,
+          "current": {},
+          "options": [],
+          "skipUrlSync": false,
+          "hide": 0
+        }
+      ]
+    },
+    "annotations": {
+      "list": []
+    },
+    "links": [
+      {
+        "title": "Последние 2 часа",
+        "url": "/d/loadtest-lr4-auth?from=now-2h&to=now",
+        "type": "link",
+        "icon": "clock",
+        "targetBlank": false,
+        "keepTime": false,
+        "includeVars": false,
+        "tooltip": "Показать текущий/свежий прогон на оси в 2 часа"
+      },
+      {
+        "title": "Весь архив (90 дней)",
+        "url": "/d/loadtest-lr4-auth?from=now-90d&to=now",
+        "type": "link",
+        "icon": "history",
+        "targetBlank": false,
+        "keepTime": false,
+        "includeVars": false,
+        "tooltip": "Показать старые прогоны; затем кликните run_id в таблице"
+      },
+      {
+        "title": "ЛР4: public",
+        "url": "/d/loadtest-lr4-public",
+        "type": "link",
+        "icon": "dashboard",
+        "targetBlank": false,
+        "keepTime": true,
+        "includeVars": false,
+        "tooltip": "Перейти к доске сценария public"
+      },
+      {
+        "title": "ЛР3: микробенчмарк",
+        "url": "/d/benchmark-lr3",
+        "type": "link",
+        "icon": "external link",
+        "targetBlank": false,
+        "keepTime": true,
+        "includeVars": false,
+        "tooltip": "Вернуться к дашборду ЛР3"
+      }
+    ],
+    "panels": [
+      {
+        "id": 1,
+        "type": "row",
+        "title": "ЛР4 — нагрузочное тестирование: методика и переключатели",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "collapsed": false,
+        "panels": []
+      },
+      {
+        "id": 2,
+        "type": "text",
+        "title": "Методика",
+        "gridPos": {
+          "h": 7,
+          "w": 24,
+          "x": 0,
+          "y": 1
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [],
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "options": {
+          "mode": "markdown",
+          "code": {
+            "language": "plaintext",
+            "showLineNumbers": false,
+            "showMiniMap": false
+          },
+          "content": "## ЛР4: нагрузочное тестирование vidayapi — `WORKLOAD=auth`\n\n**Эта доска содержит только прогоны `auth`.** Сценарий: auth (матрикс): login → feed → video → playlist → … → unfollow.\nПрогоны другого сценария — на отдельной доске\n[`loadtest-lr4-public`](/d/loadtest-lr4-public), чтобы auth и\npublic не смешивались на одной оси X.\n\nКаждый прогон использует отдельные образы приложения и генератора, чистый том\nPostgreSQL и детерминированный сид. Нагрузку создаёт собственный Kotlin-генератор:\n**корутины + собственный диспетчер с фиксированным пулом потоков**. Параметры железа,\nкорутин и потоков показаны в структурированных таблицах выбранного прогона.\n\n**Переключатели сверху — только два:** **«Тип прогона»** (ramp / stress / soak /\nsoak-errors / smoke) и **«Прогон»**. Тип прогона фильтрует список прогонов и\nадаптивную таблицу деталей; все графики ниже общие, потому что VU/RPS, задержки,\nотказы, ресурсы и JVM нужны любому сценарию. Панелей «для другого сценария»,\nкоторые всегда пустые, на доске нет.\n\n**Live — первым делом.** Секция `LIVE` читает Prometheus (ресурсы контейнеров,\nActuator и live-метрики Kotlin-генератора) и **не зависит от выбранного прогона**:\nзапустите тест при открытой Grafana — RPS, VU, p95/p99, отказы, CPU и RAM появятся\nв течение 10 с. Когда прогон завершится и импортируется в PostgreSQL, он появится\nв списке «Прогон» (обновление списка — при смене таймпикера или перезагрузке).\n\n**Главный график:** «VU и RPS во времени» — две оси на одном полотне. Именно по нему\nвидно, как рост виртуальных пользователей перестаёт давать прирост запросов, а затем\nначинаются отказы. «Доля отказов в 5-с окне» с порогом 95% показывает падение сервиса:\nнесколько подряд полных окон выше порога — это и есть критерий ранней остановки.\n\n**VU = корутина.** Генератор физически не может поднять больше виртуальных\nпользователей, чем `COROUTINES`; ramp-план автоматически обрезается до этого потолка,\nпоэтому «RAMP_MAX_VUS=300 при COROUTINES=100» даст плато на 100 VU, а не 300.\nГотовый сценарий падения на 1 CPU: `make loadtest-fail` (auth, 100 корутин,\nRAM 256 MiB, ramp 10→100 VU, остановка по 3 окнам ≥95% отказов).\n\n**Почему public не падает на 100 корутинах:** публичные чтения на 1 CPU держат\n~1000–1100 RPS при p95 ~100 мс даже при 100% CPU; замкнутый контур из 100 запросов\nне создаёт очередь в 2 с, поэтому 5xx/timeout не появляются. Для демонстрации отказа\nнужен auth-сценарий с логином и записью — он падает уже на ~40–50 VU.\n\n**Детали сценария** — одна адаптивная таблица: для ramp это ступени\n(lt_ramp_curve: VU → RPS/p95/p99/отказы/стабильность), для stress/soak — фазы\n(lt_phases: baseline → overload → recovery, RPS, перцентили и время восстановления).\nПоэтому таблица всегда заполнена и не зависит от того, какой сценарий выбран.\n\n**Время.** Все ряды построены по реальным таймстемпам (`bucket_ts` / `ts`) и\nфильтруются таймпикером. В таблице «Прогоны в базе» клик по `run_id` открывает этот\nже дашборд с таймпикером ровно на интервале прогона — удобно для коротких\nearly-stopped прогонов.\n\n**Отказ** = 5xx / timeout / обрыв. Инъекции 4xx и бизнес-4xx отказом не считаются.\nРанняя остановка: после 30 с три подряд полных 5-с окна, в каждом ≥20 запросов и\n≥95% отказов (успех ≤5%). CPU нормализован к лимиту контейнера: **100% = все\nдоступные ядра**. Перцентили p50/p95/p99 показаны на логарифмической оси.\n\nСсылки: [ЛР3 — микробенчмарк](/d/benchmark-lr3) ·\n[`loadtest-lr4-public`](/d/loadtest-lr4-public) ·\n[отчёт ЛР4](https://github.com/Snowkey505/viday/blob/main/vidayapi/docs/lr4.md) ·\n[гайд](https://github.com/Snowkey505/viday/blob/main/vidayapi/docs/lr4-grafana-guide.md)\n"
+        }
+      },
+      {
+        "id": 3,
+        "type": "row",
+        "title": "LIVE: текущий прогон (Prometheus, обновление 10 с; не зависит от выбранного «Прогон»)",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 8
+        },
+        "collapsed": false,
+        "panels": []
+      },
+      {
+        "id": 4,
+        "type": "table",
+        "title": "LIVE: текущий прогон (No data = сейчас ничего не запущено)",
+        "gridPos": {
+          "h": 7,
+          "w": 8,
+          "x": 0,
+          "y": 9
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus_lr4"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus_lr4"
+            },
+            "editorMode": "code",
+            "expr": "viday_loadtest_info{workload=\"auth\"}",
+            "range": false,
+            "instant": true,
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "align": "auto",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "inspect": false
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "showHeader": true,
+          "cellHeight": "sm",
+          "footer": {
+            "show": false,
+            "reducer": [
+              "sum"
+            ],
+            "countRows": false,
+            "fields": ""
+          }
+        },
+        "maxDataPoints": 1000,
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "Time": true,
+                "Value": true,
+                "__name__": true,
+                "job": true,
+                "instance": true,
+                "source": true
+              },
+              "indexByName": {},
+              "renameByName": {
+                "run_id": "прогон",
+                "workload": "workload",
+                "profile": "профиль",
+                "api_cpus": "CPU",
+                "api_ram_mb": "RAM MiB",
+                "coroutines": "корутины",
+                "dispatcher_threads": "потоки"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "type": "timeseries",
+        "title": "LIVE: RPS и VU (генератор)",
+        "gridPos": {
+          "h": 7,
+          "w": 16,
+          "x": 8,
+          "y": 9
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus_lr4"
+        },
+        "targets": [
+          {
+            "refId": "A0",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus_lr4"
+            },
+            "editorMode": "code",
+            "expr": "sum by (run_id) (rate(viday_loadtest_requests_total{workload=\"auth\"}[1m])) and on (run_id) last_over_time(viday_loadtest_info{workload=\"auth\",run_id!~\".*-warmup\"}[1m])",
+            "legendFormat": "{{run_id}} · RPS",
+            "range": true,
+            "instant": false,
+            "format": "time_series"
+          },
+          {
+            "refId": "A1",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus_lr4"
+            },
+            "editorMode": "code",
+            "expr": "max by (run_id) (viday_loadtest_vus{workload=\"auth\"}) and on (run_id) last_over_time(viday_loadtest_info{workload=\"auth\",run_id!~\".*-warmup\"}[1m])",
+            "legendFormat": "{{run_id}} · VU",
+            "range": true,
+            "instant": false,
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "RPS / VU",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "reqps",
+            "decimals": 1
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byRegexp",
+                "options": ".* · VU$"
+              },
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "short"
+                },
+                {
+                  "id": "custom.axisPlacement",
+                  "value": "right"
+                },
+                {
+                  "id": "custom.axisLabel",
+                  "value": "VU"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "orange"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        },
+        "maxDataPoints": 10000
+      },
+      {
+        "id": 6,
+        "type": "timeseries",
+        "title": "LIVE: p95/p99 задержки (генератор)",
+        "gridPos": {
+          "h": 7,
+          "w": 8,
+          "x": 0,
+          "y": 16
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus_lr4"
+        },
+        "targets": [
+          {
+            "refId": "A0",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus_lr4"
+            },
+            "editorMode": "code",
+            "expr": "(histogram_quantile(0.95, sum by (le, run_id) (rate(viday_loadtest_request_duration_seconds_bucket{workload=\"auth\"}[1m]))) and on (run_id) last_over_time(viday_loadtest_info{workload=\"auth\",run_id!~\".*-warmup\"}[1m])) * 1000",
+            "legendFormat": "{{run_id}} · p95",
+            "range": true,
+            "instant": false,
+            "format": "time_series"
+          },
+          {
+            "refId": "A1",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus_lr4"
+            },
+            "editorMode": "code",
+            "expr": "(histogram_quantile(0.99, sum by (le, run_id) (rate(viday_loadtest_request_duration_seconds_bucket{workload=\"auth\"}[1m]))) and on (run_id) last_over_time(viday_loadtest_info{workload=\"auth\",run_id!~\".*-warmup\"}[1m])) * 1000",
+            "legendFormat": "{{run_id}} · p99",
+            "range": true,
+            "instant": false,
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "мс",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "log",
+                "log": 10
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "ms",
+            "decimals": 1
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        },
+        "maxDataPoints": 10000
+      },
+      {
+        "id": 7,
+        "type": "timeseries",
+        "title": "LIVE: отказы/с по видам (генератор)",
+        "gridPos": {
+          "h": 7,
+          "w": 8,
+          "x": 8,
+          "y": 16
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus_lr4"
+        },
+        "targets": [
+          {
+            "refId": "A0",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus_lr4"
+            },
+            "editorMode": "code",
+            "expr": "sum by (run_id, kind) (rate(viday_loadtest_errors_total{workload=\"auth\"}[1m])) and on (run_id) last_over_time(viday_loadtest_info{workload=\"auth\",run_id!~\".*-warmup\"}[1m])",
+            "legendFormat": "{{run_id}} · {{kind}}",
+            "range": true,
+            "instant": false,
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "ошибок/с",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "reqps",
+            "decimals": 2
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        },
+        "maxDataPoints": 10000
+      },
+      {
+        "id": 8,
+        "type": "timeseries",
+        "title": "LIVE: CPU API, % от лимита контейнера",
+        "gridPos": {
+          "h": 7,
+          "w": 8,
+          "x": 16,
+          "y": 16
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus_lr4"
+        },
+        "targets": [
+          {
+            "refId": "A0",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus_lr4"
+            },
+            "editorMode": "code",
+            "expr": "viday_container_cpu_percent{component=\"api\",workload=\"auth\"} and on (run_id) last_over_time(viday_loadtest_info{workload=\"auth\",run_id!~\".*-warmup\"}[1m])",
+            "legendFormat": "{{run_id}} · api",
+            "range": true,
+            "instant": false,
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "%",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "percent",
+            "decimals": 1
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        },
+        "maxDataPoints": 10000
+      },
+      {
+        "id": 9,
+        "type": "timeseries",
+        "title": "LIVE: RAM API, MiB (working set)",
+        "gridPos": {
+          "h": 7,
+          "w": 8,
+          "x": 0,
+          "y": 23
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus_lr4"
+        },
+        "targets": [
+          {
+            "refId": "A0",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus_lr4"
+            },
+            "editorMode": "code",
+            "expr": "(viday_container_memory_working_set_bytes{component=\"api\",workload=\"auth\"} and on (run_id) last_over_time(viday_loadtest_info{workload=\"auth\",run_id!~\".*-warmup\"}[1m])) / 1024 / 1024",
+            "legendFormat": "{{run_id}} · api",
+            "range": true,
+            "instant": false,
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "MiB",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "mbytes",
+            "decimals": 1
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        },
+        "maxDataPoints": 10000
+      },
+      {
+        "id": 10,
+        "type": "timeseries",
+        "title": "LIVE: JVM heap, MiB (Actuator)",
+        "gridPos": {
+          "h": 7,
+          "w": 8,
+          "x": 8,
+          "y": 23
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus_lr4"
+        },
+        "targets": [
+          {
+            "refId": "A0",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus_lr4"
+            },
+            "editorMode": "code",
+            "expr": "sum(jvm_memory_used_bytes{job=\"viday-lr4-app\",area=\"heap\"}) / 1024 / 1024 and on() (count(last_over_time(viday_loadtest_info{workload=\"auth\",run_id!~\".*-warmup\"}[30s])) > 0)",
+            "legendFormat": "heap",
+            "range": true,
+            "instant": false,
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "MiB",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "mbytes",
+            "decimals": 1
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        },
+        "maxDataPoints": 10000
+      },
+      {
+        "id": 11,
+        "type": "timeseries",
+        "title": "LIVE: HTTP приложения — RPS и 5xx/с",
+        "gridPos": {
+          "h": 7,
+          "w": 8,
+          "x": 16,
+          "y": 23
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus_lr4"
+        },
+        "targets": [
+          {
+            "refId": "A0",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus_lr4"
+            },
+            "editorMode": "code",
+            "expr": "sum(rate(http_server_requests_seconds_count{job=\"viday-lr4-app\",uri!~\".*actuator.*\"}[1m])) and on() (count(last_over_time(viday_loadtest_info{workload=\"auth\",run_id!~\".*-warmup\"}[30s])) > 0)",
+            "legendFormat": "HTTP RPS",
+            "range": true,
+            "instant": false,
+            "format": "time_series"
+          },
+          {
+            "refId": "A1",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus_lr4"
+            },
+            "editorMode": "code",
+            "expr": "sum(rate(http_server_requests_seconds_count{job=\"viday-lr4-app\",uri!~\".*actuator.*\",status=~\"5..\"}[1m])) and on() (count(last_over_time(viday_loadtest_info{workload=\"auth\",run_id!~\".*-warmup\"}[30s])) > 0)",
+            "legendFormat": "HTTP 5xx/с",
+            "range": true,
+            "instant": false,
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "reqps",
+            "decimals": 2
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        },
+        "maxDataPoints": 10000
+      },
+      {
+        "id": 12,
+        "type": "row",
+        "title": "Прогоны выбранного типа: клик по run_id зумит таймпикер на его интервал",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 30
+        },
+        "collapsed": false,
+        "panels": []
+      },
+      {
+        "id": 13,
+        "type": "table",
+        "title": "Прогоны в базе (только выбранный «Тип прогона»)",
+        "gridPos": {
+          "h": 10,
+          "w": 24,
+          "x": 0,
+          "y": 31
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "WITH per_run AS (\n  SELECT run_id,\n         sum(requests) AS requests,\n         sum(requests) / NULLIF(sum(duration_s), 0) AS rps,\n         max(p50_ms) AS p50_ms,\n         max(p95_ms) AS p95_ms,\n         max(p99_ms) AS p99_ms,\n         sum(errors_unexpected)::double precision\n           / NULLIF(sum(requests), 0) * 100 AS fail_pct,\n         sum(errors_injected)::double precision\n           / NULLIF(sum(requests), 0) * 100 AS injected_pct,\n         max(vus_max) AS vus_max\n  FROM lt_scenario_summary\n  WHERE scope = 'overall'\n  GROUP BY run_id\n)\nSELECT r.run_id AS \"прогон\",\n       r.profile AS \"профиль\",\n       r.status AS \"статус\",\n       COALESCE(r.config->>'workload', 'auth') AS \"сценарий\",\n       COALESCE(r.config->>'api_cpus', '2') AS \"CPU\",\n       COALESCE(r.config->>'api_ram_mb', '1536') AS \"RAM MiB\",\n       COALESCE(r.config->>'coroutines', '-') AS \"корутины\",\n       COALESCE(r.config->>'dispatcher_threads', '-') AS \"потоки dispatcher\",\n       to_char(r.started_at, 'YYYY-MM-DD HH24:MI') AS \"старт\",\n       round(r.duration_s)::int AS \"длит., с\",\n       round(r.error_rate_target * 100)::int AS \"цель ошибок, %\",\n       p.requests AS \"запросы\",\n       round(p.rps::numeric, 1) AS \"RPS\",\n       round(p.p50_ms::numeric, 1) AS \"p50 (макс. фаза), мс\",\n       round(p.p95_ms::numeric, 1) AS \"p95 (макс. фаза), мс\",\n       round(p.p99_ms::numeric, 1) AS \"p99 (макс. фаза), мс\",\n       round(p.fail_pct::numeric, 2) AS \"отказы, %\",\n       round(p.injected_pct::numeric, 2) AS \"инъекции, %\",\n       round(p.vus_max::numeric, 0) AS \"VU max\",\n       CASE WHEN COALESCE(r.config->>'early_stopped', 'false')::boolean\n            THEN 'да' ELSE 'нет' END AS \"досрочно\",\n       COALESCE(r.config->>'termination_reason', '') AS \"причина остановки\",\n       round(EXTRACT(EPOCH FROM r.started_at) * 1000)::bigint AS from_ms,\n       round(EXTRACT(EPOCH FROM r.finished_at) * 1000)::bigint AS to_ms\nFROM lt_runs r\nLEFT JOIN per_run p ON p.run_id = r.run_id\nWHERE COALESCE(r.config->>'workload', 'auth') = 'auth'\n  AND r.scenario = '$scenario'\nORDER BY r.started_at DESC",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "align": "auto",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "inspect": false
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "from_ms"
+              },
+              "properties": [
+                {
+                  "id": "custom.hidden",
+                  "value": true
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "to_ms"
+              },
+              "properties": [
+                {
+                  "id": "custom.hidden",
+                  "value": true
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "прогон"
+              },
+              "properties": [
+                {
+                  "id": "links",
+                  "value": [
+                    {
+                      "title": "Открыть этот прогон (зум на его интервал)",
+                      "url": "/d/loadtest-lr4-auth?from=${__data.fields[\"from_ms\"]}&to=${__data.fields[\"to_ms\"]}&var-scenario=${scenario}&var-run=${__value.raw}",
+                      "targetBlank": false
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "showHeader": true,
+          "cellHeight": "sm",
+          "footer": {
+            "show": false,
+            "reducer": [
+              "sum"
+            ],
+            "countRows": false,
+            "fields": ""
+          }
+        }
+      },
+      {
+        "id": 14,
+        "type": "table",
+        "title": "Аппаратная конфигурация: процессор и память",
+        "gridPos": {
+          "h": 7,
+          "w": 12,
+          "x": 0,
+          "y": 41
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "SELECT parameter AS \"параметр\", value AS \"значение\"\nFROM lt_runs r\nCROSS JOIN LATERAL (VALUES\n  ('Процессор', COALESCE(r.environment->>'cpu_model', 'не указан')),\n  ('CPU limit API, ядер', COALESCE(r.config->>'api_cpus', 'не указан')),\n  ('CPU cpuset API', COALESCE(r.environment->'cpusets'->>'api', 'не указан')),\n  ('RAM limit API, MiB', COALESCE(r.config->>'api_ram_mb', 'не указан')),\n  ('JVM heap Xmx, MiB', COALESCE(r.config->>'api_heap_mb', 'не указан')),\n  ('JVM heap Xms, MiB', COALESCE(r.config->>'api_xms_mb', 'не указан')),\n  ('RAM хоста доступно на старте, MiB', COALESCE(r.environment->>'host_mem_available_mb_at_start', 'не указано'))\n) AS v(parameter, value)\nWHERE r.run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1)))",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "align": "auto",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "inspect": false
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "showHeader": true,
+          "cellHeight": "sm",
+          "footer": {
+            "show": false,
+            "reducer": [
+              "sum"
+            ],
+            "countRows": false,
+            "fields": ""
+          }
+        }
+      },
+      {
+        "id": 15,
+        "type": "table",
+        "title": "Конфигурация нагрузки: корутины, потоки и критерий отказа",
+        "gridPos": {
+          "h": 7,
+          "w": 12,
+          "x": 12,
+          "y": 41
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "SELECT parameter AS \"параметр\", value AS \"значение\"\nFROM lt_runs r\nCROSS JOIN LATERAL (VALUES\n  ('Тип сценария', COALESCE(r.config->>'workload', 'auth')),\n  ('Временной профиль', r.scenario),\n  ('Генератор', COALESCE(r.config->>'generator', 'k6')),\n  ('Корутины', COALESCE(r.config->>'coroutines', 'не применимо')),\n  ('Потоки dispatcher', COALESCE(r.config->>'dispatcher_threads', 'не применимо')),\n  ('Ramp: макс. VU в конфиге', COALESCE(r.config->>'ramp_max_vus', '—')),\n  ('Потолок VU (COROUTINES)', COALESCE(r.config->>'coroutines', '—')),\n  ('Операции на сессию', COALESCE(r.config->>'operations_per_session', '10')),\n  ('Timeout запроса', COALESCE(r.config->>'request_timeout', 'не указан')),\n  ('Критерий критического отказа', COALESCE(\n     (r.config->>'failure_windows') || ' окна × ' || (r.config->>'failure_window') ||\n     ', отказы ≥ ' || round(((r.config->>'failure_threshold')::numeric * 100), 0)::text || '%, запросов ≥ ' ||\n     (r.config->>'failure_min_requests'), 'старый прогон: см. config'))\n) AS v(parameter, value)\nWHERE r.run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1)))",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "align": "auto",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "inspect": false
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "showHeader": true,
+          "cellHeight": "sm",
+          "footer": {
+            "show": false,
+            "reducer": [
+              "sum"
+            ],
+            "countRows": false,
+            "fields": ""
+          }
+        }
+      },
+      {
+        "id": 16,
+        "type": "row",
+        "title": "Ключевые показатели выбранного прогона",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 48
+        },
+        "collapsed": false,
+        "panels": []
+      },
+      {
+        "id": 17,
+        "type": "stat",
+        "title": "Запросы",
+        "gridPos": {
+          "h": 4,
+          "w": 4,
+          "x": 0,
+          "y": 49
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "SELECT sum(requests)::bigint FROM lt_scenario_summary WHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND scope = 'overall' AND operation = 'all'",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {},
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "short",
+            "decimals": 0
+          },
+          "overrides": []
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": ""
+          },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto"
+        }
+      },
+      {
+        "id": 18,
+        "type": "stat",
+        "title": "RPS (средний)",
+        "gridPos": {
+          "h": 4,
+          "w": 4,
+          "x": 4,
+          "y": 49
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "SELECT round((sum(requests) / NULLIF(sum(duration_s),0))::numeric, 1) FROM lt_scenario_summary WHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND scope = 'overall' AND operation = 'all'",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {},
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "reqps",
+            "decimals": 1
+          },
+          "overrides": []
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": ""
+          },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto"
+        }
+      },
+      {
+        "id": 19,
+        "type": "stat",
+        "title": "p95 (макс. фаза), мс",
+        "gridPos": {
+          "h": 4,
+          "w": 4,
+          "x": 8,
+          "y": 49
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "SELECT round(max(p95_ms)::numeric, 1) FROM lt_scenario_summary WHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND scope = 'overall' AND operation = 'all'",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {},
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "ms",
+            "decimals": 1
+          },
+          "overrides": []
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": ""
+          },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto"
+        }
+      },
+      {
+        "id": 20,
+        "type": "stat",
+        "title": "p99 (макс. фаза), мс",
+        "gridPos": {
+          "h": 4,
+          "w": 4,
+          "x": 12,
+          "y": 49
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "SELECT round(max(p99_ms)::numeric, 1) FROM lt_scenario_summary WHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND scope = 'overall' AND operation = 'all'",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {},
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "ms",
+            "decimals": 1
+          },
+          "overrides": []
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": ""
+          },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto"
+        }
+      },
+      {
+        "id": 21,
+        "type": "stat",
+        "title": "Отказы 5xx/timeout, %",
+        "gridPos": {
+          "h": 4,
+          "w": 4,
+          "x": 16,
+          "y": 49
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "SELECT round((sum(errors_unexpected)::double precision / NULLIF(sum(requests),0) * 100)::numeric, 2) FROM lt_scenario_summary WHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND scope = 'overall' AND operation = 'all'",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {},
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "percent",
+            "decimals": 2
+          },
+          "overrides": []
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": ""
+          },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto"
+        }
+      },
+      {
+        "id": 22,
+        "type": "stat",
+        "title": "Инъекции 4xx, %",
+        "gridPos": {
+          "h": 4,
+          "w": 4,
+          "x": 20,
+          "y": 49
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "SELECT round((sum(errors_injected)::double precision / NULLIF(sum(requests),0) * 100)::numeric, 2) FROM lt_scenario_summary WHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND scope = 'overall' AND operation = 'all'",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {},
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "percent",
+            "decimals": 2
+          },
+          "overrides": []
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": ""
+          },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto"
+        }
+      },
+      {
+        "id": 23,
+        "type": "row",
+        "title": "Отказы: пик, окна выше порога и первое падение",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 53
+        },
+        "collapsed": false,
+        "panels": []
+      },
+      {
+        "id": 24,
+        "type": "stat",
+        "title": "Пик отказов в 5-с окне, %",
+        "gridPos": {
+          "h": 5,
+          "w": 8,
+          "x": 0,
+          "y": 54
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "SELECT round((max(errors_unexpected::double precision\n                  / NULLIF(requests, 0) * 100))::numeric, 2)\nFROM lt_timeseries\nWHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND operation = 'all' AND requests > 0",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {},
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "percent",
+            "decimals": 2
+          },
+          "overrides": []
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": ""
+          },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto"
+        }
+      },
+      {
+        "id": 25,
+        "type": "stat",
+        "title": "5-с окон с откзами ≥95%",
+        "gridPos": {
+          "h": 5,
+          "w": 8,
+          "x": 8,
+          "y": 54
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "SELECT count(*)::int\nFROM lt_timeseries\nWHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND operation = 'all' AND requests >= 20\n  AND errors_unexpected::double precision >= 0.95 * requests",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {},
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "short",
+            "decimals": 0
+          },
+          "overrides": []
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": ""
+          },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto"
+        }
+      },
+      {
+        "id": 26,
+        "type": "stat",
+        "title": "Первый таймстемп окна, где отказов больше успехов",
+        "gridPos": {
+          "h": 5,
+          "w": 8,
+          "x": 16,
+          "y": 54
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "WITH base AS (\n  SELECT bucket_ts, requests, errors_unexpected\n  FROM lt_timeseries\n  WHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND $__timeFilter(bucket_ts) AND operation = 'all'\n),\ncrossing AS (\n  SELECT b.bucket_ts\n  FROM base b\n  WHERE b.requests > 0 AND b.errors_unexpected > b.requests - b.errors_unexpected\n  ORDER BY b.bucket_ts\n  LIMIT 1\n)\n-- Возвращаем именно таймстемп первого окна, а не секунды от старта.\nSELECT COALESCE(\n         to_char((SELECT bucket_ts FROM crossing), 'YYYY-MM-DD HH24:MI:SS'),\n         'не достигнуто'\n       ) AS value",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {},
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "none",
+            "decimals": 0
+          },
+          "overrides": []
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": ""
+          },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto"
+        }
+      },
+      {
+        "id": 27,
+        "type": "row",
+        "title": "Нагрузка во времени: VU → RPS, задержки, отказы и доля отказов",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 59
+        },
+        "collapsed": false,
+        "panels": []
+      },
+      {
+        "id": 28,
+        "type": "timeseries",
+        "title": "VU и RPS во времени: рост пользователей и фактический поток запросов",
+        "gridPos": {
+          "h": 9,
+          "w": 24,
+          "x": 0,
+          "y": 60
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "time_series",
+            "rawQuery": true,
+            "rawSql": "WITH base AS (\n  SELECT bucket_ts, rps, vus\n  FROM lt_timeseries\n  WHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND $__timeFilter(bucket_ts) AND operation = 'all'\n)\nSELECT b.bucket_ts AS \"time\",\n       round(sum(b.rps)::numeric, 2) AS \"RPS\",\n       round(avg(b.vus)::numeric, 1) AS \"VU\"\nFROM base b\nGROUP BY 1\nORDER BY 1",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "RPS / VU",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "reqps",
+            "decimals": 1
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "VU"
+              },
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "short"
+                },
+                {
+                  "id": "custom.axisPlacement",
+                  "value": "right"
+                },
+                {
+                  "id": "custom.axisLabel",
+                  "value": "VU"
+                },
+                {
+                  "id": "custom.lineWidth",
+                  "value": 2
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "orange"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "RPS"
+              },
+              "properties": [
+                {
+                  "id": "custom.lineWidth",
+                  "value": 2
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "fixed",
+                    "fixedColor": "green"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "table",
+            "placement": "bottom",
+            "calcs": [
+              "max",
+              "mean",
+              "lastNotNull"
+            ]
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 29,
+        "type": "timeseries",
+        "title": "Перцентили p50/p95/p99 во времени (log-шкала)",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 69
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "time_series",
+            "rawQuery": true,
+            "rawSql": "WITH base AS (\n  SELECT bucket_ts, p50_ms, p95_ms, p99_ms\n  FROM lt_timeseries\n  WHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND $__timeFilter(bucket_ts) AND operation = 'all'\n),\nlong AS (\n  SELECT bucket_ts, 'p50' AS metric, p50_ms AS value\n  FROM base UNION ALL \n  SELECT bucket_ts, 'p95' AS metric, p95_ms AS value\n  FROM base UNION ALL \n  SELECT bucket_ts, 'p99' AS metric, p99_ms AS value\n  FROM base\n)\nSELECT bucket_ts AS \"time\", metric, round(value::numeric, 2) AS \"value\"\nFROM long\nORDER BY 1",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "мс",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "log",
+                "log": 10
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "ms",
+            "decimals": 2
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 30,
+        "type": "timeseries",
+        "title": "Отказы, инъекции и бизнес-4xx в 5-с окне",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 69
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "time_series",
+            "rawQuery": true,
+            "rawSql": "WITH base AS (\n  SELECT bucket_ts, errors_unexpected, errors_injected, errors_business\n  FROM lt_timeseries\n  WHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND $__timeFilter(bucket_ts) AND operation = 'all'\n)\nSELECT b.bucket_ts AS \"time\",\n       sum(b.errors_unexpected)::double precision AS \"отказы (5xx/timeout)\",\n       sum(b.errors_injected)::double precision AS \"инъекции 4xx\",\n       sum(b.errors_business)::double precision AS \"прочие 4xx\"\nFROM base b\nGROUP BY 1\nORDER BY 1",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "ошибок",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "short",
+            "decimals": 0
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 31,
+        "type": "timeseries",
+        "title": "Доля отказов в 5-с окне, % (порог 95% = критерий остановки)",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 77
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "time_series",
+            "rawQuery": true,
+            "rawSql": "SELECT bucket_ts AS \"time\",\n       round((sum(errors_unexpected)::double precision\n              / NULLIF(sum(requests), 0) * 100)::numeric, 2) AS \"отказы, %\"\nFROM lt_timeseries\nWHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND $__timeFilter(bucket_ts) AND operation = 'all'\nGROUP BY 1\nORDER BY 1",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "%",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "thresholdsStyle": {
+                "mode": "line"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 1
+                },
+                {
+                  "color": "red",
+                  "value": 95
+                }
+              ]
+            },
+            "unit": "percent",
+            "decimals": 2
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 32,
+        "type": "timeseries",
+        "title": "Накопленные успешные операции и отказы от начала прогона",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 77
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "time_series",
+            "rawQuery": true,
+            "rawSql": "WITH base AS (\n  SELECT bucket_ts, requests, errors_unexpected\n  FROM lt_timeseries\n  WHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND $__timeFilter(bucket_ts) AND operation = 'all'\n)\nSELECT b.bucket_ts AS \"time\",\n       sum(b.requests - b.errors_unexpected) OVER (ORDER BY b.bucket_ts)::bigint\n         AS \"успешные операции, накоплено\",\n       sum(b.errors_unexpected) OVER (ORDER BY b.bucket_ts)::bigint\n         AS \"отказы, накоплено\"\nFROM base b\nORDER BY b.bucket_ts",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "операций",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "short",
+            "decimals": 0
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 33,
+        "type": "row",
+        "title": "Детали сценария (адаптивно): ramp → ступени VU; stress/soak → фазы и время восстановления",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 85
+        },
+        "collapsed": false,
+        "panels": []
+      },
+      {
+        "id": 34,
+        "type": "table",
+        "title": "Ступени ramp или фазы stress/soak",
+        "gridPos": {
+          "h": 10,
+          "w": 24,
+          "x": 0,
+          "y": 86
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "WITH meta AS (\n  SELECT scenario FROM lt_runs WHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1)))\n),\nramp_rows AS (\n  SELECT target_vus::double precision AS ord,\n         'ступень ' || target_vus || ' VU' AS label,\n         target_vus::double precision AS vus,\n         requests,\n         rps,\n         p95_ms,\n         p99_ms,\n         unexpected_error_rate_pct AS fail_pct,\n         NULL::text AS recovery_text,\n         stable\n  FROM lt_ramp_curve\n  WHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1)))\n    AND (SELECT scenario FROM meta) = 'ramp'\n),\nphase_rows AS (\n  SELECT EXTRACT(EPOCH FROM p.started_at) AS ord,\n         p.phase AS label,\n         (SELECT max(t.vus) FROM lt_timeseries t\n           WHERE t.run_id = p.run_id AND t.phase = p.phase AND t.operation = 'all') AS vus,\n         p.requests,\n         p.rps,\n         p.p95_ms,\n         p.p99_ms,\n         p.unexpected_error_rate_pct AS fail_pct,\n         COALESCE(round(p.recovery_s::numeric, 0)::text, '—') AS recovery_text,\n         (p.unexpected_error_rate_pct < 1 AND p.p95_ms < 500) AS stable\n  FROM lt_phases p\n  WHERE p.run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1)))\n    AND (SELECT scenario FROM meta) <> 'ramp'\n),\nrows AS (\n  SELECT * FROM ramp_rows\n  UNION ALL\n  SELECT * FROM phase_rows\n)\nSELECT label AS \"ступень / фаза\",\n       round(vus::numeric, 0) AS \"VU\",\n       requests AS \"запросов\",\n       round(rps::numeric, 1) AS \"RPS\",\n       round(p95_ms::numeric, 1) AS \"p95, мс\",\n       round(p99_ms::numeric, 1) AS \"p99, мс\",\n       round(fail_pct::numeric, 2) AS \"отказы, %\",\n       COALESCE(recovery_text, '—') AS \"восстановление, с\",\n       CASE WHEN stable THEN 'да' ELSE 'нет' END AS \"стабильно\"\nFROM rows\nORDER BY ord",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "align": "auto",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "inspect": false
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "showHeader": true,
+          "cellHeight": "sm",
+          "footer": {
+            "show": false,
+            "reducer": [
+              "sum"
+            ],
+            "countRows": false,
+            "fields": ""
+          }
+        }
+      },
+      {
+        "id": 35,
+        "type": "row",
+        "title": "Распределение задержек: CDF и гистограмма (X — таймстемпы)",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 96
+        },
+        "collapsed": false,
+        "panels": []
+      },
+      {
+        "id": 36,
+        "type": "timeseries",
+        "title": "CDF во времени: доля запросов ≤ порога",
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 97
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "time_series",
+            "rawQuery": true,
+            "rawSql": "WITH base AS (\n  SELECT bucket_ts, latency_ms, max(fraction) AS fraction\n  FROM lt_cdf_ts\n  WHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND $__timeFilter(bucket_ts) AND operation = 'all'\n  GROUP BY bucket_ts, latency_ms\n)\nSELECT bucket_ts AS \"time\",\n       round(max(fraction) FILTER (WHERE latency_ms = 10)::numeric, 3) AS \"≤10 мс\", round(max(fraction) FILTER (WHERE latency_ms = 25)::numeric, 3) AS \"≤25 мс\", round(max(fraction) FILTER (WHERE latency_ms = 50)::numeric, 3) AS \"≤50 мс\", round(max(fraction) FILTER (WHERE latency_ms = 100)::numeric, 3) AS \"≤100 мс\", round(max(fraction) FILTER (WHERE latency_ms = 200)::numeric, 3) AS \"≤200 мс\", round(max(fraction) FILTER (WHERE latency_ms = 500)::numeric, 3) AS \"≤500 мс\", round(max(fraction) FILTER (WHERE latency_ms = 1000)::numeric, 3) AS \"≤1000 мс\", round(max(fraction) FILTER (WHERE latency_ms = 2000)::numeric, 3) AS \"≤2000 мс\", round(max(fraction) FILTER (WHERE latency_ms = 5000)::numeric, 3) AS \"≤5000 мс\", round(max(fraction) FILTER (WHERE latency_ms = 10000)::numeric, 3) AS \"≤10000 мс\"\nFROM base\nGROUP BY 1\nORDER BY 1",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "доля запросов",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "percentunit",
+            "decimals": 3
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 37,
+        "type": "heatmap",
+        "title": "Гистограмма задержки во времени (Y — мс, цвет — запросы)",
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 12,
+          "y": 97
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "time_series",
+            "rawQuery": true,
+            "rawSql": "SELECT bucket_ts AS \"time\",\n       round(((from_ms + to_ms) / 2.0)::numeric, 1) AS \"latency_ms\",\n       sum(count)::bigint AS \"requests\"\nFROM lt_histogram_ts\nWHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND $__timeFilter(bucket_ts) AND operation = 'all'\nGROUP BY bucket_ts, from_ms, to_ms\nORDER BY 1, 2",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {},
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "short",
+            "decimals": 0
+          },
+          "overrides": []
+        },
+        "options": {
+          "calculate": false,
+          "color": {
+            "mode": "scheme",
+            "scheme": "Turbo"
+          },
+          "yAxis": {
+            "unit": "ms",
+            "axisPlacement": "left"
+          },
+          "xAxis": {
+            "unit": "time"
+          },
+          "legend": {
+            "show": true
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 38,
+        "type": "row",
+        "title": "Пользовательские операции: где именно тормозит",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 106
+        },
+        "collapsed": false,
+        "panels": []
+      },
+      {
+        "id": 39,
+        "type": "table",
+        "title": "Сводка по операциям: запросы, RPS, p50/p95/p99, отказы",
+        "gridPos": {
+          "h": 9,
+          "w": 14,
+          "x": 0,
+          "y": 107
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "SELECT operation AS \"операция\",\n       sum(requests) AS \"запросов\",\n       round((sum(requests) / NULLIF(sum(duration_s), 0))::numeric, 1) AS \"RPS\",\n       round(max(p50_ms)::numeric, 1) AS \"p50\",\n       round(max(p95_ms)::numeric, 1) AS \"p95\",\n       round(max(p99_ms)::numeric, 1) AS \"p99\",\n       sum(errors_unexpected) AS \"отказы\",\n       sum(errors_injected) AS \"инъекции\"\nFROM lt_scenario_summary\nWHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND scope = 'operation'\nGROUP BY operation\nORDER BY sum(requests) DESC",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "align": "auto",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "inspect": false
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "showHeader": true,
+          "cellHeight": "sm",
+          "footer": {
+            "show": false,
+            "reducer": [
+              "sum"
+            ],
+            "countRows": false,
+            "fields": ""
+          }
+        }
+      },
+      {
+        "id": 40,
+        "type": "table",
+        "title": "Топ-15 операций по p95",
+        "gridPos": {
+          "h": 9,
+          "w": 10,
+          "x": 14,
+          "y": 107
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "SELECT operation AS \"операция\",\n       round(max(p95_ms)::numeric, 1) AS \"p95, мс\"\nFROM lt_scenario_summary\nWHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND scope = 'operation'\nGROUP BY operation\nORDER BY max(requests) DESC\nLIMIT 15",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "align": "auto",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "inspect": false
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "showHeader": true,
+          "cellHeight": "sm",
+          "footer": {
+            "show": false,
+            "reducer": [
+              "sum"
+            ],
+            "countRows": false,
+            "fields": ""
+          }
+        }
+      },
+      {
+        "id": 41,
+        "type": "row",
+        "title": "Ресурсы контейнеров (exporter → PostgreSQL, шаг ~10 с)",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 116
+        },
+        "collapsed": false,
+        "panels": []
+      },
+      {
+        "id": 42,
+        "type": "timeseries",
+        "title": "CPU по компонентам, % (100% = все ядра контейнера)",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 117
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "time_series",
+            "rawQuery": true,
+            "rawSql": "WITH base AS (\n  SELECT ts, component, (cpu_pct) AS value\n  FROM lt_resource_samples\n  WHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND $__timeFilter(ts)\n)\nSELECT b.ts AS \"time\",\n       round(max(b.value) FILTER (WHERE b.component = 'api')::numeric, 2) AS \"api\",\n       round(max(b.value) FILTER (WHERE b.component = 'postgres')::numeric, 2) AS \"postgres\",\n       round(max(b.value) FILTER (WHERE b.component = 'redis')::numeric, 2) AS \"redis\",\n       round(max(b.value) FILTER (WHERE b.component = 'minio')::numeric, 2) AS \"minio\",\n       round(max(b.value) FILTER (WHERE b.component IN ('k6', 'generator'))::numeric, 2) AS \"generator\"\nFROM base b\nGROUP BY 1\nORDER BY 1",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "%",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "percent",
+            "decimals": 2
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 43,
+        "type": "timeseries",
+        "title": "RAM working set по компонентам, MiB",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 117
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "time_series",
+            "rawQuery": true,
+            "rawSql": "WITH base AS (\n  SELECT ts, component, (ram_bytes / 1048576.0) AS value\n  FROM lt_resource_samples\n  WHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND $__timeFilter(ts)\n)\nSELECT b.ts AS \"time\",\n       round(max(b.value) FILTER (WHERE b.component = 'api')::numeric, 2) AS \"api\",\n       round(max(b.value) FILTER (WHERE b.component = 'postgres')::numeric, 2) AS \"postgres\",\n       round(max(b.value) FILTER (WHERE b.component = 'redis')::numeric, 2) AS \"redis\",\n       round(max(b.value) FILTER (WHERE b.component = 'minio')::numeric, 2) AS \"minio\",\n       round(max(b.value) FILTER (WHERE b.component IN ('k6', 'generator'))::numeric, 2) AS \"generator\"\nFROM base b\nGROUP BY 1\nORDER BY 1",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "MiB",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "mbytes",
+            "decimals": 1
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 44,
+        "type": "timeseries",
+        "title": "Чтение с диска, MiB/s",
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 0,
+          "y": 125
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "time_series",
+            "rawQuery": true,
+            "rawSql": "WITH base AS (\n  SELECT ts, component, (disk_read_bps / 1048576.0) AS value\n  FROM lt_resource_samples\n  WHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND $__timeFilter(ts)\n)\nSELECT b.ts AS \"time\",\n       round(max(b.value) FILTER (WHERE b.component = 'api')::numeric, 2) AS \"api\",\n       round(max(b.value) FILTER (WHERE b.component = 'postgres')::numeric, 2) AS \"postgres\",\n       round(max(b.value) FILTER (WHERE b.component = 'redis')::numeric, 2) AS \"redis\",\n       round(max(b.value) FILTER (WHERE b.component = 'minio')::numeric, 2) AS \"minio\",\n       round(max(b.value) FILTER (WHERE b.component IN ('k6', 'generator'))::numeric, 2) AS \"generator\"\nFROM base b\nGROUP BY 1\nORDER BY 1",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "MiB/s",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "mbytes",
+            "decimals": 2
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 45,
+        "type": "timeseries",
+        "title": "Запись на диск, MiB/s",
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 6,
+          "y": 125
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "time_series",
+            "rawQuery": true,
+            "rawSql": "WITH base AS (\n  SELECT ts, component, (disk_write_bps / 1048576.0) AS value\n  FROM lt_resource_samples\n  WHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND $__timeFilter(ts)\n)\nSELECT b.ts AS \"time\",\n       round(max(b.value) FILTER (WHERE b.component = 'api')::numeric, 2) AS \"api\",\n       round(max(b.value) FILTER (WHERE b.component = 'postgres')::numeric, 2) AS \"postgres\",\n       round(max(b.value) FILTER (WHERE b.component = 'redis')::numeric, 2) AS \"redis\",\n       round(max(b.value) FILTER (WHERE b.component = 'minio')::numeric, 2) AS \"minio\",\n       round(max(b.value) FILTER (WHERE b.component IN ('k6', 'generator'))::numeric, 2) AS \"generator\"\nFROM base b\nGROUP BY 1\nORDER BY 1",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "MiB/s",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "mbytes",
+            "decimals": 2
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 46,
+        "type": "timeseries",
+        "title": "Сеть: приём, MiB/s",
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 12,
+          "y": 125
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "time_series",
+            "rawQuery": true,
+            "rawSql": "WITH base AS (\n  SELECT ts, component, (net_rx_bps / 1048576.0) AS value\n  FROM lt_resource_samples\n  WHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND $__timeFilter(ts)\n)\nSELECT b.ts AS \"time\",\n       round(max(b.value) FILTER (WHERE b.component = 'api')::numeric, 2) AS \"api\",\n       round(max(b.value) FILTER (WHERE b.component = 'postgres')::numeric, 2) AS \"postgres\",\n       round(max(b.value) FILTER (WHERE b.component = 'redis')::numeric, 2) AS \"redis\",\n       round(max(b.value) FILTER (WHERE b.component = 'minio')::numeric, 2) AS \"minio\",\n       round(max(b.value) FILTER (WHERE b.component IN ('k6', 'generator'))::numeric, 2) AS \"generator\"\nFROM base b\nGROUP BY 1\nORDER BY 1",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "MiB/s",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "mbytes",
+            "decimals": 2
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 47,
+        "type": "timeseries",
+        "title": "Сеть: передача, MiB/s",
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 18,
+          "y": 125
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "time_series",
+            "rawQuery": true,
+            "rawSql": "WITH base AS (\n  SELECT ts, component, (net_tx_bps / 1048576.0) AS value\n  FROM lt_resource_samples\n  WHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND $__timeFilter(ts)\n)\nSELECT b.ts AS \"time\",\n       round(max(b.value) FILTER (WHERE b.component = 'api')::numeric, 2) AS \"api\",\n       round(max(b.value) FILTER (WHERE b.component = 'postgres')::numeric, 2) AS \"postgres\",\n       round(max(b.value) FILTER (WHERE b.component = 'redis')::numeric, 2) AS \"redis\",\n       round(max(b.value) FILTER (WHERE b.component = 'minio')::numeric, 2) AS \"minio\",\n       round(max(b.value) FILTER (WHERE b.component IN ('k6', 'generator'))::numeric, 2) AS \"generator\"\nFROM base b\nGROUP BY 1\nORDER BY 1",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "MiB/s",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "mbytes",
+            "decimals": 2
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 48,
+        "type": "row",
+        "title": "JVM приложения (Actuator → PostgreSQL): история выбранного прогона",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 133
+        },
+        "collapsed": false,
+        "panels": []
+      },
+      {
+        "id": 49,
+        "type": "timeseries",
+        "title": "JVM heap used, MiB",
+        "gridPos": {
+          "h": 7,
+          "w": 6,
+          "x": 0,
+          "y": 134
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "time_series",
+            "rawQuery": true,
+            "rawSql": "SELECT b.ts AS \"time\",\n       round(max(heap_bytes / 1048576.0)::numeric, 3) AS \"heap used, MiB\"\nFROM lt_app_samples b\nWHERE b.run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND $__timeFilter(b.ts)\nGROUP BY b.ts\nORDER BY b.ts",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "MiB",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "mbytes",
+            "decimals": 1
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 50,
+        "type": "timeseries",
+        "title": "GC pause, с/с (сумма по сборщикам)",
+        "gridPos": {
+          "h": 7,
+          "w": 6,
+          "x": 6,
+          "y": 134
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "time_series",
+            "rawQuery": true,
+            "rawSql": "SELECT b.ts AS \"time\",\n       round(max(gc_pause_rate)::numeric, 3) AS \"GC pause, с/с\"\nFROM lt_app_samples b\nWHERE b.run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND $__timeFilter(b.ts)\nGROUP BY b.ts\nORDER BY b.ts",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "с/с",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "s",
+            "decimals": 3
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 51,
+        "type": "timeseries",
+        "title": "HikariCP: активные / idle соединения",
+        "gridPos": {
+          "h": 7,
+          "w": 6,
+          "x": 12,
+          "y": 134
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "time_series",
+            "rawQuery": true,
+            "rawSql": "SELECT b.ts AS \"time\",\n       round(max(hikari_active)::numeric, 3) AS \"active\",\n       round(max(hikari_idle)::numeric, 3) AS \"idle\"\nFROM lt_app_samples b\nWHERE b.run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND $__timeFilter(b.ts)\nGROUP BY b.ts\nORDER BY b.ts",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "short",
+            "decimals": 1
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 52,
+        "type": "timeseries",
+        "title": "HTTP RPS и 5xx/с по Actuator (без /actuator)",
+        "gridPos": {
+          "h": 7,
+          "w": 6,
+          "x": 18,
+          "y": 134
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "time_series",
+            "rawQuery": true,
+            "rawSql": "SELECT b.ts AS \"time\",\n       round(max(http_rps)::numeric, 3) AS \"HTTP RPS\",\n       round(max(http_5xx_rps)::numeric, 3) AS \"HTTP 5xx/с\"\nFROM lt_app_samples b\nWHERE b.run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND $__timeFilter(b.ts)\nGROUP BY b.ts\nORDER BY b.ts",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "reqps",
+            "decimals": 1
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 53,
+        "type": "timeseries",
+        "title": "Потоки приложения и запросы в полёте",
+        "gridPos": {
+          "h": 7,
+          "w": 12,
+          "x": 0,
+          "y": 141
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "time_series",
+            "rawQuery": true,
+            "rawSql": "SELECT b.ts AS \"time\",\n       round(max(threads_live)::numeric, 3) AS \"JVM всего\",\n       round(max(threads_daemon)::numeric, 3) AS \"JVM daemon\",\n       round(max(threads_runnable)::numeric, 3) AS \"JVM runnable\",\n       round(max(threads_waiting)::numeric, 3) AS \"JVM waiting\",\n       round(max(requests_in_flight)::numeric, 3) AS \"запросов в полёте\",\n       round(max(executor_active)::numeric, 3) AS \"executor active\",\n       round(max(executor_pool)::numeric, 3) AS \"executor pool size\"\nFROM lt_app_samples b\nWHERE b.run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND $__timeFilter(b.ts)\nGROUP BY b.ts\nORDER BY b.ts",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "потоки",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "short",
+            "decimals": 0
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 54,
+        "type": "timeseries",
+        "title": "Tomcat: активные сессии",
+        "gridPos": {
+          "h": 7,
+          "w": 6,
+          "x": 12,
+          "y": 141
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "time_series",
+            "rawQuery": true,
+            "rawSql": "SELECT b.ts AS \"time\",\n       round(max(tomcat_active)::numeric, 3) AS \"active sessions\"\nFROM lt_app_samples b\nWHERE b.run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND $__timeFilter(b.ts)\nGROUP BY b.ts\nORDER BY b.ts",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "сессий",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "short",
+            "decimals": 0
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 55,
+        "type": "timeseries",
+        "title": "Tomcat: отклонённые сессии, /с",
+        "gridPos": {
+          "h": 7,
+          "w": 6,
+          "x": 18,
+          "y": 141
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "time_series",
+            "rawQuery": true,
+            "rawSql": "SELECT b.ts AS \"time\",\n       round(max(tomcat_rejected_rate)::numeric, 3) AS \"rejected sessions/с\"\nFROM lt_app_samples b\nWHERE b.run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND $__timeFilter(b.ts)\nGROUP BY b.ts\nORDER BY b.ts",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "fillOpacity": 12,
+              "gradientMode": "none",
+              "spanNulls": true,
+              "showPoints": "never",
+              "pointSize": 3,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisPlacement": "auto",
+              "axisLabel": "сессий/с",
+              "axisColorMode": "text",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "reqps",
+            "decimals": 3
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "showLegend": true,
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        }
+      },
+      {
+        "id": 56,
+        "type": "row",
+        "title": "Ресурсы: min / max / median по компонентам",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 148
+        },
+        "collapsed": false,
+        "panels": []
+      },
+      {
+        "id": 57,
+        "type": "table",
+        "title": "CPU / RAM / диск / сеть: min-max-median за весь прогон",
+        "gridPos": {
+          "h": 9,
+          "w": 24,
+          "x": 0,
+          "y": 149
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "SELECT component AS \"компонент\",\n       samples AS \"сэмплов\",\n       round(cpu_min::numeric, 2) || ' / ' || round(cpu_max::numeric, 2)\n         || ' / ' || round(cpu_median::numeric, 2) AS \"CPU %, min/max/median\",\n       round((ram_min / 1048576.0)::numeric, 1) || ' / '\n         || round((ram_max / 1048576.0)::numeric, 1) || ' / '\n         || round((ram_median / 1048576.0)::numeric, 1) AS \"RAM MiB, min/max/median\",\n       round((disk_read_median / 1048576.0)::numeric, 2) AS \"диск чтение MiB/s (med)\",\n       round((disk_write_median / 1048576.0)::numeric, 2) AS \"диск запись MiB/s (med)\",\n       round((net_rx_median / 1048576.0)::numeric, 2) AS \"сеть rx MiB/s (med)\",\n       round((net_tx_median / 1048576.0)::numeric, 2) AS \"сеть tx MiB/s (med)\",\n       pids_max AS \"pids max\"\nFROM lt_resources\nWHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND scenario = 'all'\nORDER BY component",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "align": "auto",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "inspect": false
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "showHeader": true,
+          "cellHeight": "sm",
+          "footer": {
+            "show": false,
+            "reducer": [
+              "sum"
+            ],
+            "countRows": false,
+            "fields": ""
+          }
+        }
+      },
+      {
+        "id": 58,
+        "type": "table",
+        "title": "Ресурсы по фазам прогона",
+        "gridPos": {
+          "h": 10,
+          "w": 24,
+          "x": 0,
+          "y": 158
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "SELECT phase AS \"фаза\",\n       component AS \"компонент\",\n       round(cpu_median::numeric, 2) AS \"CPU med, %\",\n       round(cpu_max::numeric, 2) AS \"CPU max, %\",\n       round((ram_median / 1048576.0)::numeric, 1) AS \"RAM med, MiB\",\n       round((ram_max / 1048576.0)::numeric, 1) AS \"RAM max, MiB\",\n       round((disk_write_median / 1048576.0)::numeric, 2) AS \"disk write med, MiB/s\",\n       round((disk_read_median / 1048576.0)::numeric, 2) AS \"disk read med, MiB/s\"\nFROM lt_resources\nWHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))) AND phase <> 'all'\nORDER BY phase, component",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "align": "auto",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "inspect": false
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "showHeader": true,
+          "cellHeight": "sm",
+          "footer": {
+            "show": false,
+            "reducer": [
+              "sum"
+            ],
+            "countRows": false,
+            "fields": ""
+          }
+        }
+      },
+      {
+        "id": 59,
+        "type": "row",
+        "title": "Конфигурация, окружение и автоматические выводы",
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 168
+        },
+        "collapsed": false,
+        "panels": []
+      },
+      {
+        "id": 60,
+        "type": "table",
+        "title": "Конфигурация прогона (metadata.config)",
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 0,
+          "y": 169
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "SELECT key AS \"параметр\", value AS \"значение\"\nFROM lt_runs r, jsonb_each_text(r.config)\nWHERE r.run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1)))\nORDER BY key",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "align": "auto",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "inspect": false
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "showHeader": true,
+          "cellHeight": "sm",
+          "footer": {
+            "show": false,
+            "reducer": [
+              "sum"
+            ],
+            "countRows": false,
+            "fields": ""
+          }
+        }
+      },
+      {
+        "id": 61,
+        "type": "table",
+        "title": "Окружение и CPU-изоляция (metadata.environment)",
+        "gridPos": {
+          "h": 9,
+          "w": 12,
+          "x": 12,
+          "y": 169
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "SELECT key AS \"параметр\", value AS \"значение\"\nFROM lt_runs r, jsonb_each_text(r.environment)\nWHERE r.run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1)))\nORDER BY key",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "align": "auto",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "inspect": false
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "showHeader": true,
+          "cellHeight": "sm",
+          "footer": {
+            "show": false,
+            "reducer": [
+              "sum"
+            ],
+            "countRows": false,
+            "fields": ""
+          }
+        }
+      },
+      {
+        "id": 62,
+        "type": "table",
+        "title": "Автоматические выводы: стабильная зона, восстановление, тренд RAM",
+        "gridPos": {
+          "h": 8,
+          "w": 18,
+          "x": 0,
+          "y": 178
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "grafana-postgresql-datasource",
+              "uid": "benchmark_pg"
+            },
+            "editorMode": "code",
+            "format": "table",
+            "rawQuery": true,
+            "rawSql": "SELECT kind AS \"тип\", key AS \"показатель\", value AS \"значение\", detail AS \"детали\"\nFROM lt_findings\nWHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1)))\nUNION ALL\nSELECT 'info', 'результат', 'без специальных выводов',\n       'Короткий smoke или стабильный прогон: пороги ramp/recovery/early-stop не активированы'\nWHERE NOT EXISTS (SELECT 1 FROM lt_findings WHERE run_id = (SELECT COALESCE((SELECT run_id FROM lt_runs WHERE run_id = NULLIF('$run', '') AND scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth'), (SELECT run_id FROM lt_runs WHERE scenario = '$scenario' AND COALESCE(config->>'workload', 'auth') = 'auth' ORDER BY started_at DESC LIMIT 1))))\nORDER BY 1, 2",
+            "maxDataPoints": 4000
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "align": "auto",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "inspect": false
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "showHeader": true,
+          "cellHeight": "sm",
+          "footer": {
+            "show": false,
+            "reducer": [
+              "sum"
+            ],
+            "countRows": false,
+            "fields": ""
+          }
+        }
+      },
+      {
+        "id": 63,
+        "type": "text",
+        "title": "Ссылки",
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 18,
+          "y": 178
+        },
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "benchmark_pg"
+        },
+        "targets": [],
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+        "options": {
+          "mode": "markdown",
+          "code": {
+            "language": "plaintext",
+            "showLineNumbers": false,
+            "showMiniMap": false
+          },
+          "content": "### Отчёты\n\n- [ЛР3 — микробенчмарк](/d/benchmark-lr3)\n- [Prometheus](http://localhost:9090)\n- Markdown-отчёт: `docs/lr4.md`, результаты: `docs/lr4-results/<run-id>/`\n\n### Что считается ошибкой\n\n- **отказы** — 5xx, timeout, обрыв (входят в error rate SLO);\n- **инъекции 4xx** — намеренно ошибочные операции (10%/20% тесты);\n- **прочие 4xx** — бизнес-ответы сценария (409 «уже подписан» и т.п.).\n"
+        }
+      }
+    ]
+  },
+  "overwrite": true,
+  "inputs": [],
+  "folderId": 0
+}

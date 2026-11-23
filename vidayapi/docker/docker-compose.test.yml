@@ -1,0 +1,76 @@
+# =============================================================================
+# Тестовый стенд ЛР2 (отдельный от dev-стека docker-compose.yml):
+#   * postgres-test — ОТДЕЛЬНЫЙ инстанс PostgreSQL для тестов (Требование 3),
+#     инициализируется ПОСЛЕДОВАТЕЛЬНЫМ запуском init-скриптов 01..05
+#     (Требование 4): таблицы -> констрейнты -> роли/RLS -> триггеры -> индексы.
+#   * redis-test / minio-test — зависимости приложения (кэш, файловое хранилище).
+#
+# Порты по умолчанию НЕ пересекаются с dev-стеком (5432/6379/9000), чтобы
+# тесты не мешали работающему окружению и нескольким разработчикам (Требование 15):
+#   TEST_POSTGRES_PORT=55433 docker compose -p viday-test-alice \
+#       -f docker/docker-compose.test.yml up -d
+#
+# Запуск:  docker compose -f docker/docker-compose.test.yml up -d
+# Останов: docker compose -f docker/docker-compose.test.yml down -v
+#
+# ВНИМАНИЕ: у файла НЕТ поля `name:` и фиксированных container_name — имя
+# проекта задаётся через `-p viday-test-<имя>` (Требование 15): тогда
+# контейнеры/сети/тома каждого разработчика полностью изолированы.
+# =============================================================================
+services:
+  postgres-test:
+    image: postgres:15-alpine
+    environment:
+      # Имя БД должно быть именно "viday": init/03_roles.sql выдаёт
+      # GRANT CONNECT ON DATABASE viday ... и упадёт на другой БД.
+      POSTGRES_DB: viday
+      POSTGRES_USER: viday_admin_user
+      POSTGRES_PASSWORD: admin_password_change_me
+    ports:
+      - "${TEST_POSTGRES_PORT:-55432}:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U viday_admin_user -d viday"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    networks:
+      - viday_test_network
+
+  redis-test:
+    image: redis:7-alpine
+    ports:
+      - "${TEST_REDIS_PORT:-56380}:6379"
+    command: redis-server --appendonly no
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    networks:
+      - viday_test_network
+
+  minio-test:
+    image: bitnamilegacy/minio:2025.7.23-debian-12-r5
+    ports:
+      - "${TEST_MINIO_PORT:-59002}:9000"
+      - "${TEST_MINIO_CONSOLE_PORT:-59003}:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    networks:
+      - viday_test_network
+
+volumes:
+  postgres_test_data:
+
+networks:
+  viday_test_network:
+    driver: bridge

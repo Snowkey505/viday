@@ -1,0 +1,1 @@
+{"run_id":"lr4-good-c1-r256-h64-ramp","profile":"ramp","workload":"auth","started_at":"2026-11-19T19:30:33.618320189Z","finished_at":"2026-11-19T19:34:36.148316415Z","early_stopped":false,"termination_reason":"planned duration reached","coroutines":10,"dispatcher_threads":1}

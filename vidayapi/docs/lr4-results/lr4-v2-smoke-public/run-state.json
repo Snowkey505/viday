@@ -1,0 +1,1 @@
+{"run_id":"lr4-v2-smoke-public","profile":"smoke-public","workload":"public","started_at":"2026-11-12T18:13:13.467291433Z","finished_at":"2026-11-12T18:13:33.584782255Z","early_stopped":false,"termination_reason":"planned duration reached","coroutines":20,"dispatcher_threads":2}

@@ -1,0 +1,20 @@
+# =============================================================================
+# ЛР3 — источник данных Grafana: PostgreSQL с результатами микробенчмарка.
+# uid фиксирован (benchmark_pg) — на него ссылаются панели дашборда.
+# =============================================================================
+apiVersion: 1
+
+datasources:
+  - name: Benchmark PostgreSQL
+    uid: benchmark_pg
+    type: postgres
+    access: proxy
+    url: benchmark-db:5432
+    user: benchmark_user
+    database: benchmark
+    secureJsonData:
+      password: benchmark_password
+    jsonData:
+      sslmode: disable
+      postgresVersion: 150000
+      timescaledb: false

@@ -1,0 +1,24 @@
+# Исключаем из docker-контекстов (Dockerfile.app, Dockerfile.test-runner) всё,
+# что не нужно для сборки/запуска тестов.
+.git
+.idea
+.gradle
+.gradle-ci
+build
+**/build
+logs
+**/logs
+traffic
+research_output
+*.pcap
+docker/postgres/research
+docs
+.vscode
+# gradle/node НЕ исключаем: build.gradle.kts требует локальный Node.js-архив
+# для Allure-отчётов (node-v22.22.0-linux-x64.tar.gz)
+# В Docker-контекст входят исходники Gradle-модуля loadtest, но не прогоны.
+loadtest/results
+loadtest/runtime
+# scripts НЕ исключаем: docker/test-runner/Dockerfile и docker/e2e/Dockerfile
+# копируют scripts/ внутрь образа (pipeline.sh, reset-test-db.sh, e2e-curl.sh).
+docker/grafana

@@ -1,0 +1,70 @@
+# ============================================================
+# Global ignore rules for the viday monorepo
+# ============================================================
+
+# ---------- OS / IDE ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.swp
+*~
+
+# ---------- Local Android SDK / machine-specific config ----------
+# The SDK is downloaded by scripts/ci-install-sdk.sh and must never be committed.
+**/.android-sdk/
+local.properties
+
+# ---------- Gradle / Kotlin build output ----------
+.gradle/
+.gradle-ci/
+build/
+.kotlin/
+captures/
+out/
+bin/
+*.hprof
+*.apk
+*.aab
+*.dex
+*.class
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# ---------- Logs & runtime artifacts ----------
+*.log
+logs/
+**/logs/
+log_build.txt
+
+# Raw load-test output (multi-GB). Compact reports live in docs/lr4-results/.
+vidayapi/loadtest/results/
+vidayapi/loadtest/runtime/
+
+# ---------- Test / coverage reports ----------
+allure-results/
+allure-report/
+allure-history/
+coverage/
+*.exec
+
+# ---------- Screenshots / captures ----------
+screenshots/
+captures/
+
+# ---------- Misc generated artifacts ----------
+*.zip
+research_output/
+research_output.zip

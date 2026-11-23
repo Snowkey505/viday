@@ -1,0 +1,15 @@
+*.iml
+.gradle
+/local.properties
+### IntelliJ IDEA — вся служебная конфигурация IDE (не в git) ###
+/.idea/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+*.hprof
+*.apk
+!**/src/main/**/build/
+!**/src/test/**/build/
