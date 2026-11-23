@@ -40,6 +40,14 @@ dependencies {
     testImplementation("org.testcontainers:junit-jupiter:1.19.3")
     testImplementation("io.mockk:mockk:1.13.8")
     testImplementation("com.ninja-squad:springmockk:4.0.2")
+
+    // ЛР5: BDD (Cucumber-JVM) для E2E-сценариев аутентификации.
+    // Версия 7.34.x собрана против Spring Framework 7, что соответствует
+    // Spring Boot 4; allure-cucumber7-jvm пишет результаты в общий Allure-отчёт.
+    testImplementation("io.cucumber:cucumber-java:7.34.9")
+    testImplementation("io.cucumber:cucumber-spring:7.34.9")
+    testImplementation("io.cucumber:cucumber-junit-platform-engine:7.34.9")
+    testImplementation("io.qameta.allure:allure-cucumber7-jvm:2.29.1")
 }
 
 kotlin {

@@ -1,4 +1,4 @@
-.PHONY: build run run-console clean test test-offline test-fixtures-demo test-integration test-e2e coverage allure allure-serve sonar-up sonar-down sonar benchmark-db benchmark-db-copy benchmark benchmark-local benchmark-import benchmark-dashboard grafana-up grafana-down grafana-logs stand-up stand-down stand-logs stand-ps app-up app-down reset-test-db e2e-curl traffic-demo e2e-traffic wireshark ci-runner loadtest loadtest-all loadtest-fail loadtest-matrix loadtest-import loadtest-dashboard
+.PHONY: build run run-console clean test test-offline test-fixtures-demo test-integration test-e2e test-bdd coverage allure allure-serve sonar-up sonar-down sonar benchmark-db benchmark-db-copy benchmark benchmark-local benchmark-import benchmark-dashboard grafana-up grafana-down grafana-logs stand-up stand-down stand-reset stand-logs stand-ps app-up app-down reset-test-db e2e-curl traffic-demo e2e-traffic wireshark ci-runner loadtest loadtest-all loadtest-fail loadtest-matrix loadtest-import loadtest-dashboard
 
 build:
 	cd docker && make build && cd .. && ./gradlew build
@@ -30,6 +30,11 @@ test-fixtures-demo:
 stand-up:
 	docker compose -p viday-test -f docker/docker-compose.test.yml up -d
 
+# Полный пересоздаёт том PostgreSQL: init-скрипты 01..06 (включая ЛР5
+# 06_auth_lr5.sql) выполняются только на ПУСТОМ data-каталоге. Нужен после
+# появления новых миграций на уже существующем стенде.
+stand-reset: stand-down stand-up
+
 stand-down:
 	docker compose -p viday-test -f docker/docker-compose.test.yml down -v
 
@@ -46,6 +51,12 @@ test-integration:
 # E2E-тест: приложение + реальный HTTP поверх стенда (Задание 3, Требование 6)
 test-e2e:
 	./gradlew :presentation:testE2E
+
+# ЛР5: BDD/Cucumber E2E-сценарии аутентификации (@lr5) поверх стенда.
+# Пароль технического пользователя: VIDAY_LR5_TECH_PASSWORD (секрет CI)
+# либо эфемерный, сгенерированный хуками.
+test-bdd:
+	./gradlew :presentation:testBdd
 
 # Приложение в контейнере (для демо curl + захвата трафика, Задание 5)
 app-up:

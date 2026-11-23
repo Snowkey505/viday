@@ -3,25 +3,39 @@ viday:
     enabled: false
   cache:
     enabled: true
+  # ЛР5: политика аутентификации. Значения можно переопределить переменными
+  # окружения без пересборки; тестовый стенд использует дефолты.
+  auth:
+    max-login-attempts: ${VIDAY_AUTH_MAX_LOGIN_ATTEMPTS:5}
+    lock-duration-minutes: ${VIDAY_AUTH_LOCK_DURATION_MINUTES:15}
+    password-rotation-days: ${VIDAY_AUTH_PASSWORD_ROTATION_DAYS:90}
+    two-factor-code-ttl-minutes: ${VIDAY_AUTH_TWO_FACTOR_TTL_MINUTES:5}
+    two-factor-max-attempts: ${VIDAY_AUTH_TWO_FACTOR_MAX_ATTEMPTS:5}
+    password-change-token-ttl-minutes: ${VIDAY_AUTH_PASSWORD_CHANGE_TTL_MINUTES:10}
 
 jwt:
-  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-  expiration-ms: 86400000
+  # Ключ подписи НЕ хранится в репозитории. В CI/production задаётся
+  # JWT_SECRET (GitHub Actions secret / GitLab CI variable / Vault).
+  # Если переменная не задана, приложение генерирует эфемерный ключ на процесс
+  # (см. JwtSecretProvider) — удобно для локального запуска, но токены
+  # перестают действовать после рестарта.
+  secret: ${JWT_SECRET:}
+  expiration-ms: ${JWT_EXPIRATION_MS:86400000}
 
 minio:
-  endpoint: http://localhost:9000
+  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
   # Public URLs served to clients. For a USB device (adb reverse tcp:9000 tcp:9000)
   # the phone reaches MinIO through the same loopback tunnel as the API.
-  public-endpoint: http://127.0.0.1:9000
-  access-key: minioadmin
-  secret-key: minioadmin
-  region: us-east-1
+  public-endpoint: ${MINIO_PUBLIC_ENDPOINT:http://127.0.0.1:9000}
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin}
+  region: ${MINIO_REGION:us-east-1}
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/viday
-    username: viday_app_user
-    password: app_password_change_me
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/viday}
+    username: ${SPRING_DATASOURCE_USERNAME:viday_app_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:app_password_change_me}
     driver-class-name: org.postgresql.Driver
     # connection-init-sql задаётся в RlsDataSourcePostProcessor ДО старта пула:
     # Spring Boot 4 биндит свойства HikariDataSource после инициализации, и

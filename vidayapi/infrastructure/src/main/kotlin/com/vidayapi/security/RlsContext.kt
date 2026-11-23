@@ -12,6 +12,13 @@ enum class PgRole(val sqlName: String) {
     CREATOR("viday_creator"),
     ADMIN("viday_admin"),
     ANALYST("viday_analyst"),
+
+    /**
+     * ЛР5: ограниченная роль для анонимных запросов /api/auth. Имеет доступ только
+     * к viday."user", user_auth, auth_challenge и auth_email_outbox, чтобы
+     * обработка логина не выполнялась с правами администратора стенда.
+     */
+    AUTH("viday_auth"),
     ;
 
     companion object {
@@ -38,6 +45,7 @@ data class RlsContext(
     companion object {
         val GUEST = RlsContext(PgRole.GUEST)
         val REGISTRATION = RlsContext(PgRole.USER)
+        val AUTH = RlsContext(PgRole.AUTH)
         val ADMIN = RlsContext(PgRole.ADMIN)
     }
 }
@@ -73,8 +81,11 @@ object RlsContextResolver {
     fun guestBootstrap(): RlsContext = RlsContext.GUEST
 
     fun resolve(request: HttpServletRequest): RlsContext {
-        if (isRegisterRequest(request)) {
-            return RlsContext.REGISTRATION
+        // ЛР5: все auth-эндпоинты (login, 2FA, восстановление, смена пароля,
+        // регистрация) работают под viday_auth. Роль не имеет доступа к
+        // бизнес-таблицам и не является администратором стенда.
+        if (isAuthRequest(request)) {
+            return RlsContext.AUTH
         }
 
         val authentication = SecurityContextHolder.getContext().authentication
@@ -112,8 +123,9 @@ object RlsContextResolver {
 
     private fun get(): RlsContext? = RlsContextHolder.get()
 
-    private fun isRegisterRequest(request: HttpServletRequest): Boolean {
+    private fun isAuthRequest(request: HttpServletRequest): Boolean {
         val path = request.servletPath.takeIf { it.isNotBlank() } ?: request.requestURI
-        return path.removeSuffix("/").endsWith("/api/auth/register")
+        return path.removeSuffix("/").startsWith("/api/auth/") ||
+            path.removeSuffix("/") == "/api/auth"
     }
 }

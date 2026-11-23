@@ -72,7 +72,12 @@ subprojects {
                 property("sonar.java.libraries", configurations.named("runtimeClasspath").get().asPath)
                 property(
                     "sonar.junit.reportPaths",
-                    listOf("test-results/test", "test-results/testIntegration", "test-results/testE2E")
+                    listOf(
+                        "test-results/test",
+                        "test-results/testIntegration",
+                        "test-results/testE2E",
+                        "test-results/testBdd",
+                    )
                         .joinToString(",") { layout.buildDirectory.dir(it).get().asFile.absolutePath },
                 )
                 property(
@@ -142,6 +147,7 @@ subprojects {
             val allureResultsDirName = when (name) {
                 "testIntegration" -> "allure-results-it"
                 "testE2E" -> "allure-results-e2e"
+                "testBdd" -> "allure-results-bdd"
                 else -> "allure-results"
             }
             systemProperty(
@@ -184,6 +190,7 @@ subprojects {
 
         tasks.named<Test>("test").configure {
             useJUnitPlatform {
+                includeEngines("junit-jupiter")
                 // Демо-фикстур отдельно: обычный прогон остаётся ровно 22 теста
                 // (8 классических + 14 лондонских), demo-классы запускаются
                 // только через :<module>:testFixturesDemo.
@@ -205,6 +212,7 @@ subprojects {
             testClassesDirs = testSourceSet.output.classesDirs
             classpath = testSourceSet.runtimeClasspath
             useJUnitPlatform {
+                includeEngines("junit-jupiter")
                 includeTags("offline")
                 excludeTags("integration")
             }
@@ -222,6 +230,7 @@ subprojects {
             testClassesDirs = testSourceSet.output.classesDirs
             classpath = testSourceSet.runtimeClasspath
             useJUnitPlatform {
+                includeEngines("junit-jupiter")
                 includeTags("fixtures-demo")
                 excludeTags("integration")
             }
@@ -240,6 +249,7 @@ subprojects {
             testClassesDirs = testSourceSet.output.classesDirs
             classpath = testSourceSet.runtimeClasspath
             useJUnitPlatform {
+                includeEngines("junit-jupiter")
                 includeTags("integration")
             }
             maxParallelForks = 1
@@ -265,6 +275,7 @@ subprojects {
                 testClassesDirs = testSourceSet.output.classesDirs
                 classpath = testSourceSet.runtimeClasspath
                 useJUnitPlatform {
+                    includeEngines("junit-jupiter")
                     includeTags("e2e")
                 }
                 maxParallelForks = 1
@@ -276,6 +287,48 @@ subprojects {
                 System.getenv("VIDAY_TEST_REDIS_HOST")?.let { systemProperty("VIDAY_TEST_REDIS_HOST", it) }
                 System.getenv("VIDAY_TEST_REDIS_PORT")?.let { systemProperty("VIDAY_TEST_REDIS_PORT", it) }
                 System.getenv("VIDAY_TEST_MINIO_ENDPOINT")?.let { systemProperty("VIDAY_TEST_MINIO_ENDPOINT", it) }
+            }
+
+            // ЛР5: BDD-сценарии (Cucumber-JVM) полной аутентификации и плановой
+            // смены пароля. Гоняются как отдельная стадия, чтобы её результат
+            // было видно в CI и Allure отдельно от unit/integration/e2e.
+            tasks.register<Test>("testBdd") {
+                group = "verification"
+                description = "BDD/Cucumber E2E auth scenarios (@lr5) on the real test stand"
+                val testSourceSet = project.extensions.getByType<SourceSetContainer>().getByName("test")
+                dependsOn(tasks.named("testClasses"))
+                testClassesDirs = testSourceSet.output.classesDirs
+                classpath = testSourceSet.runtimeClasspath
+                useJUnitPlatform {
+                    // Только Cucumber-движок: JUnit Jupiter-тесты в этой задаче не нужны.
+                    includeEngines("cucumber")
+                }
+                maxParallelForks = 1
+                systemProperty("cucumber.glue", "com.vidayapi.bdd")
+                systemProperty("cucumber.features", "classpath:features")
+                systemProperty("cucumber.plugin", "io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm")
+                systemProperty("cucumber.filter.tags", "@lr5")
+                systemProperty("cucumber.publish.quiet", "true")
+                systemProperty("cucumber.junit-platform.naming-strategy", "long")
+                // Параметры стенда и секреты пробрасываются из окружения.
+                // Пароль технического пользователя НЕ имеет дефолта в коде:
+                // при отсутствии VIDAY_LR5_TECH_PASSWORD он генерируется
+                // эфемерно в TechnicalUserHooks.
+                listOf(
+                    "VIDAY_TEST_JDBC_URL",
+                    "VIDAY_TEST_DB_USER",
+                    "VIDAY_TEST_DB_PASSWORD",
+                    "VIDAY_TEST_REDIS_HOST",
+                    "VIDAY_TEST_REDIS_PORT",
+                    "VIDAY_TEST_MINIO_ENDPOINT",
+                    // Секрет CI (GitHub Actions / GitLab CI variable / Vault).
+                    // Передаётся и системным свойством, чтобы hooks не зависели
+                    // от способа наследования env в конкретном раннере.
+                    "VIDAY_LR5_TECH_PASSWORD",
+                ).forEach { name -> System.getenv(name)?.let { systemProperty(name, it) } }
+                System.getenv("JWT_SECRET")
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { systemProperty("jwt.secret", it) }
             }
         }
 
@@ -296,7 +349,7 @@ subprojects {
             // ошибка валидации "implicit dependency". Объявляем порядок через
             // mustRunAfter (не dependsOn — отчёт НЕ должен сам запускать тесты,
             // он конвертирует уже существующие *.exec).
-            mustRunAfter(tasks.matching { it.name in setOf("test", "testIntegration", "testE2E") })
+            mustRunAfter(tasks.matching { it.name in setOf("test", "testIntegration", "testE2E", "testBdd") })
             reports {
                 xml.required.set(true)
                 xml.outputLocation.set(layout.buildDirectory.file("reports/jacoco/test/jacocoTestReport.xml"))
@@ -438,6 +491,7 @@ tasks.register<Exec>("allureServe") {
         subprojects.map { "${it.path}:test" },
         ":infrastructure:testIntegration",
         ":presentation:testE2E",
+        ":presentation:testBdd",
         "allureCiReport",
     )
     val port = providers.gradleProperty("allurePort").orElse("19999")
@@ -479,6 +533,7 @@ tasks.register<Copy>("collectAllureResultsCi") {
     }
     from(project(":infrastructure").layout.buildDirectory.dir("allure-results-it"))
     from(project(":presentation").layout.buildDirectory.dir("allure-results-e2e"))
+    from(project(":presentation").layout.buildDirectory.dir("allure-results-bdd"))
 
     into(allureCiResults)
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
@@ -490,6 +545,7 @@ tasks.register<Copy>("collectAllureResultsCi") {
         listOf(
             project(":infrastructure").layout.buildDirectory.dir("allure-results-it").get().asFile,
             project(":presentation").layout.buildDirectory.dir("allure-results-e2e").get().asFile,
+            project(":presentation").layout.buildDirectory.dir("allure-results-bdd").get().asFile,
         ).forEach { dir -> dir.mkdirs() }
         subprojects.forEach { sub ->
             sub.layout.buildDirectory.dir("allure-results").get().asFile.mkdirs()

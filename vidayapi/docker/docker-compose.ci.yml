@@ -109,6 +109,11 @@ services:
       VIDAY_TEST_REDIS_HOST: redis-test
       VIDAY_TEST_REDIS_PORT: "6379"
       VIDAY_TEST_MINIO_ENDPOINT: http://minio-test:9000
+      # ЛР5: секреты приходят извне (GitHub Actions secrets / GitLab CI
+      # variables / Vault). Пустое значение допустимо: хук сгенерирует
+      # эфемерный пароль технического пользователя, JWT-ключ — на процесс.
+      VIDAY_LR5_TECH_PASSWORD: ${VIDAY_LR5_TECH_PASSWORD:-}
+      JWT_SECRET: ${JWT_SECRET:-}
       GRADLE_USER_HOME: /home/gradle/.gradle
       VIDAYAPI_ROOT: /workspace
     volumes:

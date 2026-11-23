@@ -8,23 +8,26 @@ Compose). CI/CD — **GitHub Actions** ([`.github/workflows/ci.yml`](.github/wor
 
 | Проект | Каталог | Что в CI |
 |--------|---------|----------|
-| Backend API | [`vidayapi/`](vidayapi/) | build → unit → integration → e2e → Allure-отчёт |
+| Backend API | [`vidayapi/`](vidayapi/) | build → unit → integration → e2e → bdd (ЛР5) → Allure-отчёт |
 | Android-приложение | [`viday/`](viday/) | build (assembleDebug) → unit (JVM) → device (эмулятор, KVM) |
 
-Лабораторная отчётность: [`vidayapi/docs/lr2.md`](vidayapi/docs/lr2.md).
+Лабораторная отчётность: [`vidayapi/docs/lr2.md`](vidayapi/docs/lr2.md),
+[`vidayapi/docs/lr5.md`](vidayapi/docs/lr5.md) (BDD-аутентификация, 2FA,
+лимит попыток, восстановление, плановая смена пароля).
 
 ---
 
 ## CI/CD (GitHub Actions)
 
-Единый workflow — [`ci.yml`](.github/workflows/ci.yml). Порядок стадий — Требование 5 ЛР2:
-`build → unit → integration → e2e → device → report` (через `needs`).
+Единый workflow — [`ci.yml`](.github/workflows/ci.yml). Порядок стадий:
+`build → unit → integration → e2e → bdd → device → report` (через `needs`).
 
 ```
-build-vidayapi ─► unit-vidayapi ─► integration-vidayapi ─► e2e-vidayapi ─► report-vidayapi
-   │                                (unit → integration → e2e — цепочка needs)
-   └─ build-viday ─► unit-viday ─┐
-                                 └──► device-viday (эмулятор + API из jar) ── параллельно backend
+build-vidayapi ─► unit-vidayapi ─► integration-vidayapi ─► e2e-vidayapi ─┐
+   │                                (unit → integration → e2e)          ├─► report-vidayapi
+   │                                                                     │
+   └─ build-vidayapi-jar ─────────────────────► bdd-vidayapi (ЛР5) ──────┘
+   └─ build-viday ─► unit-viday ─► device-viday (эмулятор + API из jar) ── параллельно backend
 ```
 
 Ключевые решения:
@@ -34,7 +37,11 @@ build-vidayapi ─► unit-vidayapi ─► integration-vidayapi ─► e2e-viday
   (артефакт `vidayapi-jar`). Остальные джобы только `docker pull`.
 - **`report-vidayapi`** выполняется **всегда** (`if: !cancelled()`) и НЕ
   перезапускает тесты: Allure генерируется из `allure-results*`, пришедших
-  артефактами из unit/integration/e2e (Требование 8).
+  артефактами из unit/integration/e2e/bdd (Требование 8).
+- **`bdd-vidayapi`** (ЛР5) прогоняет Cucumber-сценарии аутентификации
+  (`@lr5`). Пароль технического пользователя берётся из секрета
+  `VIDAY_LR5_TECH_PASSWORD`, JWT-ключ — из `JWT_SECRET`; при отсутствии
+  секретов значения генерируются эфемерно.
 - JUnit-отчёты публикуются аннотациями через `dorny/test-reporter`; история
   Allure (тренды, Требование 9) кэшируется через `actions/cache`.
 - **`device-viday`**: эмулятор Android (API 30) через
@@ -70,10 +77,14 @@ build-vidayapi ─► unit-vidayapi ─► integration-vidayapi ─► e2e-viday
 ## Проверка локально (без CI)
 
 ```bash
-# vidayapi — стенд + тесты (unit/integration/e2e/report/repeat в одном контейнере)
+# vidayapi — стенд + тесты (unit/integration/e2e/bdd/report/repeat в одном контейнере)
 cd vidayapi && make stand-up && make test-integration && make test-e2e
+make test-bdd                        # ЛР5: Cucumber auth-сценарии
 make ci-runner                       # весь конвейер в docker-контейнере + Allure
 make stand-down
+
+# Если стенд создавался до ЛР5, в нём нет таблиц user_auth/auth_challenge:
+make stand-reset                     # down -v + up -d (init 01..06)
 
 # Задание 5: curl-имитация + захват трафика (Wireshark)
 make stand-up
@@ -89,4 +100,6 @@ make device-tests                    # ждёт AVD + adb reverse внутри
 
 > Безопасность: не коммитьте токены/пароли. Пароли стенда здесь — только
 > тестовые значения для локального окружения ЛР2 (`admin_password_change_me`,
-> `minioadmin`).
+> `minioadmin`). Пароль технического пользователя ЛР5 и `JWT_SECRET`
+> задаются через секреты CI (GitHub Actions / GitLab CI / Vault), а локально
+> генерируются эфемерно.

@@ -3,9 +3,9 @@
 #
 # Архитектура (порядок стадий):
 #   1) unit-viday ∥ unit-vidayapi ∥ integration-vidayapi — ПАРАЛЛЕЛЬНО
-#      (build-vidayapi только готовит образы test-runner/postgres-test в ghcr);
+#   (build-vidayapi только готовит образы test-runner/postgres-test в ghcr);
 #   2) build обоих: build-viday (APK) ∥ build-vidayapi-jar (bootJar);
-#   3) e2e (после билдов + integration);
+#   3) e2e (после билдов + integration) ∥ bdd (ЛР5: Cucumber auth-сценарии);
 #   4) отчёты: report-vidayapi (Allure) ∥ sonar-vidayapi;
 #   5) publish на gh-pages (Allure — НАКОПИТЕЛЬНЫЙ: к результатам прошлых
 #      прогонов ветки добавляются новые, ничего не перезаписывается);
@@ -435,12 +435,85 @@ jobs:
           retention-days: 7
 
   # ---------------------------------------------------------------------------
+  # STAGE 3.5: BDD/Cucumber E2E-сценарии аутентификации (ЛР5).
+  # Проверяются: 2FA по email, лимит попыток ввода пароля, восстановление
+  # после блокировки, плановая смена пароля, подготовка и утилизация
+  # технического пользователя. Секреты VIDAY_LR5_TECH_PASSWORD и JWT_SECRET
+  # приходят из GitHub Actions secrets и НЕ хранятся в репозитории; если
+  # секрет не задан, пароль генерируется эфемерно, а JWT-ключ — на процесс.
+  # ---------------------------------------------------------------------------
+  bdd-vidayapi:
+    needs: [build-vidayapi-jar, integration-vidayapi]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vidayapi
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set GHCR image names (lowercase)
+        run: |
+          REPO="${GITHUB_REPOSITORY,,}"
+          echo "TEST_RUNNER_IMAGE=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "POSTGRES_TEST_IMAGE=ghcr.io/${REPO}/postgres-test:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "IMAGE_NAME=ghcr.io/${REPO}/test-runner:${GITHUB_SHA}" >> "$GITHUB_ENV"
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Restore Gradle cache
+        uses: actions/cache/restore@v4
+        with:
+          path: vidayapi/.gradle-ci
+          key: vidayapi-cache-${{ hashFiles('vidayapi/build.gradle.kts', 'vidayapi/settings.gradle.kts', 'vidayapi/gradle/wrapper/gradle-wrapper.properties') }}
+      - name: Run BDD auth scenarios (LR5)
+        env:
+          VIDAY_LR5_TECH_PASSWORD: ${{ secrets.VIDAY_LR5_TECH_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        run: |
+          docker pull "$TEST_RUNNER_IMAGE"
+          docker pull "$POSTGRES_TEST_IMAGE"
+          docker compose -f $COMPOSE_FILE up -d postgres-test redis-test minio-test
+          docker compose -f $COMPOSE_FILE run --rm -u root \
+            -v "$PWD:/workspace" \
+            -v "$PWD/allure-history:/workspace/allure-history" \
+            -v "$PWD/$GRADLE_CACHE:/cache/.gradle" \
+            -e ALLURE_HISTORY_DIR=$ALLURE_HISTORY_DIR \
+            -e GRADLE_USER_HOME=/cache/.gradle \
+            -e VIDAY_LR5_TECH_PASSWORD="$VIDAY_LR5_TECH_PASSWORD" \
+            -e JWT_SECRET="$JWT_SECRET" \
+            test-runner bdd
+      - name: Tear down stand
+        if: always()
+        run: docker compose -f $COMPOSE_FILE down -v || true
+      - name: Publish JUnit report
+        if: success() || failure()
+        uses: dorny/test-reporter@v1
+        with:
+          name: BDD auth tests (JUnit)
+          path: vidayapi/presentation/build/test-results/testBdd/**/*.xml
+          reporter: java-junit
+      - name: Upload allure-results-bdd + JUnit XML + JaCoCo exec
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vidayapi-bdd-results
+          path: |
+            vidayapi/presentation/build/allure-results-bdd/**/*
+            vidayapi/presentation/build/test-results/testBdd/**/*.xml
+            vidayapi/presentation/build/jacoco/testBdd.exec
+            vidayapi/allure-history/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
   # STAGE 4: отчёты — Allure ВСЕГДА (Требование 8), без повторного прогона
   # тестов. Стенд не нужен: отчёт генерируется из allure-results*,
   # пришедших артефактами. Параллельно с sonar-vidayapi.
   # ---------------------------------------------------------------------------
   report-vidayapi:
-    needs: [unit-vidayapi, integration-vidayapi, e2e-vidayapi]
+    needs: [unit-vidayapi, integration-vidayapi, e2e-vidayapi, bdd-vidayapi]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     defaults:
@@ -495,6 +568,12 @@ jobs:
         with:
           name: vidayapi-e2e-results
           path: vidayapi
+      - name: Download BDD allure-results (ЛР5)
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: vidayapi-bdd-results
+          path: vidayapi
       - name: Download unit coverage (JaCoCo XML/HTML) для Allure
         uses: actions/download-artifact@v4
         continue-on-error: true
@@ -535,7 +614,7 @@ jobs:
               cp -p "$file" "$target"
               found=$((found + 1))
             done < <(find "$dir" -type f -print0)
-          done < <(find . -type d \( -path './.gradle-ci' -o -path './allure-history' \) -prune -o -type d \( -name 'allure-results' -o -name 'allure-results-it' -o -name 'allure-results-e2e' \) -print0)
+          done < <(find . -type d \( -path './.gradle-ci' -o -path './allure-history' \) -prune -o -type d \( -name 'allure-results' -o -name 'allure-results-it' -o -name 'allure-results-e2e' -o -name 'allure-results-bdd' \) -print0)
           echo "Collected Allure files: $found"
           result_count=$(find "$input" -maxdepth 1 -type f \( -name '*-result.json' -o -name '*-container.json' \) | wc -l)
           echo "Collected Allure result/container files: $result_count"
@@ -606,7 +685,7 @@ jobs:
   # Сервер поднимается прямо в джобе через docker-compose.sonar.yml; токен
   # генерируется через REST API (свежий сервер, admin/admin). Тесты НЕ
   # перезапускаются: JaCoCo exec-файлы и JUnit XML приходят артефактами из
-  # реальных прогонов (unit / integration / e2e), jacocoTestReport только
+  # реальных прогонов (unit / integration / e2e / bdd), jacocoTestReport только
   # сливает их в итоговое покрытие. Результат: (1) проект на сервере с деревом
   # модулей и coverage, (2) автономный HTML-снимок отчёта
   # (scripts/sonar-snapshot.py) + полный JaCoCo HTML — оба уходят на gh-pages.
@@ -614,8 +693,8 @@ jobs:
   # ---------------------------------------------------------------------------
   sonar-vidayapi:
     # Скан запускается ПОСЛЕ всех тестовых стадий backend'а: покрытие и
-    # результаты должны быть итоговыми (unit + integration + e2e уже прошли).
-    needs: [unit-vidayapi, integration-vidayapi, e2e-vidayapi]
+    # результаты должны быть итоговыми (unit + integration + e2e + bdd).
+    needs: [unit-vidayapi, integration-vidayapi, e2e-vidayapi, bdd-vidayapi]
     continue-on-error: true
     runs-on: ubuntu-latest
     defaults:
@@ -659,7 +738,7 @@ jobs:
             echo "SONAR_TOKEN=$TOKEN" >> "$GITHUB_ENV"
           fi
       # Тесты НЕ перезапускаются: JaCoCo exec-файлы и JUnit XML приходят
-      # артефактами из реальных прогонов (unit / integration / e2e).
+      # артефактами из реальных прогонов (unit / integration / e2e / bdd).
       # jacocoTestReport здесь только СЛИВАЕТ exec-файлы в отчёт модуля
       # (попутно компилируя классы), затем сканер импортирует его в SonarQube.
       - name: Download unit test artifacts (JaCoCo exec + JUnit XML)
@@ -680,7 +759,13 @@ jobs:
         with:
           name: vidayapi-e2e-results
           path: vidayapi
-      - name: "Run SonarQube analysis (aggregated coverage: unit + IT + e2e)"
+      - name: Download BDD test artifacts (JaCoCo exec + JUnit XML)
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: vidayapi-bdd-results
+          path: vidayapi
+      - name: "Run SonarQube analysis (aggregated coverage: unit + IT + e2e + bdd)"
         run: |
           docker run --rm --network host -u root \
             -v "$PWD:/workspace" \

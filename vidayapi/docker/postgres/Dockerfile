@@ -7,5 +7,6 @@ COPY init/02_alter_constraints.sql /docker-entrypoint-initdb.d/02_alter_constrai
 COPY init/03_roles.sql /docker-entrypoint-initdb.d/03_roles.sql
 COPY init/04_triggers.sql /docker-entrypoint-initdb.d/04_triggers.sql
 COPY init/05_indexes.sql /docker-entrypoint-initdb.d/05_indexes.sql
+COPY init/06_auth_lr5.sql /docker-entrypoint-initdb.d/06_auth_lr5.sql
 
 EXPOSE 5432

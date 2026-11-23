@@ -64,5 +64,17 @@ business:
     default-role: USER
 
 jwt:
-  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-  expiration-ms: 86400000
+  # Ключ подписи берётся из окружения (см. JwtSecretProvider). Если JWT_SECRET
+  # не задан, генерируется эфемерный ключ на процесс.
+  secret: ${JWT_SECRET:}
+  expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+
+# ЛР5: политика аутентификации (2FA, лимит попыток, блокировка, ротация).
+viday:
+  auth:
+    max-login-attempts: ${VIDAY_AUTH_MAX_LOGIN_ATTEMPTS:5}
+    lock-duration-minutes: ${VIDAY_AUTH_LOCK_DURATION_MINUTES:15}
+    password-rotation-days: ${VIDAY_AUTH_PASSWORD_ROTATION_DAYS:90}
+    two-factor-code-ttl-minutes: ${VIDAY_AUTH_TWO_FACTOR_TTL_MINUTES:5}
+    two-factor-max-attempts: ${VIDAY_AUTH_TWO_FACTOR_MAX_ATTEMPTS:5}
+    password-change-token-ttl-minutes: ${VIDAY_AUTH_PASSWORD_CHANGE_TTL_MINUTES:10}

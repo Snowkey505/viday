@@ -12,6 +12,7 @@
 #   pipeline.sh unit
 #   pipeline.sh integration
 #   pipeline.sh e2e
+#   pipeline.sh bdd           # ЛР5: Cucumber E2E-сценарии аутентификации (@lr5)
 #   pipeline.sh report        # Allure из уже лежащих allure-results* (без тестов)
 #   pipeline.sh assemble      # compile / bootJar без тестов
 #   pipeline.sh sonar         # SonarQube анализ (нужны SONAR_TOKEN / SONAR_HOST_URL)
@@ -81,6 +82,24 @@ step_e2e() {
   echo "e2e: OK"
 }
 
+# ЛР5: BDD-сценарии (Cucumber) полной аутентификации, лимита попыток,
+# восстановления после блокировки и плановой смены пароля. Технический
+# пользователь создаётся/удаляется хуками, пароль приходит из секрета
+# (VIDAY_LR5_TECH_PASSWORD) либо генерируется эфемерно.
+step_bdd() {
+  section_start bdd "bdd auth (Cucumber + стенд)"
+  echo "### [bdd] Cucumber E2E-сценарии аутентификации ЛР5 ($(date +%T))"
+  $GRADLE :presentation:testBdd || {
+    ./scripts/reset-test-db.sh >/dev/null 2>&1 || true
+    echo "bdd: FAILED"
+    section_end bdd
+    return 1
+  }
+  ./scripts/reset-test-db.sh || { echo "bdd: FAILED (rollback)"; section_end bdd; return 1; }
+  section_end bdd
+  echo "bdd: OK"
+}
+
 step_sonar() {
   section_start sonar "SonarQube анализ"
   echo "### [sonar] SonarQube ($SONAR_HOST_URL) ($(date +%T))"
@@ -97,13 +116,14 @@ step_sonar() {
 
 step_sonar_tests() {
   # Полный прогон тестов с JaCoCo-покрытием (локальный сценарий):
-  # exec-файлы unit + integration + e2e попадают в один jacocoTestReport.
+  # exec-файлы unit + integration + e2e + bdd попадают в один jacocoTestReport.
   # В CI больше НЕ используется: джоба sonar собирает покрытие из exec-файлов,
   # пришедших артефактами из реальных прогонов (без повторного запуска тестов).
   ok=0
   step_unit || ok=1
   if [ "$ok" -eq 0 ]; then step_integration || ok=1; fi
   if [ "$ok" -eq 0 ]; then step_e2e || ok=1; fi
+  if [ "$ok" -eq 0 ]; then step_bdd || ok=1; fi
   return "$ok"
 }
 
@@ -151,7 +171,7 @@ step_report() {
         found=$((found + 1))
       done < <(find "$dir" -type f -print0)
     done < <(find "$ROOT" -mindepth 3 -maxdepth 3 -type d \
-      \( -name 'allure-results' -o -name 'allure-results-it' -o -name 'allure-results-e2e' \) -print0)
+      \( -name 'allure-results' -o -name 'allure-results-it' -o -name 'allure-results-e2e' -o -name 'allure-results-bdd' \) -print0)
     echo "Collected local Allure files: $found"
   fi
 
@@ -212,6 +232,7 @@ case "${1:-full}" in
   unit)        step_unit ;;
   integration) step_integration ;;
   e2e)         step_e2e ;;
+  bdd)         step_bdd ;;
   report)      step_report ;;
   sonar)       step_sonar ;;
   sonar-tests) step_sonar_tests ;;
@@ -221,6 +242,7 @@ case "${1:-full}" in
     step_unit || ok=1
     if [ "$ok" -eq 0 ]; then step_integration || ok=1; fi
     if [ "$ok" -eq 0 ]; then step_e2e || ok=1; fi
+    if [ "$ok" -eq 0 ]; then step_bdd || ok=1; fi
     step_report
     if [ "$ok" -eq 0 ]; then step_repeat || ok=1; fi
     if [ "$ok" -eq 0 ]; then
@@ -231,7 +253,7 @@ case "${1:-full}" in
     exit "$ok"
     ;;
   *)
-    echo "usage: pipeline.sh [full|unit|integration|e2e|report|assemble|sonar|sonar-tests|repeat]"
+    echo "usage: pipeline.sh [full|unit|integration|e2e|bdd|report|assemble|sonar|sonar-tests|repeat]"
     exit 2
     ;;
 esac
