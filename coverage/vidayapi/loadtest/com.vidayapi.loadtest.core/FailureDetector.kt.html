@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FailureDetector.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">loadtest</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.loadtest.core</a> &gt; <span class="el_source">FailureDetector.kt</span></div><h1>FailureDetector.kt</h1><pre class="source lang-java linenums">package com.vidayapi.loadtest.core
+
+import java.time.Instant
+
+<span class="fc" id="L5">class FailureDetector(</span>
+<span class="fc" id="L6">    private val enabled: Boolean,</span>
+<span class="fc" id="L7">    private val minRunSeconds: Long,</span>
+<span class="fc" id="L8">    private val windowSeconds: Long,</span>
+<span class="fc" id="L9">    private val failureThreshold: Double,</span>
+<span class="fc" id="L10">    private val consecutiveWindows: Int,</span>
+<span class="fc" id="L11">    private val minRequestsPerWindow: Int,</span>
+) {
+<span class="fc" id="L13">    private data class Window(val startSecond: Long, var requests: Int = 0, var failures: Int = 0)</span>
+
+<span class="fc" id="L15">    private val windows = mutableMapOf&lt;Long, Window&gt;()</span>
+
+    @Synchronized
+<span class="nc" id="L18">    fun record(failed: Boolean, at: Instant = Instant.now()) {</span>
+<span class="pc bpc" id="L19" title="1 of 2 branches missed.">        if (!enabled) return</span>
+<span class="fc" id="L20">        val second = at.epochSecond / windowSeconds * windowSeconds</span>
+<span class="fc" id="L21">        val window = windows.getOrPut(second) { Window(second) }</span>
+<span class="fc" id="L22">        window.requests++</span>
+<span class="fc bfc" id="L23" title="All 2 branches covered.">        if (failed) window.failures++</span>
+<span class="pc bpc" id="L24" title="1 of 2 branches missed.">        windows.keys.removeAll { it &lt; second - (consecutiveWindows + 1L) * windowSeconds }</span>
+<span class="fc" id="L25">    }</span>
+
+    @Synchronized
+<span class="nc" id="L28">    fun failureReason(elapsedSeconds: Long, at: Instant = Instant.now()): String? {</span>
+<span class="pc bpc" id="L29" title="1 of 4 branches missed.">        if (!enabled || elapsedSeconds &lt; minRunSeconds) return null</span>
+<span class="fc" id="L30">        val currentSecond = at.epochSecond / windowSeconds * windowSeconds</span>
+<span class="fc" id="L31">        val complete = windows.values</span>
+<span class="fc bfc" id="L32" title="All 2 branches covered.">            .filter { it.startSecond &lt; currentSecond }</span>
+<span class="fc" id="L33">            .sortedBy { it.startSecond }</span>
+<span class="fc" id="L34">            .takeLast(consecutiveWindows)</span>
+<span class="pc bpc" id="L35" title="1 of 2 branches missed.">        if (complete.size &lt; consecutiveWindows) return null</span>
+<span class="fc" id="L36">        val contiguous = complete.zipWithNext().all { (left, right) -&gt;</span>
+<span class="fc bfc" id="L37" title="All 2 branches covered.">            right.startSecond == left.startSecond + windowSeconds</span>
+        }
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        if (!contiguous) return null</span>
+<span class="fc" id="L40">        val failed = complete.all { window -&gt;</span>
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">            window.requests &gt;= minRequestsPerWindow &amp;&amp;</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">                window.failures.toDouble() / window.requests &gt;= failureThreshold</span>
+        }
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        return if (failed) {</span>
+<span class="fc" id="L45">            val ratios = complete.joinToString(&quot;,&quot;) { &quot;%.1f%%&quot;.format(it.failures * 100.0 / it.requests) }</span>
+<span class="fc" id="L46">            &quot;unexpected failures &gt;= ${failureThreshold * 100}% for $consecutiveWindows consecutive windows ($ratios)&quot;</span>
+        } else {
+<span class="fc" id="L48">            null</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

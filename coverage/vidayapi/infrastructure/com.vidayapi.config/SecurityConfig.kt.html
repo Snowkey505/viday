@@ -46,25 +46,29 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 <span class="nc" id="L46">                        &quot;/api/videos&quot;,</span>
 <span class="nc" id="L47">                        &quot;/api/videos/*&quot;,</span>
 <span class="nc" id="L48">                        &quot;/api/streams/live&quot;,</span>
-<span class="nc" id="L49">                        &quot;/swagger-ui/**&quot;,</span>
-<span class="nc" id="L50">                        &quot;/swagger-ui.html&quot;,</span>
-<span class="nc" id="L51">                        &quot;/v3/api-docs/**&quot;,</span>
-<span class="nc" id="L52">                        &quot;/v3/api-docs.yaml&quot;,</span>
-<span class="nc" id="L53">                        &quot;/webjars/**&quot;,</span>
-<span class="nc" id="L54">                        &quot;/swagger-resources/**&quot;,</span>
-<span class="nc" id="L55">                        &quot;/swagger-resources&quot;,</span>
-<span class="nc" id="L56">                    ).permitAll()</span>
-<span class="nc" id="L57">                    .requestMatchers(HttpMethod.GET, &quot;/api/streams/{contentId:[0-9]+}&quot;).permitAll()</span>
-<span class="nc" id="L58">                    .anyRequest().authenticated()</span>
-<span class="nc" id="L59">            }</span>
-<span class="nc" id="L60">            .sessionManagement { </span>
-<span class="nc" id="L61">                it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)</span>
-<span class="nc" id="L62">            }</span>
-<span class="nc" id="L63">            .addFilterBefore(rlsBootstrapFilter, UsernamePasswordAuthenticationFilter::class.java)</span>
-<span class="nc" id="L64">            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)</span>
-<span class="nc" id="L65">            .addFilterBefore(rlsContextFilter, UsernamePasswordAuthenticationFilter::class.java)</span>
+                        // ЛР4: Prometheus скрейпит метрики приложения без JWT.
+<span class="nc" id="L50">                        &quot;/actuator/health&quot;,</span>
+<span class="nc" id="L51">                        &quot;/actuator/health/**&quot;,</span>
+<span class="nc" id="L52">                        &quot;/actuator/prometheus&quot;,</span>
+<span class="nc" id="L53">                        &quot;/swagger-ui/**&quot;,</span>
+<span class="nc" id="L54">                        &quot;/swagger-ui.html&quot;,</span>
+<span class="nc" id="L55">                        &quot;/v3/api-docs/**&quot;,</span>
+<span class="nc" id="L56">                        &quot;/v3/api-docs.yaml&quot;,</span>
+<span class="nc" id="L57">                        &quot;/webjars/**&quot;,</span>
+<span class="nc" id="L58">                        &quot;/swagger-resources/**&quot;,</span>
+<span class="nc" id="L59">                        &quot;/swagger-resources&quot;,</span>
+<span class="nc" id="L60">                    ).permitAll()</span>
+<span class="nc" id="L61">                    .requestMatchers(HttpMethod.GET, &quot;/api/streams/{contentId:[0-9]+}&quot;).permitAll()</span>
+<span class="nc" id="L62">                    .anyRequest().authenticated()</span>
+<span class="nc" id="L63">            }</span>
+<span class="nc" id="L64">            .sessionManagement { </span>
+<span class="nc" id="L65">                it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)</span>
+<span class="nc" id="L66">            }</span>
+<span class="nc" id="L67">            .addFilterBefore(rlsBootstrapFilter, UsernamePasswordAuthenticationFilter::class.java)</span>
+<span class="nc" id="L68">            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)</span>
+<span class="nc" id="L69">            .addFilterBefore(rlsContextFilter, UsernamePasswordAuthenticationFilter::class.java)</span>
         
-<span class="nc" id="L67">        return http.build()</span>
+<span class="nc" id="L71">        return http.build()</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

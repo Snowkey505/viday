@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LoadConfig.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">loadtest</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.loadtest</a> &gt; <span class="el_source">LoadConfig.kt</span></div><h1>LoadConfig.kt</h1><pre class="source lang-java linenums">package com.vidayapi.loadtest
+
+import java.nio.file.Path
+import java.time.Duration
+
+<span class="fc" id="L6">data class LoadConfig(</span>
+<span class="pc" id="L7">    val baseUrl: String,</span>
+<span class="pc" id="L8">    val scenario: String,</span>
+<span class="fc" id="L9">    val workload: String,</span>
+<span class="pc" id="L10">    val profile: String,</span>
+<span class="pc" id="L11">    val runId: String,</span>
+<span class="pc" id="L12">    val outputDir: Path,</span>
+<span class="pc" id="L13">    val errorRate: Double,</span>
+<span class="pc" id="L14">    val coroutines: Int,</span>
+<span class="pc" id="L15">    val dispatcherThreads: Int,</span>
+<span class="fc" id="L16">    val requestTimeout: Duration,</span>
+<span class="fc" id="L17">    val thinkMinMs: Long,</span>
+<span class="fc" id="L18">    val thinkMaxMs: Long,</span>
+<span class="pc" id="L19">    val userCount: Int,</span>
+<span class="pc" id="L20">    val userPrefix: String,</span>
+<span class="pc" id="L21">    val password: String,</span>
+<span class="pc" id="L22">    val seedPlaylists: Int,</span>
+<span class="pc" id="L23">    val smokeVus: Int,</span>
+<span class="pc" id="L24">    val smokeDuration: Duration,</span>
+<span class="pc" id="L25">    val soakVus: Int,</span>
+<span class="pc" id="L26">    val soakDuration: Duration,</span>
+<span class="pc" id="L27">    val rampMaxVus: Int,</span>
+<span class="pc" id="L28">    val rampStepDuration: Duration,</span>
+<span class="pc" id="L29">    val rampPlateauDuration: Duration,</span>
+<span class="pc" id="L30">    val stressBaselineVus: Int,</span>
+<span class="pc" id="L31">    val stressOverloadVus: Int,</span>
+<span class="pc" id="L32">    val stressBaselineDuration: Duration,</span>
+<span class="pc" id="L33">    val stressOverloadDuration: Duration,</span>
+<span class="pc" id="L34">    val stressRecoveryDuration: Duration,</span>
+<span class="pc" id="L35">    val earlyStop: Boolean,</span>
+<span class="fc" id="L36">    val earlyStopAfter: Duration,</span>
+<span class="fc" id="L37">    val failureWindow: Duration,</span>
+<span class="fc" id="L38">    val failureThreshold: Double,</span>
+<span class="fc" id="L39">    val failureWindows: Int,</span>
+<span class="fc" id="L40">    val failureMinRequests: Int,</span>
+) {
+<span class="nc bnc" id="L42" title="All 4 branches missed.">    fun plan() = when (scenario) {</span>
+        // VU в этом генераторе = корутина: поднять больше COROUTINES нельзя.
+        // Обрезаем план здесь, иначе RAMP_MAX_VUS=300 при COROUTINES=100
+        // превращается в невидимое плато на 100 VU и вводит в заблуждение.
+<span class="nc" id="L46">        &quot;ramp&quot; -&gt; com.vidayapi.loadtest.core.LoadPlan.ramp(</span>
+<span class="nc" id="L47">            rampStepDuration,</span>
+<span class="nc" id="L48">            rampPlateauDuration,</span>
+<span class="nc" id="L49">            minOf(rampMaxVus, coroutines),</span>
+        )
+<span class="nc" id="L51">        &quot;stress&quot; -&gt; com.vidayapi.loadtest.core.LoadPlan.stress(</span>
+<span class="nc" id="L52">            stressBaselineVus,</span>
+<span class="nc" id="L53">            stressOverloadVus,</span>
+<span class="nc" id="L54">            stressBaselineDuration,</span>
+<span class="nc" id="L55">            stressOverloadDuration,</span>
+<span class="nc" id="L56">            stressRecoveryDuration,</span>
+        )
+<span class="nc" id="L58">        &quot;soak&quot;, &quot;soak-errors&quot; -&gt; com.vidayapi.loadtest.core.LoadPlan.constant(</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">            if (errorRate &gt; 0) &quot;soak_${(errorRate * 100).toInt()}pct&quot; else &quot;soak&quot;,</span>
+<span class="nc" id="L60">            soakVus,</span>
+<span class="nc" id="L61">            soakDuration,</span>
+        )
+<span class="nc" id="L63">        else -&gt; com.vidayapi.loadtest.core.LoadPlan.constant(&quot;smoke&quot;, smokeVus, smokeDuration)</span>
+<span class="nc" id="L64">    }</span>
+
+    companion object {
+<span class="nc" id="L67">        fun fromEnv(env: Map&lt;String, String&gt; = System.getenv()): LoadConfig {</span>
+<span class="pc bpc" id="L68" title="2 of 8 branches missed.">            fun value(name: String, default: String) = env[name]?.takeIf { it.isNotBlank() } ?: default</span>
+<span class="fc" id="L69">            fun int(name: String, default: Int) = value(name, default.toString()).toInt().also {</span>
+<span class="pc bpc" id="L70" title="2 of 4 branches missed.">                require(it &gt; 0) { &quot;$name must be positive&quot; }</span>
+<span class="fc" id="L71">            }</span>
+<span class="fc" id="L72">            fun duration(name: String, default: String) = parseDuration(value(name, default))</span>
+<span class="fc" id="L73">            val errorRate = value(&quot;ERROR_RATE&quot;, &quot;0&quot;).toDouble()</span>
+<span class="fc" id="L74">            val workload = value(&quot;WORKLOAD&quot;, &quot;auth&quot;)</span>
+<span class="fc" id="L75">            val threshold = value(&quot;FAILURE_THRESHOLD&quot;, &quot;0.95&quot;).toDouble()</span>
+<span class="pc bpc" id="L76" title="3 of 6 branches missed.">            require(errorRate in 0.0..1.0) { &quot;ERROR_RATE must be between 0 and 1&quot; }</span>
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">            require(workload in setOf(&quot;auth&quot;, &quot;public&quot;)) { &quot;WORKLOAD must be auth or public&quot; }</span>
+<span class="fc bfc" id="L78" title="All 8 branches covered.">            require(workload != &quot;public&quot; || errorRate == 0.0) { &quot;public workload does not support ERROR_RATE&quot; }</span>
+<span class="pc bpc" id="L79" title="3 of 6 branches missed.">            require(threshold in 0.0..1.0) { &quot;FAILURE_THRESHOLD must be between 0 and 1&quot; }</span>
+<span class="fc" id="L80">            return LoadConfig(</span>
+<span class="fc" id="L81">                baseUrl = value(&quot;BASE_URL&quot;, &quot;http://localhost:8080&quot;).trimEnd('/'),</span>
+<span class="fc" id="L82">                scenario = value(&quot;SCENARIO&quot;, &quot;smoke&quot;),</span>
+<span class="fc" id="L83">                workload = workload,</span>
+<span class="fc" id="L84">                profile = value(&quot;PROFILE&quot;, value(&quot;SCENARIO&quot;, &quot;smoke&quot;)),</span>
+<span class="fc" id="L85">                runId = value(&quot;RUN_ID&quot;, &quot;local-${System.currentTimeMillis()}&quot;),</span>
+<span class="fc" id="L86">                outputDir = Path.of(value(&quot;OUT_DIR&quot;, &quot;/results&quot;)),</span>
+<span class="fc" id="L87">                errorRate = errorRate,</span>
+<span class="fc" id="L88">                coroutines = int(&quot;COROUTINES&quot;, 450),</span>
+<span class="fc" id="L89">                dispatcherThreads = int(&quot;DISPATCHER_THREADS&quot;, 4),</span>
+<span class="fc" id="L90">                requestTimeout = duration(&quot;REQUEST_TIMEOUT&quot;, &quot;30s&quot;),</span>
+<span class="fc" id="L91">                thinkMinMs = value(&quot;THINK_MIN_MS&quot;, &quot;1000&quot;).toLong(),</span>
+<span class="fc" id="L92">                thinkMaxMs = value(&quot;THINK_MAX_MS&quot;, &quot;2500&quot;).toLong(),</span>
+<span class="fc" id="L93">                userCount = int(&quot;USER_COUNT&quot;, 200),</span>
+<span class="fc" id="L94">                userPrefix = value(&quot;USER_PREFIX&quot;, &quot;loaduser&quot;),</span>
+<span class="fc" id="L95">                password = value(&quot;LOADTEST_PASSWORD&quot;, &quot;VidayLoadTest!42&quot;),</span>
+<span class="fc" id="L96">                seedPlaylists = int(&quot;SEED_PLAYLISTS&quot;, 100),</span>
+<span class="fc" id="L97">                smokeVus = int(&quot;SMOKE_VUS&quot;, 2),</span>
+<span class="fc" id="L98">                smokeDuration = duration(&quot;SMOKE_DURATION&quot;, &quot;35s&quot;),</span>
+<span class="fc" id="L99">                soakVus = int(&quot;SOAK_VUS&quot;, 60),</span>
+<span class="fc" id="L100">                soakDuration = duration(&quot;SOAK_DURATION&quot;, &quot;20m&quot;),</span>
+<span class="fc" id="L101">                rampMaxVus = int(&quot;RAMP_MAX_VUS&quot;, 450),</span>
+<span class="fc" id="L102">                rampStepDuration = duration(&quot;RAMP_STEP_DURATION&quot;, &quot;1m&quot;),</span>
+<span class="fc" id="L103">                rampPlateauDuration = duration(&quot;RAMP_PLATEAU_DURATION&quot;, &quot;2m&quot;),</span>
+<span class="fc" id="L104">                stressBaselineVus = int(&quot;STRESS_BASELINE_VUS&quot;, 50),</span>
+<span class="fc" id="L105">                stressOverloadVus = int(&quot;STRESS_OVERLOAD_VUS&quot;, 400),</span>
+<span class="fc" id="L106">                stressBaselineDuration = duration(&quot;STRESS_BASELINE_DURATION&quot;, &quot;3m&quot;),</span>
+<span class="fc" id="L107">                stressOverloadDuration = duration(&quot;STRESS_OVERLOAD_DURATION&quot;, &quot;4m&quot;),</span>
+<span class="fc" id="L108">                stressRecoveryDuration = duration(&quot;STRESS_RECOVERY_DURATION&quot;, &quot;5m&quot;),</span>
+<span class="fc" id="L109">                earlyStop = value(&quot;EARLY_STOP&quot;, &quot;1&quot;) == &quot;1&quot;,</span>
+<span class="fc" id="L110">                earlyStopAfter = duration(&quot;EARLY_STOP_AFTER&quot;, &quot;30s&quot;),</span>
+<span class="fc" id="L111">                failureWindow = duration(&quot;FAILURE_WINDOW&quot;, &quot;5s&quot;),</span>
+<span class="fc" id="L112">                failureThreshold = threshold,</span>
+<span class="fc" id="L113">                failureWindows = int(&quot;FAILURE_WINDOWS&quot;, 3),</span>
+<span class="fc" id="L114">                failureMinRequests = int(&quot;FAILURE_MIN_REQUESTS&quot;, 20),</span>
+<span class="fc" id="L115">            ).also {</span>
+<span class="pc bpc" id="L116" title="3 of 6 branches missed.">                require(it.thinkMinMs &gt;= 0 &amp;&amp; it.thinkMaxMs &gt;= it.thinkMinMs) { &quot;invalid think time range&quot; }</span>
+<span class="pc bpc" id="L117" title="2 of 4 branches missed.">                require(it.requestTimeout &gt; Duration.ZERO) { &quot;REQUEST_TIMEOUT must be positive&quot; }</span>
+<span class="fc" id="L118">            }</span>
+        }
+
+        fun parseDuration(value: String): Duration {
+<span class="fc" id="L122">            val amount = value.dropLast(1).toLong()</span>
+<span class="pc bpc" id="L123" title="2 of 4 branches missed.">            require(amount &gt;= 0) { &quot;duration cannot be negative: $value&quot; }</span>
+<span class="fc" id="L124">            return when (value.lastOrNull()) {</span>
+<span class="pc bpc" id="L125" title="1 of 4 branches missed.">                's' -&gt; Duration.ofSeconds(amount)</span>
+<span class="pc bpc" id="L126" title="2 of 4 branches missed.">                'm' -&gt; Duration.ofMinutes(amount)</span>
+<span class="nc bnc" id="L127" title="All 4 branches missed.">                'h' -&gt; Duration.ofHours(amount)</span>
+<span class="nc" id="L128">                else -&gt; Duration.ofMillis(value.toLong())</span>
+            }
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

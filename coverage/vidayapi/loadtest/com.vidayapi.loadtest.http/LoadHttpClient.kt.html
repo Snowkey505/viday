@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LoadHttpClient.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">loadtest</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.loadtest.http</a> &gt; <span class="el_source">LoadHttpClient.kt</span></div><h1>LoadHttpClient.kt</h1><pre class="source lang-java linenums">package com.vidayapi.loadtest.http
+
+import com.vidayapi.loadtest.LoadConfig
+import com.vidayapi.loadtest.core.FailureDetector
+import com.vidayapi.loadtest.core.LoadDispatcher
+import com.vidayapi.loadtest.core.PointWriter
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.time.Instant
+import java.util.concurrent.CancellationException
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionException
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlinx.coroutines.suspendCancellableCoroutine
+
+<span class="nc" id="L19">data class LoadResponse(val status: Int, val body: String)</span>
+
+<span class="nc" id="L21">class LoadHttpClient(</span>
+<span class="nc" id="L22">    private val config: LoadConfig,</span>
+    dispatcher: LoadDispatcher,
+<span class="nc" id="L24">    private val points: PointWriter,</span>
+<span class="nc" id="L25">    private val failures: FailureDetector,</span>
+) {
+<span class="nc" id="L27">    private val client = HttpClient.newBuilder()</span>
+<span class="nc" id="L28">        .executor(dispatcher.executor)</span>
+<span class="nc" id="L29">        .connectTimeout(config.requestTimeout)</span>
+<span class="nc" id="L30">        .followRedirects(HttpClient.Redirect.NEVER)</span>
+<span class="nc" id="L31">        .build()</span>
+
+<span class="nc" id="L33">    suspend fun request(</span>
+        method: String,
+        path: String,
+        operation: String,
+        phase: String,
+<span class="nc" id="L38">        token: String? = null,</span>
+<span class="nc" id="L39">        body: String? = null,</span>
+<span class="nc" id="L40">        injectedError: Boolean = false,</span>
+<span class="nc" id="L41">        record: Boolean = true,</span>
+    ): LoadResponse {
+<span class="nc" id="L43">        val builder = HttpRequest.newBuilder(URI.create(config.baseUrl + path))</span>
+<span class="nc" id="L44">            .timeout(config.requestTimeout)</span>
+<span class="nc" id="L45">            .header(&quot;Accept&quot;, &quot;application/json&quot;)</span>
+<span class="nc" id="L46">            .header(&quot;User-Agent&quot;, &quot;viday-lr4-coroutines/1.0&quot;)</span>
+<span class="nc bnc" id="L47" title="All 2 branches missed.">        if (token != null) builder.header(&quot;Authorization&quot;, &quot;Bearer $token&quot;)</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        if (body != null) builder.header(&quot;Content-Type&quot;, &quot;application/json&quot;)</span>
+<span class="nc bnc" id="L49" title="All 4 branches missed.">        builder.method(method, body?.let(HttpRequest.BodyPublishers::ofString) ?: HttpRequest.BodyPublishers.noBody())</span>
+
+<span class="nc" id="L51">        val started = System.nanoTime()</span>
+<span class="nc" id="L52">        val response = try {</span>
+<span class="nc" id="L53">            val result = client.sendAsync(builder.build(), HttpResponse.BodyHandlers.ofString()).await()</span>
+<span class="nc" id="L54">            LoadResponse(result.statusCode(), result.body())</span>
+<span class="nc" id="L55">        } catch (e: CancellationException) {</span>
+<span class="nc" id="L56">            throw e</span>
+<span class="nc" id="L57">        } catch (_: Exception) {</span>
+<span class="nc" id="L58">            LoadResponse(0, &quot;&quot;)</span>
+        }
+<span class="nc" id="L60">        val durationMs = (System.nanoTime() - started) / 1_000_000.0</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">        if (record) {</span>
+<span class="nc" id="L62">            val at = Instant.now()</span>
+<span class="nc bnc" id="L63" title="All 2 branches missed.">            points.request(durationMs, config.scenario, phase, operation, response.status, injectedError, at)</span>
+<span class="nc bnc" id="L64" title="All 4 branches missed.">            failures.record(response.status == 0 || response.status &gt;= 500, at)</span>
+        }
+<span class="nc" id="L66">        return response</span>
+    }
+}
+
+<span class="nc" id="L70">private suspend fun &lt;T&gt; CompletableFuture&lt;T&gt;.await(): T = suspendCancellableCoroutine { continuation -&gt;</span>
+<span class="nc" id="L71">    whenComplete { result, error -&gt;</span>
+<span class="nc bnc" id="L72" title="All 2 branches missed.">        if (error == null) {</span>
+<span class="nc" id="L73">            continuation.resume(result)</span>
+        } else {
+<span class="nc bnc" id="L75" title="All 6 branches missed.">            val cause = (error as? CompletionException)?.cause ?: error</span>
+<span class="nc" id="L76">            continuation.resumeWithException(cause)</span>
+        }
+<span class="nc" id="L78">    }</span>
+<span class="nc" id="L79">    continuation.invokeOnCancellation { cancel(true) }</span>
+<span class="nc" id="L80">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

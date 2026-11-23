@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LiveMetrics.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">loadtest</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.loadtest</a> &gt; <span class="el_source">LiveMetrics.kt</span></div><h1>LiveMetrics.kt</h1><pre class="source lang-java linenums">package com.vidayapi.loadtest
+
+import com.sun.net.httpserver.HttpServer
+import java.net.InetSocketAddress
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.DoubleAdder
+import java.util.concurrent.atomic.LongAdder
+
+/**
+ * Live-метрики генератора для Prometheus (endpoint /metrics на порту METRICS_PORT).
+ *
+ * Нужны, чтобы Grafana показывала RPS, перцентили, ошибки и VU текущего прогона
+ * до того, как report.json будет импортирован в PostgreSQL. Метки run_id и
+ * workload позволяют держать на одном графике несколько конфигураций (например,
+ * CPU=1 и CPU=2) и сразу видеть разницу.
+ */
+object LiveMetrics {
+<span class="nc" id="L20">    private val bucketsSeconds = doubleArrayOf(</span>
+<span class="nc" id="L21">        0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0,</span>
+    )
+
+<span class="nc" id="L24">    private class Series {</span>
+<span class="nc" id="L25">        val requests = LongAdder()</span>
+<span class="nc" id="L26">        val unexpected = LongAdder()</span>
+<span class="nc" id="L27">        val injected = LongAdder()</span>
+<span class="nc" id="L28">        val business = LongAdder()</span>
+<span class="nc" id="L29">        val durationSum = DoubleAdder()</span>
+<span class="nc bnc" id="L30" title="All 2 branches missed.">        val bucketCounts = Array(bucketsSeconds.size) { LongAdder() }</span>
+    }
+
+<span class="nc" id="L33">    private val series = ConcurrentHashMap&lt;String, Series&gt;()</span>
+<span class="nc" id="L34">    private val currentVus = AtomicLong(0)</span>
+
+<span class="nc" id="L36">    @Volatile private var runId = &quot;unknown&quot;</span>
+<span class="nc" id="L37">    @Volatile private var workload = &quot;unknown&quot;</span>
+<span class="nc" id="L38">    @Volatile private var profile = &quot;unknown&quot;</span>
+<span class="nc" id="L39">    @Volatile private var apiCpus = &quot;-&quot;</span>
+<span class="nc" id="L40">    @Volatile private var apiRamMb = &quot;-&quot;</span>
+<span class="nc" id="L41">    @Volatile private var coroutines = &quot;-&quot;</span>
+<span class="nc" id="L42">    @Volatile private var dispatcherThreads = &quot;-&quot;</span>
+    @Volatile private var server: HttpServer? = null
+
+    fun start(config: LoadConfig) {
+<span class="nc" id="L46">        runId = config.runId</span>
+<span class="nc" id="L47">        workload = config.workload</span>
+<span class="nc" id="L48">        profile = config.profile</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">        apiCpus = System.getenv(&quot;API_CPUS&quot;) ?: &quot;-&quot;</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">        apiRamMb = System.getenv(&quot;API_RAM_MB&quot;) ?: &quot;-&quot;</span>
+<span class="nc" id="L51">        coroutines = config.coroutines.toString()</span>
+<span class="nc" id="L52">        dispatcherThreads = config.dispatcherThreads.toString()</span>
+
+<span class="nc bnc" id="L54" title="All 4 branches missed.">        val port = System.getenv(&quot;METRICS_PORT&quot;)?.toIntOrNull() ?: 9102</span>
+<span class="nc" id="L55">        try {</span>
+<span class="nc" id="L56">            val httpServer = HttpServer.create(InetSocketAddress(&quot;0.0.0.0&quot;, port), 0)</span>
+<span class="nc" id="L57">            server = httpServer</span>
+<span class="nc" id="L58">            httpServer.createContext(&quot;/metrics&quot;) { exchange -&gt;</span>
+<span class="nc" id="L59">                val body = render().toByteArray(Charsets.UTF_8)</span>
+<span class="nc" id="L60">                exchange.responseHeaders.add(&quot;Content-Type&quot;, &quot;text/plain; version=0.0.4; charset=utf-8&quot;)</span>
+<span class="nc" id="L61">                exchange.sendResponseHeaders(200, body.size.toLong())</span>
+<span class="nc" id="L62">                exchange.responseBody.use { it.write(body) }</span>
+<span class="nc" id="L63">            }</span>
+<span class="nc" id="L64">            httpServer.createContext(&quot;/health&quot;) { exchange -&gt;</span>
+<span class="nc" id="L65">                val body = &quot;ok\n&quot;.toByteArray(Charsets.UTF_8)</span>
+<span class="nc" id="L66">                exchange.sendResponseHeaders(200, body.size.toLong())</span>
+<span class="nc" id="L67">                exchange.responseBody.use { it.write(body) }</span>
+<span class="nc" id="L68">            }</span>
+<span class="nc" id="L69">            httpServer.executor = Executors.newSingleThreadExecutor { runnable -&gt;</span>
+<span class="nc" id="L70">                Thread(runnable, &quot;loadtest-live-metrics&quot;).apply { isDaemon = true }</span>
+            }
+<span class="nc" id="L72">            httpServer.start()</span>
+<span class="nc" id="L73">            println(&quot;LR4 live metrics: http://0.0.0.0:$port/metrics&quot;)</span>
+<span class="nc" id="L74">        } catch (exc: Exception) {</span>
+            // Метрики не должны ронять сам нагрузочный прогон.
+<span class="nc" id="L76">            System.err.println(&quot;LR4 live metrics disabled: ${exc.message}&quot;)</span>
+        }
+<span class="nc" id="L78">    }</span>
+
+    /** Останавливает HTTP-сервер, иначе JVM не завершается и docker run висит. */
+    fun stop() {
+<span class="nc" id="L82">        try {</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">            server?.stop(0)</span>
+<span class="nc" id="L84">        } catch (_: Exception) {</span>
+            // остановка метрик не должна влиять на результат прогона
+        } finally {
+<span class="nc" id="L87">            server = null</span>
+        }
+<span class="nc" id="L89">    }</span>
+
+    fun record(
+        durationMs: Double,
+        phase: String,
+        operation: String,
+        status: Int,
+        injectedError: Boolean,
+    ) {
+<span class="nc" id="L98">        val item = series.computeIfAbsent(&quot;$phase\u0000$operation&quot;) { Series() }</span>
+<span class="nc" id="L99">        item.requests.increment()</span>
+<span class="nc" id="L100">        when {</span>
+<span class="nc bnc" id="L101" title="All 4 branches missed.">            status == 0 || status &gt;= 500 -&gt; item.unexpected.increment()</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">            injectedError -&gt; item.injected.increment()</span>
+<span class="nc bnc" id="L103" title="All 6 branches missed.">            status in 400..499 -&gt; item.business.increment()</span>
+        }
+<span class="nc" id="L105">        val seconds = durationMs / 1000.0</span>
+<span class="nc" id="L106">        item.durationSum.add(seconds)</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">        var bucket = bucketsSeconds.indexOfFirst { seconds &lt;= it }</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">        if (bucket &lt; 0) bucket = bucketsSeconds.size - 1</span>
+<span class="nc" id="L109">        item.bucketCounts[bucket].increment()</span>
+<span class="nc" id="L110">    }</span>
+
+    fun vus(value: Int) {
+<span class="nc" id="L113">        currentVus.set(value.toLong())</span>
+<span class="nc" id="L114">    }</span>
+
+    private fun render(): String {
+<span class="nc" id="L117">        val out = StringBuilder()</span>
+<span class="nc" id="L118">        out.appendLine(&quot;# HELP viday_loadtest_requests_total Total completed requests by run, phase and operation&quot;)</span>
+<span class="nc" id="L119">        out.appendLine(&quot;# TYPE viday_loadtest_requests_total counter&quot;)</span>
+<span class="nc" id="L120">        for ((key, item) in series.entries.sortedBy { it.key }) {</span>
+<span class="nc" id="L121">            val (phase, operation) = key.split('\u0000', limit = 2)</span>
+<span class="nc" id="L122">            val labels = labels(phase, operation)</span>
+<span class="nc" id="L123">            out.appendLine(&quot;viday_loadtest_requests_total{$labels} ${item.requests.sum()}&quot;)</span>
+        }
+
+<span class="nc" id="L126">        out.appendLine(&quot;# HELP viday_loadtest_request_duration_seconds Request latency histogram&quot;)</span>
+<span class="nc" id="L127">        out.appendLine(&quot;# TYPE viday_loadtest_request_duration_seconds histogram&quot;)</span>
+<span class="nc" id="L128">        for ((key, item) in series.entries.sortedBy { it.key }) {</span>
+<span class="nc" id="L129">            val (phase, operation) = key.split('\u0000', limit = 2)</span>
+<span class="nc" id="L130">            val base = labels(phase, operation)</span>
+<span class="nc" id="L131">            var cumulative = 0L</span>
+<span class="nc bnc" id="L132" title="All 2 branches missed.">            for (i in bucketsSeconds.indices) {</span>
+<span class="nc" id="L133">                cumulative += item.bucketCounts[i].sum()</span>
+<span class="nc" id="L134">                out.appendLine(</span>
+<span class="nc" id="L135">                    &quot;viday_loadtest_request_duration_seconds_bucket{$base,le=\&quot;${bucketsSeconds[i]}\&quot;} $cumulative&quot;,</span>
+                )
+            }
+<span class="nc" id="L138">            val total = item.requests.sum()</span>
+<span class="nc" id="L139">            out.appendLine(&quot;viday_loadtest_request_duration_seconds_bucket{$base,le=\&quot;+Inf\&quot;} $total&quot;)</span>
+<span class="nc" id="L140">            out.appendLine(&quot;viday_loadtest_request_duration_seconds_sum{$base} ${item.durationSum.sum()}&quot;)</span>
+<span class="nc" id="L141">            out.appendLine(&quot;viday_loadtest_request_duration_seconds_count{$base} $total&quot;)</span>
+        }
+
+<span class="nc" id="L144">        out.appendLine(&quot;# HELP viday_loadtest_errors_total Requests by error kind (unexpected = 5xx/timeout)&quot;)</span>
+<span class="nc" id="L145">        out.appendLine(&quot;# TYPE viday_loadtest_errors_total counter&quot;)</span>
+<span class="nc" id="L146">        for ((key, item) in series.entries.sortedBy { it.key }) {</span>
+<span class="nc" id="L147">            val (phase, operation) = key.split('\u0000', limit = 2)</span>
+<span class="nc" id="L148">            val base = labels(phase, operation)</span>
+<span class="nc" id="L149">            out.appendLine(&quot;viday_loadtest_errors_total{$base,kind=\&quot;unexpected\&quot;} ${item.unexpected.sum()}&quot;)</span>
+<span class="nc" id="L150">            out.appendLine(&quot;viday_loadtest_errors_total{$base,kind=\&quot;injected\&quot;} ${item.injected.sum()}&quot;)</span>
+<span class="nc" id="L151">            out.appendLine(&quot;viday_loadtest_errors_total{$base,kind=\&quot;business\&quot;} ${item.business.sum()}&quot;)</span>
+        }
+
+<span class="nc" id="L154">        out.appendLine(&quot;# HELP viday_loadtest_vus Current planned virtual users&quot;)</span>
+<span class="nc" id="L155">        out.appendLine(&quot;# TYPE viday_loadtest_vus gauge&quot;)</span>
+<span class="nc" id="L156">        out.appendLine(&quot;viday_loadtest_vus{${infoLabels()}} ${currentVus.get()}&quot;)</span>
+
+<span class="nc" id="L158">        out.appendLine(&quot;# HELP viday_loadtest_info Run configuration labels&quot;)</span>
+<span class="nc" id="L159">        out.appendLine(&quot;# TYPE viday_loadtest_info gauge&quot;)</span>
+<span class="nc" id="L160">        out.appendLine(&quot;viday_loadtest_info{${infoLabels()}} 1&quot;)</span>
+<span class="nc" id="L161">        return out.toString()</span>
+    }
+
+    private fun labels(phase: String, operation: String): String =
+<span class="nc" id="L165">        &quot;${infoLabels()},phase=\&quot;${escape(phase)}\&quot;,operation=\&quot;${escape(operation)}\&quot;&quot;</span>
+
+    private fun infoLabels(): String =
+<span class="nc" id="L168">        &quot;run_id=\&quot;${escape(runId)}\&quot;,workload=\&quot;${escape(workload)}\&quot;,profile=\&quot;${escape(profile)}\&quot;,&quot; +</span>
+<span class="nc" id="L169">            &quot;api_cpus=\&quot;${escape(apiCpus)}\&quot;,api_ram_mb=\&quot;${escape(apiRamMb)}\&quot;,&quot; +</span>
+<span class="nc" id="L170">            &quot;coroutines=\&quot;${escape(coroutines)}\&quot;,dispatcher_threads=\&quot;${escape(dispatcherThreads)}\&quot;&quot;</span>
+
+    private fun escape(value: String): String =
+<span class="nc" id="L173">        value.replace(&quot;\\&quot;, &quot;\\\\&quot;).replace(&quot;\n&quot;, &quot;\\n&quot;).replace(&quot;\&quot;&quot;, &quot;\\\&quot;&quot;)</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

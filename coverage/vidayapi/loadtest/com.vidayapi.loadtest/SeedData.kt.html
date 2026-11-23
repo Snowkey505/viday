@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SeedData.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">loadtest</a> &gt; <a href="index.source.html" class="el_package">com.vidayapi.loadtest</a> &gt; <span class="el_source">SeedData.kt</span></div><h1>SeedData.kt</h1><pre class="source lang-java linenums">package com.vidayapi.loadtest
+
+import com.vidayapi.loadtest.http.LoadHttpClient
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+
+<span class="nc" id="L10">data class SeedData(</span>
+<span class="nc" id="L11">    val videoIds: List&lt;Int&gt;,</span>
+<span class="nc" id="L12">    val creatorIds: List&lt;Int&gt;,</span>
+<span class="nc" id="L13">    val playlistIds: List&lt;Int&gt;,</span>
+<span class="nc" id="L14">    val users: List&lt;String&gt;,</span>
+)
+
+<span class="nc" id="L17">suspend fun loadSeed(config: LoadConfig, http: LoadHttpClient): SeedData {</span>
+<span class="nc" id="L18">    val response = http.request(&quot;GET&quot;, &quot;/api/videos?page=0&amp;size=100&quot;, &quot;setup&quot;, &quot;setup&quot;, record = false)</span>
+<span class="nc bnc" id="L19" title="All 4 branches missed.">    check(response.status == 200) { &quot;seed feed unavailable: HTTP ${response.status}&quot; }</span>
+<span class="nc bnc" id="L20" title="All 4 branches missed.">    val items = Json.parseToJsonElement(response.body).jsonObject[&quot;items&quot;]?.jsonArray</span>
+<span class="nc" id="L21">        ?: error(&quot;seed feed has no items&quot;)</span>
+<span class="nc" id="L22">    val videos = items.map { it.jsonObject }</span>
+<span class="nc" id="L23">    val videoIds = videos.map { it.getValue(&quot;id&quot;).jsonPrimitive.int }</span>
+<span class="nc bnc" id="L24" title="All 2 branches missed.">    val creatorIds = videos.map { it.getValue(&quot;ownerId&quot;).jsonPrimitive.int }.filter { it &gt; 0 }.distinct()</span>
+<span class="nc bnc" id="L25" title="All 4 branches missed.">    check(videoIds.isNotEmpty()) { &quot;seed feed is empty&quot; }</span>
+<span class="nc bnc" id="L26" title="All 4 branches missed.">    check(creatorIds.isNotEmpty()) { &quot;no creators found in seed feed&quot; }</span>
+<span class="nc" id="L27">    return SeedData(</span>
+<span class="nc" id="L28">        videoIds = videoIds,</span>
+<span class="nc" id="L29">        creatorIds = creatorIds,</span>
+<span class="nc" id="L30">        playlistIds = (1..config.seedPlaylists).toList(),</span>
+<span class="nc" id="L31">        users = (1..config.userCount).map { &quot;${config.userPrefix}$it&quot; },</span>
+    )
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>
