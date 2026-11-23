@@ -19,6 +19,6 @@ docs
 # В Docker-контекст входят исходники Gradle-модуля loadtest, но не прогоны.
 loadtest/results
 loadtest/runtime
-scripts
-docs
+# scripts НЕ исключаем: docker/test-runner/Dockerfile и docker/e2e/Dockerfile
+# копируют scripts/ внутрь образа (pipeline.sh, reset-test-db.sh, e2e-curl.sh).
 docker/grafana
